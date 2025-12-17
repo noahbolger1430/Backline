@@ -1,115 +1,73 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.event_application import ApplicationStatus
-
-if TYPE_CHECKING:
-    from app.schemas.band_event import BandEventResponse
+from app.schemas.band_event import BandEventCreate, BandEventResponse, BandEventStatus, BandEventUpdate
 
 
 class EventBase(BaseModel):
     """
-    Base event schema with common attributes.
+    Base schema for event with common attributes.
     """
 
-    name: str
+    name: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
     event_date: date
     doors_time: Optional[time] = None
     show_time: time
     is_ticketed: bool = False
-    ticket_price: Optional[int] = None
+    ticket_price: Optional[int] = Field(None, ge=0)
     is_age_restricted: bool = False
-    age_restriction: Optional[int] = None
+    age_restriction: Optional[int] = Field(None, ge=0, le=100)
 
     @field_validator("ticket_price")
     @classmethod
     def validate_ticket_price(cls, v: Optional[int], info) -> Optional[int]:
         """
-        Validate ticket price is positive and required if event is ticketed.
+        Validate ticket price is provided if event is ticketed.
         """
-        if "is_ticketed" in info.data and info.data["is_ticketed"]:
-            if v is None:
-                raise ValueError("ticket_price is required when is_ticketed is True")
-            if v <= 0:
-                raise ValueError("ticket_price must be positive")
+        if info.data.get("is_ticketed") and v is None:
+            raise ValueError("Ticket price required for ticketed events")
         return v
 
     @field_validator("age_restriction")
     @classmethod
     def validate_age_restriction(cls, v: Optional[int], info) -> Optional[int]:
         """
-        Validate age restriction is reasonable and required if age restricted.
+        Validate age restriction is provided if event is age restricted.
         """
-        if "is_age_restricted" in info.data and info.data["is_age_restricted"]:
-            if v is None:
-                raise ValueError("age_restriction is required when is_age_restricted is True")
-            if v < 0 or v > 21:
-                raise ValueError("age_restriction must be between 0 and 21")
+        if info.data.get("is_age_restricted") and v is None:
+            raise ValueError("Age restriction required for age-restricted events")
         return v
 
 
 class EventCreate(EventBase):
     """
-    Schema for event creation.
+    Schema for creating an event.
     """
 
-    pass
+    venue_id: int
 
 
 class EventUpdate(BaseModel):
     """
-    Schema for updating event information.
+    Schema for updating an event.
     All fields are optional to allow partial updates.
     """
 
-    name: Optional[str] = None
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = None
     event_date: Optional[date] = None
     doors_time: Optional[time] = None
     show_time: Optional[time] = None
     is_ticketed: Optional[bool] = None
-    ticket_price: Optional[int] = None
+    ticket_price: Optional[int] = Field(None, ge=0)
     is_age_restricted: Optional[bool] = None
-    age_restriction: Optional[int] = None
-
-    @field_validator("ticket_price")
-    @classmethod
-    def validate_ticket_price_positive(cls, v: Optional[int]) -> Optional[int]:
-        """
-        Validate that ticket price is positive if provided.
-        """
-        if v is not None and v <= 0:
-            raise ValueError("ticket_price must be positive")
-        return v
-
-    @field_validator("age_restriction")
-    @classmethod
-    def validate_age_restriction_range(cls, v: Optional[int]) -> Optional[int]:
-        """
-        Validate that age restriction is reasonable if provided.
-        """
-        if v is not None and (v < 0 or v > 21):
-            raise ValueError("age_restriction must be between 0 and 21")
-        return v
-
-
-class EventSummary(BaseModel):
-    """
-    Schema for event summary in nested responses.
-    """
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    venue_id: int
-    name: str
-    event_date: date
-    show_time: time
+    age_restriction: Optional[int] = Field(None, ge=0, le=100)
 
 
 class EventInDB(EventBase):
@@ -125,20 +83,30 @@ class EventInDB(EventBase):
     updated_at: datetime
 
 
-class Event(EventInDB):
+class EventResponse(EventBase):
     """
-    Schema for event responses.
-    """
-
-    pass
-
-
-class EventWithBands(Event):
-    """
-    Schema for event responses including booked bands.
+    Schema for event API responses.
     """
 
-    bands: List["BandEventResponse"] = []
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    venue_id: int
+    venue_name: str
+    created_at: datetime
+    updated_at: datetime
+    band_count: int = 0
+
+
+class EventListResponse(BaseModel):
+    """
+    Schema for paginated event list responses.
+    """
+
+    events: List[EventResponse]
+    total: int
+    skip: int
+    limit: int
 
 
 class EventApplicationBase(BaseModel):

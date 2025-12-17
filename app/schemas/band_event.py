@@ -8,26 +8,25 @@ if TYPE_CHECKING:
     from app.schemas.event import EventSummary
 
 
+class BandEventStatus(str):
+    """
+    Enumeration of band event participation statuses.
+    """
+
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
+
+
 class BandEventBase(BaseModel):
     """
     Base schema for band-event relationship with common attributes.
     """
 
-    status: str = "pending"
+    status: BandEventStatus = BandEventStatus.PENDING
     set_time: Optional[time] = None
     set_length_minutes: Optional[int] = None
     performance_order: Optional[int] = None
-
-    @field_validator("status")
-    @classmethod
-    def validate_status(cls, v: str) -> str:
-        """
-        Validate status is one of the allowed values.
-        """
-        allowed_statuses = ["pending", "confirmed", "cancelled"]
-        if v not in allowed_statuses:
-            raise ValueError(f"status must be one of {allowed_statuses}")
-        return v
 
     @field_validator("set_length_minutes")
     @classmethod

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import decode_access_token
 from app.database import get_db
-from app.models import Band, BandMember, BandRole, User, Venue, VenueRole, VenueStaff
+from app.models import Band, BandMember, BandRole, Event, User, Venue, VenueRole, VenueStaff
 from app.utils.exceptions import (
     BandNotFoundException,
     CredentialsException,
@@ -102,4 +102,19 @@ def check_venue_permission(venue: Venue, user: User, required_roles: list[VenueR
         raise UnauthorizedVenueAccessException()
 
     return staff_membership
+
+
+def get_event_or_404(event_id: int, db: Session) -> Event:
+    """
+    Get an event by ID or raise 404.
+    """
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        from fastapi import HTTPException, status
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with id {event_id} not found",
+        )
+    return event
 
