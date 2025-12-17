@@ -10,7 +10,7 @@ from app.database import Base
 class User(Base):
     """
     User model representing authentication and basic user information.
-    A user can be a member of multiple bands.
+    A user can be a member of multiple bands and staff at multiple venues.
     """
 
     __tablename__ = "users"
@@ -26,4 +26,5 @@ class User(Base):
     )
 
     band_memberships = relationship("BandMember", back_populates="user", cascade="all, delete-orphan")
+    venue_memberships = relationship("VenueStaff", back_populates="user", cascade="all, delete-orphan")
 

@@ -1,7 +1,11 @@
-from app.models.availability import BandAvailability, BandMemberAvailability, AvailabilityStatus
+from app.models.availability import AvailabilityStatus, BandAvailability, BandMemberAvailability
 from app.models.band import Band
 from app.models.band_member import BandMember, BandRole
+from app.models.event import Event
+from app.models.event_application import ApplicationStatus, EventApplication
 from app.models.user import User
+from app.models.venue import Venue
+from app.models.venue_staff import VenueRole, VenueStaff
 
 __all__ = [
     "User",
@@ -11,5 +15,11 @@ __all__ = [
     "BandMemberAvailability",
     "BandAvailability",
     "AvailabilityStatus",
+    "Venue",
+    "VenueStaff",
+    "VenueRole",
+    "Event",
+    "EventApplication",
+    "ApplicationStatus",
 ]
 

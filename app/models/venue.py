@@ -1,0 +1,36 @@
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from app.database import Base
+
+
+class Venue(Base):
+    """
+    Venue model representing a physical location where shows can be performed.
+
+    Contains venue information such as location details, capacity, and amenities.
+    Users associated with a venue can manage events and review applications.
+    """
+
+    __tablename__ = "venues"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True, nullable=False)
+    description = Column(Text, nullable=True)
+    street_address = Column(String, nullable=False)
+    city = Column(String, nullable=False, index=True)
+    state = Column(String, nullable=False)
+    zip_code = Column(String, nullable=False)
+    capacity = Column(Integer, nullable=True)
+    has_sound_provided = Column(Boolean, default=False, nullable=False)
+    has_parking = Column(Boolean, default=False, nullable=False)
+    age_restriction = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    staff = relationship("VenueStaff", back_populates="venue", cascade="all, delete-orphan")
+    events = relationship("Event", back_populates="venue", cascade="all, delete-orphan")
+

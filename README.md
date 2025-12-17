@@ -29,6 +29,13 @@ This platform solves the complex problem of coordinating schedules between band 
 - Bulk availability entry support
 - Date range querying capabilities
 
+### Venue & Event Management (Models)
+- Venue profiles with location and amenity details
+- Role-based venue staff management (Owner, Manager, Staff)
+- Event creation with date, time, and ticketing information
+- Event application system for bands
+- Application status tracking (Pending, Reviewed, Accepted, Rejected, Withdrawn)
+
 ## Data Model: Availability
 
 ### Availability Status

@@ -121,3 +121,87 @@ class BandMemberNotFoundException(HTTPException):
             detail="Band member not found",
         )
 
+
+class VenueNotFoundException(HTTPException):
+    """
+    Exception raised when venue is not found.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Venue not found",
+        )
+
+
+class VenueAlreadyExistsException(HTTPException):
+    """
+    Exception raised when attempting to create a venue with existing name.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Venue with this name already exists",
+        )
+
+
+class UnauthorizedVenueAccessException(HTTPException):
+    """
+    Exception raised when user attempts unauthorized venue operation.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to perform this action on this venue",
+        )
+
+
+class EventNotFoundException(HTTPException):
+    """
+    Exception raised when event is not found.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found",
+        )
+
+
+class EventApplicationNotFoundException(HTTPException):
+    """
+    Exception raised when event application is not found.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event application not found",
+        )
+
+
+class EventApplicationAlreadyExistsException(HTTPException):
+    """
+    Exception raised when band has already applied to an event.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Band has already applied to this event",
+        )
+
+
+class InvalidApplicationStatusException(HTTPException):
+    """
+    Exception raised when attempting an invalid application status transition.
+    """
+
+    def __init__(self, message: str = "Invalid application status transition") -> None:
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=message,
+        )
+

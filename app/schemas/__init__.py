@@ -22,7 +22,26 @@ from app.schemas.band import (
     BandMemberUpdate,
     BandUpdate,
 )
+from app.schemas.event import (
+    Event,
+    EventApplication,
+    EventApplicationCreate,
+    EventApplicationReview,
+    EventApplicationUpdate,
+    EventCreate,
+    EventInDB,
+    EventUpdate,
+)
 from app.schemas.user import User, UserCreate, UserInDB, UserUpdate
+from app.schemas.venue import (
+    Venue,
+    VenueCreate,
+    VenueInDB,
+    VenueStaff,
+    VenueStaffAdd,
+    VenueStaffUpdate,
+    VenueUpdate,
+)
 
 __all__ = [
     "User",
@@ -51,5 +70,20 @@ __all__ = [
     "MemberAvailabilitySummary",
     "BandEffectiveAvailability",
     "BandEffectiveAvailabilityRange",
+    "Venue",
+    "VenueCreate",
+    "VenueUpdate",
+    "VenueInDB",
+    "VenueStaff",
+    "VenueStaffAdd",
+    "VenueStaffUpdate",
+    "Event",
+    "EventCreate",
+    "EventUpdate",
+    "EventInDB",
+    "EventApplication",
+    "EventApplicationCreate",
+    "EventApplicationUpdate",
+    "EventApplicationReview",
 ]
 
