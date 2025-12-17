@@ -5,6 +5,7 @@ import RoleSelection from "./components/Onboarding/RoleSelection";
 import InviteCodeEntry from "./components/Onboarding/InviteCodeEntry";
 import BandCreation from "./components/Onboarding/BandCreation";
 import InviteSuccess from "./components/Onboarding/InviteSuccess";
+import BandDashboard from "./components/Dashboard/BandDashboard";
 import VenueInviteEntry from "./components/Onboarding/VenueInviteEntry";
 import VenueCreation from "./components/Onboarding/VenueCreation";
 import VenueSuccess from "./components/Onboarding/VenueSuccess";
@@ -197,13 +198,15 @@ const App = () => {
         );
 
       case "dashboard":
+        if (userBands.length > 0) {
+          return <BandDashboard />;
+        }
+
         return (
           <div className="dashboard-placeholder">
-            <h1>Dashboard Coming Soon</h1>
-            <div className="entity-summary">
-              {userBands.length > 0 && <p>Your Bands: {userBands.map((b) => b.name).join(", ")}</p>}
-              {userVenues.length > 0 && <p>Your Venues: {userVenues.map((v) => v.name).join(", ")}</p>}
-            </div>
+            <h1>Welcome to BackLine</h1>
+            <p>Get started by creating or joining a band or venue</p>
+            <button onClick={() => setCurrentView("roleSelection")}>Get Started</button>
             <button onClick={handleLogout}>Logout</button>
           </div>
         );
