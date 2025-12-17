@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1 import availability, auth, bands, events, users, venue_availability, venues
+from app.api.v1 import availability, auth, bands, event_applications, events, users, venue_availability, venues
 
 api_router = APIRouter()
 
@@ -11,4 +11,5 @@ api_router.include_router(venue_availability.router, prefix="/venues", tags=["ve
 api_router.include_router(venues.router, prefix="/venues", tags=["venues"])
 api_router.include_router(availability.router, prefix="/availability", tags=["availability"])
 api_router.include_router(events.router, prefix="/events", tags=["events"])
+api_router.include_router(event_applications.router, prefix="/applications", tags=["event-applications"])
 

@@ -1,6 +1,7 @@
 from enum import Enum as PyEnum
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -43,4 +44,20 @@ class EventApplication(Base):
     event = relationship("Event", back_populates="applications")
     band = relationship("Band", back_populates="event_applications")
     reviewed_by = relationship("User", foreign_keys=[reviewed_by_user_id])
+
+    @hybrid_property
+    def event_name(self) -> str:
+        return self.event.name if self.event else ""
+
+    @hybrid_property
+    def event_date(self):
+        return self.event.event_date if self.event else None
+
+    @hybrid_property
+    def band_name(self) -> str:
+        return self.band.name if self.band else ""
+
+    @hybrid_property
+    def reviewed_by_name(self) -> str:
+        return self.reviewed_by.full_name if self.reviewed_by else None
 
