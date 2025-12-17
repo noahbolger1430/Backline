@@ -192,6 +192,52 @@ Both venue availability endpoints support an optional `band_id` parameter. When 
 - Reducing coordination time by showing mutually available dates
 - Planning tours with multiple venue options
 
+### Availability Management
+
+#### Band Member Availability
+- `POST /api/v1/availability/bands/{band_id}/members/me/availability` - Set availability for specific dates
+  - Allows band members to mark themselves as available, unavailable, or tentative
+  - Automatically updates existing entries if dates already have availability set
+- `POST /api/v1/availability/bands/{band_id}/members/me/availability/by-day-of-week` - Set recurring availability
+  - Mark specific days of the week (e.g., "all Mondays") within a date range
+  - Useful for standing commitments like work schedules
+
+#### Band Availability (Admin/Owner Only)
+- `POST /api/v1/availability/bands/{band_id}/availability` - Set band-level availability
+  - For band-wide blocks like studio time or hiatus periods
+  - Requires OWNER or ADMIN role
+- `POST /api/v1/availability/bands/{band_id}/availability/by-day-of-week` - Set recurring band availability
+  - Block recurring days for rehearsals or other commitments
+  - Requires OWNER or ADMIN role
+
+#### Venue Availability (Owner/Manager Only)
+- `POST /api/v1/availability/venues/{venue_id}/availability` - Set venue availability for specific dates
+  - For one-off blocks like holidays or private events
+  - Requires OWNER or MANAGER role
+  - Operating hours handle regular weekly patterns
+- `POST /api/v1/availability/venues/{venue_id}/availability/by-day-of-week` - Set recurring venue availability
+  - For temporary changes to regular operating patterns
+  - Requires OWNER or MANAGER role
+
+#### Availability Statuses
+
+**Band/Band Member:**
+- `available` - Explicitly available
+- `unavailable` - Not available
+- `tentative` - Potentially available, needs confirmation
+
+**Venue:**
+- `available` - Explicitly available (overrides closed operating hours)
+- `unavailable` - Blocked/not available
+- `hold` - Tentatively held pending confirmation
+
+#### Update Behavior
+
+All availability endpoints support upsert behavior:
+- If an entry exists for a date, it is updated
+- If no entry exists, a new one is created
+- This allows the same endpoint to be used for both creating and updating availability
+
 ## Code Standards
 This project adheres to strict code quality standards:
 
