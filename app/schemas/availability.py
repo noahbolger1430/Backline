@@ -1,9 +1,10 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.availability import AvailabilityStatus
+from app.utils.validators import BulkOperationValidator, DateRangeValidator, StringValidator
 
 
 class BandMemberAvailabilityBase(BaseModel):
@@ -17,21 +18,13 @@ class BandMemberAvailabilityBase(BaseModel):
 
     @field_validator("date")
     @classmethod
-    def validate_date_not_too_far(cls, v: date) -> date:
-        max_future_date = date.today() + timedelta(days=730)
-        if v > max_future_date:
-            raise ValueError("Cannot set availability more than 2 years in the future")
-        return v
+    def validate_date(cls, v: date) -> date:
+        return DateRangeValidator.validate_not_too_far_future(v)
 
     @field_validator("note")
     @classmethod
-    def validate_note_content(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None:
-            cleaned = " ".join(v.split())
-            if len(cleaned) > 500:
-                raise ValueError("Note cannot exceed 500 characters")
-            return cleaned if cleaned else None
-        return v
+    def validate_note(cls, v: Optional[str]) -> Optional[str]:
+        return StringValidator.clean_and_validate(v, allow_none=True)
 
 
 class BandMemberAvailabilityCreate(BandMemberAvailabilityBase):
@@ -49,7 +42,12 @@ class BandMemberAvailabilityUpdate(BaseModel):
     """
 
     status: Optional[AvailabilityStatus] = None
-    note: Optional[str] = None
+    note: Optional[str] = Field(None, max_length=500)
+
+    @field_validator("note")
+    @classmethod
+    def validate_note(cls, v: Optional[str]) -> Optional[str]:
+        return StringValidator.clean_and_validate(v, allow_none=True)
 
 
 class BandMemberAvailabilityInDB(BandMemberAvailabilityBase):
@@ -80,7 +78,17 @@ class BandAvailabilityBase(BaseModel):
 
     date: date
     status: AvailabilityStatus = AvailabilityStatus.UNAVAILABLE
-    note: Optional[str] = None
+    note: Optional[str] = Field(None, max_length=500)
+
+    @field_validator("date")
+    @classmethod
+    def validate_date(cls, v: date) -> date:
+        return DateRangeValidator.validate_not_too_far_future(v)
+
+    @field_validator("note")
+    @classmethod
+    def validate_note(cls, v: Optional[str]) -> Optional[str]:
+        return StringValidator.clean_and_validate(v, allow_none=True)
 
 
 class BandAvailabilityCreate(BandAvailabilityBase):
@@ -98,7 +106,12 @@ class BandAvailabilityUpdate(BaseModel):
     """
 
     status: Optional[AvailabilityStatus] = None
-    note: Optional[str] = None
+    note: Optional[str] = Field(None, max_length=500)
+
+    @field_validator("note")
+    @classmethod
+    def validate_note(cls, v: Optional[str]) -> Optional[str]:
+        return StringValidator.clean_and_validate(v, allow_none=True)
 
 
 class BandAvailabilityInDB(BandAvailabilityBase):
@@ -143,15 +156,8 @@ class BandMemberAvailabilityBulkCreate(BaseModel):
 
     @field_validator("entries")
     @classmethod
-    def validate_entries(cls, v: List[BandMemberAvailabilityCreate]) -> List[BandMemberAvailabilityCreate]:
-        if not v:
-            raise ValueError("entries list cannot be empty")
-        if len(v) > 365:
-            raise ValueError("Cannot create more than 365 entries at once")
-        dates = [entry.date for entry in v]
-        if len(dates) != len(set(dates)):
-            raise ValueError("Duplicate dates found in entries")
-        return v
+    def validate_entries(cls, v: List) -> List:
+        return BulkOperationValidator.validate_bulk_entries(v, "date")
 
 
 class BandAvailabilityBulkCreate(BaseModel):
@@ -160,17 +166,12 @@ class BandAvailabilityBulkCreate(BaseModel):
     Useful for setting availability across a date range.
     """
 
-    entries: List[BandAvailabilityCreate]
+    entries: List[BandAvailabilityCreate] = Field(..., max_length=365)
 
     @field_validator("entries")
     @classmethod
-    def validate_entries_not_empty(cls, v: List[BandAvailabilityCreate]) -> List[BandAvailabilityCreate]:
-        """
-        Validate that the entries list is not empty.
-        """
-        if not v:
-            raise ValueError("entries list cannot be empty")
-        return v
+    def validate_entries(cls, v: List) -> List:
+        return BulkOperationValidator.validate_bulk_entries(v, "date")
 
 
 class DateRange(BaseModel):
@@ -183,23 +184,15 @@ class DateRange(BaseModel):
 
     @field_validator("start_date")
     @classmethod
-    def validate_start_date_not_too_old(cls, v: date) -> date:
-        min_past_date = date.today() - timedelta(days=365)
-        if v < min_past_date:
-            raise ValueError("Cannot query dates more than 1 year in the past")
-        return v
+    def validate_start_date(cls, v: date) -> date:
+        return DateRangeValidator.validate_not_too_far_past(v)
 
     @field_validator("end_date")
     @classmethod
     def validate_end_date(cls, v: date, info) -> date:
+        v = DateRangeValidator.validate_not_too_far_future(v)
         if "start_date" in info.data:
-            if v < info.data["start_date"]:
-                raise ValueError("end_date must be on or after start_date")
-            if (v - info.data["start_date"]).days > 365:
-                raise ValueError("Date range cannot exceed 365 days")
-        max_future_date = date.today() + timedelta(days=730)
-        if v > max_future_date:
-            raise ValueError("Cannot query dates more than 2 years in the future")
+            DateRangeValidator.validate_date_range(info.data["start_date"], v)
         return v
 
 

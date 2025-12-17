@@ -1,10 +1,10 @@
-import re
 from datetime import datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.venue_staff import VenueRole
+from app.utils.validators import StringValidator
 
 
 class VenueBase(BaseModel):
@@ -13,7 +13,7 @@ class VenueBase(BaseModel):
     """
 
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=2000)
     street_address: str = Field(..., min_length=1)
     city: str = Field(..., min_length=1)
     state: str = Field(..., min_length=2, max_length=2)
@@ -21,7 +21,7 @@ class VenueBase(BaseModel):
     capacity: Optional[int] = Field(None, gt=0)
     has_sound_provided: bool = False
     has_parking: bool = False
-    age_restriction: Optional[int] = Field(None, ge=0, le=100)
+    age_restriction: Optional[int] = Field(None, ge=0, le=21)
 
     @field_validator("state")
     @classmethod
@@ -31,10 +31,12 @@ class VenueBase(BaseModel):
     @field_validator("name")
     @classmethod
     def validate_name(cls, v: str) -> str:
-        cleaned = " ".join(v.split())
-        if not cleaned:
-            raise ValueError("Name cannot be empty or only whitespace")
-        return cleaned
+        return StringValidator.clean_and_validate(v, allow_none=False, error_msg="Venue name cannot be empty")
+
+    @field_validator("street_address", "city")
+    @classmethod
+    def validate_address_fields(cls, v: str) -> str:
+        return StringValidator.clean_and_validate(v, allow_none=False, error_msg="Address field cannot be empty")
 
 
 class VenueCreate(VenueBase):
@@ -47,7 +49,7 @@ class VenueUpdate(BaseModel):
     """Schema for updating a venue. All fields optional."""
 
     name: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=2000)
     street_address: Optional[str] = Field(None, min_length=1)
     city: Optional[str] = Field(None, min_length=1)
     state: Optional[str] = Field(None, min_length=2, max_length=2)
@@ -55,7 +57,7 @@ class VenueUpdate(BaseModel):
     capacity: Optional[int] = Field(None, gt=0)
     has_sound_provided: Optional[bool] = None
     has_parking: Optional[bool] = None
-    age_restriction: Optional[int] = Field(None, ge=0, le=100)
+    age_restriction: Optional[int] = Field(None, ge=0, le=21)
 
     @field_validator("state")
     @classmethod
@@ -65,12 +67,12 @@ class VenueUpdate(BaseModel):
     @field_validator("name")
     @classmethod
     def validate_name(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None:
-            cleaned = " ".join(v.split())
-            if not cleaned:
-                raise ValueError("Name cannot be empty or only whitespace")
-            return cleaned
-        return v
+        return StringValidator.clean_and_validate(v, allow_none=True, error_msg="Venue name cannot be empty")
+
+    @field_validator("street_address", "city")
+    @classmethod
+    def validate_address_fields(cls, v: Optional[str]) -> Optional[str]:
+        return StringValidator.clean_and_validate(v, allow_none=True, error_msg="Address field cannot be empty")
 
 
 class VenueResponse(VenueBase):

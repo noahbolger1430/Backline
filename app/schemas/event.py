@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.event_application import ApplicationStatus
 from app.schemas.band_event import BandEventCreate, BandEventResponse, BandEventStatus, BandEventUpdate
+from app.utils.validators import PriceValidator, StringValidator
 
 
 class EventBase(BaseModel):
@@ -15,7 +16,7 @@ class EventBase(BaseModel):
     """
 
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=2000)
     event_date: date
     doors_time: Optional[time] = None
     show_time: time
@@ -24,15 +25,15 @@ class EventBase(BaseModel):
     is_age_restricted: bool = False
     age_restriction: Optional[int] = Field(None, ge=0, le=100)
 
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        return StringValidator.clean_and_validate(v, allow_none=False, error_msg="Event name cannot be empty")
+
     @field_validator("ticket_price")
     @classmethod
     def validate_ticket_price(cls, v: Optional[int], info) -> Optional[int]:
-        """
-        Validate ticket price is provided if event is ticketed.
-        """
-        if info.data.get("is_ticketed") and v is None:
-            raise ValueError("Ticket price required for ticketed events")
-        return v
+        return PriceValidator.validate_price_required_if_ticketed(v, info.data.get("is_ticketed", False), "ticket_price")
 
     @field_validator("age_restriction")
     @classmethod
@@ -60,7 +61,7 @@ class EventUpdate(BaseModel):
     """
 
     name: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=2000)
     event_date: Optional[date] = None
     doors_time: Optional[time] = None
     show_time: Optional[time] = None
@@ -68,6 +69,16 @@ class EventUpdate(BaseModel):
     ticket_price: Optional[int] = Field(None, ge=0)
     is_age_restricted: Optional[bool] = None
     age_restriction: Optional[int] = Field(None, ge=0, le=100)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: Optional[str]) -> Optional[str]:
+        return StringValidator.clean_and_validate(v, allow_none=True)
+
+    @field_validator("ticket_price")
+    @classmethod
+    def validate_ticket_price(cls, v: Optional[int]) -> Optional[int]:
+        return PriceValidator.validate_positive_price(v)
 
 
 class EventInDB(EventBase):
