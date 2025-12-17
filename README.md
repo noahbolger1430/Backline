@@ -109,6 +109,12 @@ band-scheduling-platform/
 │   └── main.py             # Application entry point
 └── tests/                  # Test suite
 
+## Documentation
+
+Additional documentation is available in the `docs/` directory:
+
+- [Data Management](docs/Data%20Management.md) - Database, ORM, and migration tooling decisions
+
 ## Setup
 
 ### Prerequisites
