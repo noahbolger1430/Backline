@@ -10,7 +10,8 @@ class Event(Base):
     Event model representing a scheduled show at a venue.
 
     Contains event details including date, time, and requirements.
-    Bands can submit applications to perform at events.
+    Bands can submit applications to perform at events and
+    be booked through the band_events relationship.
     """
 
     __tablename__ = "events"
@@ -33,4 +34,5 @@ class Event(Base):
 
     venue = relationship("Venue", back_populates="events")
     applications = relationship("EventApplication", back_populates="event", cascade="all, delete-orphan")
+    bands = relationship("BandEvent", back_populates="event", cascade="all, delete-orphan")
 

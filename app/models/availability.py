@@ -50,10 +50,13 @@ class BandAvailability(Base):
     Used for band-level scheduling blocks that apply regardless of individual
     member availability (e.g., band hiatus, studio time, travel days).
 
+    When a band is booked for an event, a BandAvailability record is created
+    with the band_event_id set, marking the band as unavailable for that date.
+
     A band's effective availability for a date is determined by:
-    1. If BandAvailability entry exists with UNAVAILABLE status -> band unavailable
-    2. If ALL band members have UNAVAILABLE status for date -> band unavailable
-    3. Otherwise -> band available
+    1. BandAvailability entry with UNAVAILABLE status -> unavailable
+    2. ALL band members have UNAVAILABLE status for date -> unavailable
+    3. Otherwise -> available
     """
 
     __tablename__ = "band_availabilities"
@@ -61,6 +64,7 @@ class BandAvailability(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     band_id = Column(Integer, ForeignKey("bands.id", ondelete="CASCADE"), nullable=False, index=True)
+    band_event_id = Column(Integer, ForeignKey("band_events.id", ondelete="SET NULL"), nullable=True, index=True)
     date = Column(Date, nullable=False, index=True)
     status = Column(String, nullable=False, default=AvailabilityStatus.UNAVAILABLE.value)
     note = Column(Text, nullable=True)
@@ -68,4 +72,5 @@ class BandAvailability(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     band = relationship("Band", back_populates="availabilities")
+    band_event = relationship("BandEvent", back_populates="availability")
 

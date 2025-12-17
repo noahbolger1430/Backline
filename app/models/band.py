@@ -8,7 +8,9 @@ from app.database import Base
 class Band(Base):
     """
     Band model representing a musical group.
-    Contains band information and relationships to members.
+
+    Contains band information and relationships to members,
+    events they are booked for, and availability records.
     """
 
     __tablename__ = "bands"
@@ -24,6 +26,7 @@ class Band(Base):
     )
 
     members = relationship("BandMember", back_populates="band", cascade="all, delete-orphan")
+    events = relationship("BandEvent", back_populates="band", cascade="all, delete-orphan")
     availabilities = relationship("BandAvailability", back_populates="band", cascade="all, delete-orphan")
     event_applications = relationship("EventApplication", back_populates="band", cascade="all, delete-orphan")
 
