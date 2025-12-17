@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
@@ -27,6 +29,13 @@ class Venue(Base):
     has_sound_provided = Column(Boolean, default=False, nullable=False)
     has_parking = Column(Boolean, default=False, nullable=False)
     age_restriction = Column(Integer, nullable=True)
+    invite_code = Column(
+        String,
+        unique=True,
+        index=True,
+        nullable=False,
+        default=lambda: str(uuid.uuid4()),
+    )
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False

@@ -5,43 +5,54 @@ import RoleSelection from "./components/Onboarding/RoleSelection";
 import InviteCodeEntry from "./components/Onboarding/InviteCodeEntry";
 import BandCreation from "./components/Onboarding/BandCreation";
 import InviteSuccess from "./components/Onboarding/InviteSuccess";
+import VenueInviteEntry from "./components/Onboarding/VenueInviteEntry";
+import VenueCreation from "./components/Onboarding/VenueCreation";
+import VenueSuccess from "./components/Onboarding/VenueSuccess";
 import { bandService } from "./services/bandService";
+import { venueService } from "./services/venueService";
 import "./App.css";
 
 const App = () => {
   const [currentView, setCurrentView] = useState("login");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userBands, setUserBands] = useState([]);
+  const [userVenues, setUserVenues] = useState([]);
   const [currentBand, setCurrentBand] = useState(null);
+  const [currentVenue, setCurrentVenue] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (token) {
       setIsAuthenticated(true);
-      checkUserBands();
+      checkUserEntities();
     }
   }, []);
 
-  const checkUserBands = async () => {
+  const checkUserEntities = async () => {
     try {
-      const bands = await bandService.getUserBands();
-      setUserBands(bands);
+      const [bands, venues] = await Promise.all([
+        bandService.getUserBands(),
+        venueService.getUserVenues(),
+      ]);
 
-      if (bands.length > 0) {
+      setUserBands(bands);
+      setUserVenues(venues);
+
+      if (bands.length > 0 || venues.length > 0) {
         setCurrentView("dashboard");
       } else {
         setCurrentView("roleSelection");
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error("Error fetching user bands:", error);
+      console.error("Error fetching user entities:", error);
       setCurrentView("roleSelection");
     }
   };
 
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);
-    checkUserBands();
+    checkUserEntities();
   };
 
   const handleSignupSuccess = () => {
@@ -53,24 +64,37 @@ const App = () => {
   const handleRoleSelect = (role, hasInviteCode) => {
     if (role === "band") {
       if (hasInviteCode) {
-        setCurrentView("inviteEntry");
+        setCurrentView("bandInviteEntry");
       } else {
         setCurrentView("bandCreation");
       }
-    } else {
-      // eslint-disable-next-line no-alert
-      alert("Venue management coming soon!");
+    } else if (role === "venue") {
+      if (hasInviteCode) {
+        setCurrentView("venueInviteEntry");
+      } else {
+        setCurrentView("venueCreation");
+      }
     }
   };
 
   const handleBandCreated = (band) => {
     setCurrentBand(band);
-    setCurrentView("inviteSuccess");
+    setCurrentView("bandSuccess");
   };
 
   const handleBandJoined = (band) => {
     setCurrentBand(band);
-    setCurrentView("joinSuccess");
+    setCurrentView("bandJoinSuccess");
+  };
+
+  const handleVenueCreated = (venue) => {
+    setCurrentVenue(venue);
+    setCurrentView("venueSuccess");
+  };
+
+  const handleVenueJoined = (venue) => {
+    setCurrentVenue(venue);
+    setCurrentView("venueJoinSuccess");
   };
 
   const handleContinueToDashboard = () => {
@@ -104,7 +128,7 @@ const App = () => {
       case "roleSelection":
         return <RoleSelection onRoleSelect={handleRoleSelect} />;
 
-      case "inviteEntry":
+      case "bandInviteEntry":
         return (
           <InviteCodeEntry
             onSuccess={handleBandJoined}
@@ -120,7 +144,7 @@ const App = () => {
           />
         );
 
-      case "inviteSuccess":
+      case "bandSuccess":
         return (
           <InviteSuccess
             band={currentBand}
@@ -129,7 +153,7 @@ const App = () => {
           />
         );
 
-      case "joinSuccess":
+      case "bandJoinSuccess":
         return (
           <InviteSuccess
             band={currentBand}
@@ -138,11 +162,48 @@ const App = () => {
           />
         );
 
+      case "venueInviteEntry":
+        return (
+          <VenueInviteEntry
+            onSuccess={handleVenueJoined}
+            onBack={() => setCurrentView("roleSelection")}
+          />
+        );
+
+      case "venueCreation":
+        return (
+          <VenueCreation
+            onSuccess={handleVenueCreated}
+            onBack={() => setCurrentView("roleSelection")}
+          />
+        );
+
+      case "venueSuccess":
+        return (
+          <VenueSuccess
+            venue={currentVenue}
+            onContinue={handleContinueToDashboard}
+            isNewVenue
+          />
+        );
+
+      case "venueJoinSuccess":
+        return (
+          <VenueSuccess
+            venue={currentVenue}
+            onContinue={handleContinueToDashboard}
+            isNewVenue={false}
+          />
+        );
+
       case "dashboard":
         return (
           <div className="dashboard-placeholder">
             <h1>Dashboard Coming Soon</h1>
-            <p>Band management features will be implemented here</p>
+            <div className="entity-summary">
+              {userBands.length > 0 && <p>Your Bands: {userBands.map((b) => b.name).join(", ")}</p>}
+              {userVenues.length > 0 && <p>Your Venues: {userVenues.map((v) => v.name).join(", ")}</p>}
+            </div>
             <button onClick={handleLogout}>Logout</button>
           </div>
         );

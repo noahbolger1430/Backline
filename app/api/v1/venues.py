@@ -7,7 +7,9 @@ from app.api.deps import get_current_user, get_venue_or_404
 from app.database import get_db
 from app.models import User, Venue, VenueRole, VenueStaff
 from app.schemas.venue import (
+    Venue,
     VenueCreate,
+    VenueJoinByInvite,
     VenueListResponse,
     VenueResponse,
     VenueStaffCreate,
@@ -280,4 +282,49 @@ def get_my_venues(current_user: User = Depends(get_current_user), db: Session = 
     """
     venues = VenueService.get_user_venues(db, current_user)
     return [VenueResponse.model_validate(v) for v in venues]
+
+
+@router.post("/join", response_model=Venue, status_code=status.HTTP_200_OK)
+def join_venue_with_invite(
+    join_data: VenueJoinByInvite,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Venue:
+    """
+    Join a venue using an invite code.
+    """
+    venue = db.query(Venue).filter(Venue.invite_code == join_data.invite_code).first()
+
+    if not venue:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid invite code",
+        )
+
+    existing_staff = (
+        db.query(VenueStaff)
+        .filter(VenueStaff.venue_id == venue.id, VenueStaff.user_id == current_user.id)
+        .first()
+    )
+
+    if existing_staff:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You are already a staff member at this venue",
+        )
+
+    new_staff = VenueStaff(
+        user_id=current_user.id,
+        venue_id=venue.id,
+        role=VenueRole.STAFF.value,
+    )
+    db.add(new_staff)
+    db.commit()
+    db.refresh(venue)
+
+    return venue
 

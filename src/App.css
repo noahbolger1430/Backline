@@ -24,6 +24,16 @@ body {
   gap: 20px;
 }
 
+.entity-summary {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.entity-summary p {
+  margin: 10px 0;
+  font-size: 16px;
+}
+
 .dashboard-placeholder button {
   padding: 12px 24px;
   background-color: #ffffff;

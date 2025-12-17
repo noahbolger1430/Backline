@@ -2,14 +2,16 @@ import React, { useState } from "react";
 import "./Onboarding.css";
 
 const RoleSelection = ({ onRoleSelect }) => {
+  const [selectedRole, setSelectedRole] = useState(null);
   const [hasInviteCode, setHasInviteCode] = useState(null);
 
-  const handleBandSelection = () => {
-    onRoleSelect("band", hasInviteCode);
+  const handleRoleSelection = (role) => {
+    setSelectedRole(role);
+    setHasInviteCode(null);
   };
 
-  const handleVenueSelection = () => {
-    onRoleSelect("venue", hasInviteCode);
+  const handleInviteChoice = (hasCode) => {
+    onRoleSelect(selectedRole, hasCode);
   };
 
   return (
@@ -22,34 +24,38 @@ const RoleSelection = ({ onRoleSelect }) => {
           <p className="question-text">Are you:</p>
 
           <div className="role-options">
-            <button className="role-button band" onClick={() => setHasInviteCode(false)}>
+            <button
+              className={`role-button band ${selectedRole === "band" ? "selected" : ""}`}
+              onClick={() => handleRoleSelection("band")}
+            >
               <span className="role-icon">🎸</span>
               <span className="role-text">In a Band</span>
             </button>
 
-            <button className="role-button venue" onClick={() => setHasInviteCode(false)}>
+            <button
+              className={`role-button venue ${selectedRole === "venue" ? "selected" : ""}`}
+              onClick={() => handleRoleSelection("venue")}
+            >
               <span className="role-icon">🏛️</span>
               <span className="role-text">Managing a Venue</span>
             </button>
           </div>
 
-          {hasInviteCode === false && (
+          {selectedRole && (
             <div className="invite-check">
-              <p className="question-text">Do you have an invite code?</p>
+              <p className="question-text">
+                {selectedRole === "band"
+                  ? "Do you have a band invite code?"
+                  : "Do you have a venue invite code?"}
+              </p>
 
               <div className="invite-options">
-                <button
-                  className="invite-button yes"
-                  onClick={() => {
-                    setHasInviteCode(true);
-                    handleBandSelection();
-                  }}
-                >
+                <button className="invite-button yes" onClick={() => handleInviteChoice(true)}>
                   Yes, I have a code
                 </button>
 
-                <button className="invite-button no" onClick={handleBandSelection}>
-                  No, I'll create a new band
+                <button className="invite-button no" onClick={() => handleInviteChoice(false)}>
+                  {selectedRole === "band" ? "No, I'll create a new band" : "No, I'll create a new venue"}
                 </button>
               </div>
             </div>
