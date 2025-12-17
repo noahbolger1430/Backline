@@ -1,7 +1,7 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.availability import AvailabilityStatus
 
@@ -13,7 +13,25 @@ class BandMemberAvailabilityBase(BaseModel):
 
     date: date
     status: AvailabilityStatus = AvailabilityStatus.UNAVAILABLE
-    note: Optional[str] = None
+    note: Optional[str] = Field(None, max_length=500)
+
+    @field_validator("date")
+    @classmethod
+    def validate_date_not_too_far(cls, v: date) -> date:
+        max_future_date = date.today() + timedelta(days=730)
+        if v > max_future_date:
+            raise ValueError("Cannot set availability more than 2 years in the future")
+        return v
+
+    @field_validator("note")
+    @classmethod
+    def validate_note_content(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            cleaned = " ".join(v.split())
+            if len(cleaned) > 500:
+                raise ValueError("Note cannot exceed 500 characters")
+            return cleaned if cleaned else None
+        return v
 
 
 class BandMemberAvailabilityCreate(BandMemberAvailabilityBase):
@@ -121,16 +139,18 @@ class BandMemberAvailabilityBulkCreate(BaseModel):
     Useful for setting availability across a date range.
     """
 
-    entries: List[BandMemberAvailabilityCreate]
+    entries: List[BandMemberAvailabilityCreate] = Field(..., max_length=365)
 
     @field_validator("entries")
     @classmethod
-    def validate_entries_not_empty(cls, v: List[BandMemberAvailabilityCreate]) -> List[BandMemberAvailabilityCreate]:
-        """
-        Validate that the entries list is not empty.
-        """
+    def validate_entries(cls, v: List[BandMemberAvailabilityCreate]) -> List[BandMemberAvailabilityCreate]:
         if not v:
             raise ValueError("entries list cannot be empty")
+        if len(v) > 365:
+            raise ValueError("Cannot create more than 365 entries at once")
+        dates = [entry.date for entry in v]
+        if len(dates) != len(set(dates)):
+            raise ValueError("Duplicate dates found in entries")
         return v
 
 
@@ -161,14 +181,25 @@ class DateRange(BaseModel):
     start_date: date
     end_date: date
 
+    @field_validator("start_date")
+    @classmethod
+    def validate_start_date_not_too_old(cls, v: date) -> date:
+        min_past_date = date.today() - timedelta(days=365)
+        if v < min_past_date:
+            raise ValueError("Cannot query dates more than 1 year in the past")
+        return v
+
     @field_validator("end_date")
     @classmethod
-    def validate_end_date_after_start(cls, v: date, info) -> date:
-        """
-        Validate that end_date is not before start_date.
-        """
-        if "start_date" in info.data and v < info.data["start_date"]:
-            raise ValueError("end_date must be on or after start_date")
+    def validate_end_date(cls, v: date, info) -> date:
+        if "start_date" in info.data:
+            if v < info.data["start_date"]:
+                raise ValueError("end_date must be on or after start_date")
+            if (v - info.data["start_date"]).days > 365:
+                raise ValueError("Date range cannot exceed 365 days")
+        max_future_date = date.today() + timedelta(days=730)
+        if v > max_future_date:
+            raise ValueError("Cannot query dates more than 2 years in the future")
         return v
 
 

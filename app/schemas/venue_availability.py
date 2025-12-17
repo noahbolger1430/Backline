@@ -1,7 +1,7 @@
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.venue_availability import VenueAvailabilityStatus
 from app.models.venue_operating_hours import DayOfWeek
@@ -17,24 +17,12 @@ class VenueOperatingHoursBase(BaseModel):
     open_time: Optional[time] = None
     close_time: Optional[time] = None
 
-    @field_validator("open_time")
-    @classmethod
-    def validate_open_time_required_if_not_closed(cls, v: Optional[time], info) -> Optional[time]:
-        """
-        Validate that open_time is provided if venue is not closed.
-        """
-        if "is_closed" in info.data and not info.data["is_closed"] and v is None:
-            raise ValueError("open_time is required when venue is not closed")
-        return v
-
     @field_validator("close_time")
     @classmethod
-    def validate_close_time_required_if_not_closed(cls, v: Optional[time], info) -> Optional[time]:
-        """
-        Validate that close_time is provided if venue is not closed.
-        """
-        if "is_closed" in info.data and not info.data["is_closed"] and v is None:
-            raise ValueError("close_time is required when venue is not closed")
+    def validate_close_after_open(cls, v: Optional[time], info) -> Optional[time]:
+        if v is not None and "open_time" in info.data and info.data["open_time"] is not None:
+            if v <= info.data["open_time"]:
+                raise ValueError("close_time must be after open_time")
         return v
 
 
@@ -89,9 +77,6 @@ class VenueOperatingHoursBulkCreate(BaseModel):
     @field_validator("entries")
     @classmethod
     def validate_entries_not_empty(cls, v: List[VenueOperatingHoursCreate]) -> List[VenueOperatingHoursCreate]:
-        """
-        Validate that the entries list is not empty.
-        """
         if not v:
             raise ValueError("entries list cannot be empty")
         return v
@@ -99,9 +84,6 @@ class VenueOperatingHoursBulkCreate(BaseModel):
     @field_validator("entries")
     @classmethod
     def validate_unique_days(cls, v: List[VenueOperatingHoursCreate]) -> List[VenueOperatingHoursCreate]:
-        """
-        Validate that each day of week appears only once.
-        """
         days = [entry.day_of_week for entry in v]
         if len(days) != len(set(days)):
             raise ValueError("each day_of_week must appear only once")
@@ -115,7 +97,7 @@ class VenueAvailabilityBase(BaseModel):
 
     date: date
     status: VenueAvailabilityStatus = VenueAvailabilityStatus.UNAVAILABLE
-    note: Optional[str] = None
+    note: Optional[str] = Field(None, max_length=500)
 
 
 class VenueAvailabilityCreate(VenueAvailabilityBase):
@@ -163,49 +145,52 @@ class VenueAvailabilityBulkCreate(BaseModel):
     Useful for blocking out date ranges.
     """
 
-    entries: List[VenueAvailabilityCreate]
+    entries: List[VenueAvailabilityCreate] = Field(..., max_length=365)
 
     @field_validator("entries")
     @classmethod
-    def validate_entries_not_empty(cls, v: List[VenueAvailabilityCreate]) -> List[VenueAvailabilityCreate]:
-        """
-        Validate that the entries list is not empty.
-        """
+    def validate_entries(cls, v: List[VenueAvailabilityCreate]) -> List[VenueAvailabilityCreate]:
         if not v:
             raise ValueError("entries list cannot be empty")
+        if len(v) > 365:
+            raise ValueError("Cannot create more than 365 entries at once")
+        dates = [entry.date for entry in v]
+        if len(dates) != len(set(dates)):
+            raise ValueError("Duplicate dates found in entries")
         return v
 
 
 class VenueAvailabilityBulkCreateByDayOfWeek(BaseModel):
     """
-    Schema for creating availability entries for specific days of the week
-    within a date range. Enables bulk blocking of recurring days.
+    Schema for creating availability entries for specific days of the week within a date range.
     """
 
     start_date: date
     end_date: date
-    days_of_week: List[DayOfWeek]
+    days_of_week: List[DayOfWeek] = Field(..., min_length=1, max_length=7)
     status: VenueAvailabilityStatus = VenueAvailabilityStatus.UNAVAILABLE
-    note: Optional[str] = None
+    note: Optional[str] = Field(None, max_length=500)
 
     @field_validator("end_date")
     @classmethod
-    def validate_end_date_after_start(cls, v: date, info) -> date:
-        """
-        Validate that end_date is not before start_date.
-        """
-        if "start_date" in info.data and v < info.data["start_date"]:
-            raise ValueError("end_date must be on or after start_date")
+    def validate_date_range(cls, v: date, info) -> date:
+        if "start_date" in info.data:
+            if v < info.data["start_date"]:
+                raise ValueError("end_date must be on or after start_date")
+            if (v - info.data["start_date"]).days > 365:
+                raise ValueError("Date range cannot exceed 365 days for bulk operations")
+        max_future_date = date.today() + timedelta(days=730)
+        if v > max_future_date:
+            raise ValueError("Cannot set availability more than 2 years in the future")
         return v
 
     @field_validator("days_of_week")
     @classmethod
-    def validate_days_not_empty(cls, v: List[DayOfWeek]) -> List[DayOfWeek]:
-        """
-        Validate that at least one day of week is specified.
-        """
+    def validate_unique_days(cls, v: List[DayOfWeek]) -> List[DayOfWeek]:
         if not v:
             raise ValueError("days_of_week list cannot be empty")
+        if len(v) != len(set(v)):
+            raise ValueError("Duplicate days of week found")
         return v
 
 
