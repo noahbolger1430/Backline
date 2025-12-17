@@ -4,6 +4,7 @@ from app.schemas.availability import (
     BandAvailabilityCreate,
     BandAvailabilityResponse,
     BandAvailabilityUpdate,
+    BandAvailabilityWithEvent,
     BandEffectiveAvailability,
     BandEffectiveAvailabilityRange,
     BandMemberAvailabilityBulkCreate,
@@ -21,6 +22,15 @@ from app.schemas.band import (
     BandMemberAdd,
     BandMemberUpdate,
     BandUpdate,
+    BandSummary,
+)
+from app.schemas.band_event import (
+    BandEventBase,
+    BandEventCreate,
+    BandEventInDB,
+    BandEventResponse,
+    BandEventUpdate,
+    BandEventWithDetails,
 )
 from app.schemas.event import (
     Event,
@@ -30,7 +40,9 @@ from app.schemas.event import (
     EventApplicationUpdate,
     EventCreate,
     EventInDB,
+    EventSummary,
     EventUpdate,
+    EventWithBands,
 )
 from app.schemas.user import User, UserCreate, UserInDB, UserUpdate
 from app.schemas.venue import (
@@ -70,6 +82,13 @@ __all__ = [
     "BandMember",
     "BandMemberAdd",
     "BandMemberUpdate",
+    "BandSummary",
+    "BandEventBase",
+    "BandEventCreate",
+    "BandEventUpdate",
+    "BandEventInDB",
+    "BandEventResponse",
+    "BandEventWithDetails",
     "Token",
     "TokenData",
     "LoginRequest",
@@ -80,6 +99,7 @@ __all__ = [
     "BandAvailabilityCreate",
     "BandAvailabilityUpdate",
     "BandAvailabilityResponse",
+    "BandAvailabilityWithEvent",
     "BandAvailabilityBulkCreate",
     "DateRange",
     "MemberAvailabilitySummary",
@@ -96,6 +116,8 @@ __all__ = [
     "EventCreate",
     "EventUpdate",
     "EventInDB",
+    "EventSummary",
+    "EventWithBands",
     "EventApplication",
     "EventApplicationCreate",
     "EventApplicationUpdate",

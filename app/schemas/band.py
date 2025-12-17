@@ -87,6 +87,19 @@ class Band(BandInDB):
     members: List[BandMember] = []
 
 
+class BandSummary(BaseModel):
+    """
+    Schema for band summary in nested responses.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    genre: Optional[str] = None
+    location: Optional[str] = None
+
+
 class BandMemberAdd(BaseModel):
     """
     Schema for adding a member to a band.

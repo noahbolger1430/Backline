@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 from datetime import date, datetime, time
-from typing import Optional
+from typing import List, Optional, TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.models.event_application import ApplicationStatus
+
+if TYPE_CHECKING:
+    from app.schemas.band_event import BandEventResponse
 
 
 class EventBase(BaseModel):
@@ -93,6 +98,20 @@ class EventUpdate(BaseModel):
         return v
 
 
+class EventSummary(BaseModel):
+    """
+    Schema for event summary in nested responses.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    venue_id: int
+    name: str
+    event_date: date
+    show_time: time
+
+
 class EventInDB(EventBase):
     """
     Schema representing event as stored in database.
@@ -112,6 +131,14 @@ class Event(EventInDB):
     """
 
     pass
+
+
+class EventWithBands(Event):
+    """
+    Schema for event responses including booked bands.
+    """
+
+    bands: List["BandEventResponse"] = []
 
 
 class EventApplicationBase(BaseModel):

@@ -92,6 +92,7 @@ class BandAvailabilityInDB(BandAvailabilityBase):
 
     id: int
     band_id: int
+    band_event_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
 
@@ -102,6 +103,16 @@ class BandAvailabilityResponse(BandAvailabilityInDB):
     """
 
     pass
+
+
+class BandAvailabilityWithEvent(BandAvailabilityResponse):
+    """
+    Schema for band availability with event details.
+    """
+
+    from app.schemas.band_event import BandEventResponse
+
+    band_event: Optional[BandEventResponse] = None
 
 
 class BandMemberAvailabilityBulkCreate(BaseModel):
@@ -185,6 +196,7 @@ class BandEffectiveAvailability(BaseModel):
     is_available: bool
     has_explicit_band_block: bool
     band_block_note: Optional[str] = None
+    band_event_id: Optional[int] = None
     total_members: int
     available_members: int
     unavailable_members: int
