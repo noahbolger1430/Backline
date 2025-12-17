@@ -176,6 +176,22 @@ POST /api/v1/bands/{band_id}/members - Add band member (Admin/Owner)
 PUT /api/v1/bands/{band_id}/members/{member_id} - Update member (Admin/Owner)
 DELETE /api/v1/bands/{band_id}/members/{member_id} - Remove member (Admin/Owner)
 
+### Venue Availability
+- `GET /api/v1/venues/{venue_id}/availability` - Get detailed venue availability
+  - Query params: `start_date`, `end_date`, `band_id` (optional)
+  - Returns comprehensive availability data including operating hours, events, and blocks
+- `GET /api/v1/venues/{venue_id}/available-dates` - Get simple list of available dates
+  - Query params: `start_date`, `end_date`, `band_id` (optional)
+  - Returns only the list of dates when venue is available
+
+#### Cross-Referencing Band Availability
+
+Both venue availability endpoints support an optional `band_id` parameter. When provided, the results are filtered to show only dates where both the venue and the specified band are available. This is particularly useful for:
+
+- Bands searching for venues where they can perform
+- Reducing coordination time by showing mutually available dates
+- Planning tours with multiple venue options
+
 ## Code Standards
 This project adheres to strict code quality standards:
 

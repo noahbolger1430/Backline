@@ -6,20 +6,20 @@ from sqlalchemy.orm import Session
 
 from app.core.security import decode_access_token
 from app.database import get_db
-from app.models import Band, BandMember, BandRole, User
+from app.models import Band, BandMember, BandRole, User, Venue, VenueRole, VenueStaff
 from app.utils.exceptions import (
     BandNotFoundException,
     CredentialsException,
     InactiveUserException,
     UnauthorizedBandAccessException,
+    UnauthorizedVenueAccessException,
+    VenueNotFoundException,
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
 
-async def get_current_user(
-    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
-) -> User:
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     """
     Dependency to get the current authenticated user from JWT token.
     """
@@ -71,4 +71,35 @@ def check_band_permission(band: Band, user: User, required_roles: list[BandRole]
         raise UnauthorizedBandAccessException()
 
     return membership
+
+
+def get_venue_or_404(venue_id: int, db: Session) -> Venue:
+    """
+    Get venue by ID or raise 404 exception.
+    """
+    venue = db.query(Venue).filter(Venue.id == venue_id).first()
+    if not venue:
+        raise VenueNotFoundException()
+    return venue
+
+
+def check_venue_permission(venue: Venue, user: User, required_roles: list[VenueRole]) -> VenueStaff:
+    """
+    Check if user has required role at venue.
+    Raises exception if user is not staff or lacks permission.
+    Returns the staff membership if authorized.
+    """
+    staff_membership = None
+    for staff in venue.staff:
+        if staff.user_id == user.id:
+            staff_membership = staff
+            break
+
+    if not staff_membership:
+        raise UnauthorizedVenueAccessException()
+
+    if VenueRole(staff_membership.role) not in required_roles:
+        raise UnauthorizedVenueAccessException()
+
+    return staff_membership
 
