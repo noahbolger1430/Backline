@@ -430,3 +430,244 @@
   }
 }
 
+/* Venue Dashboard Specific */
+.venue-name {
+  font-size: 20px;
+  font-weight: normal;
+  margin: 0;
+}
+
+.venue-dashboard-content {
+  height: calc(100vh - 60px - 85px);
+}
+
+.venue-main-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+}
+
+/* Venue Calendar */
+.venue-calendar-container {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.venue-calendar-grid {
+  flex: 1;
+  background-color: #fafafa;
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.venue-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  flex: 1;
+}
+
+.venue-calendar-day {
+  background-color: #ffffff;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  padding: 8px;
+  min-height: 120px;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+}
+
+.venue-calendar-day.has-event {
+  cursor: pointer;
+  border-color: #e0e0e0;
+}
+
+.venue-calendar-day.has-event:hover {
+  border-color: #2196f3;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+}
+
+.venue-calendar-day.empty {
+  background-color: transparent;
+}
+
+.venue-calendar-day.today .day-number {
+  background-color: #2196f3;
+  color: #ffffff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.day-number {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 8px;
+}
+
+.day-event {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #f0f8ff;
+  border-radius: 4px;
+  padding: 6px;
+  border-left: 3px solid #2196f3;
+}
+
+.event-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: #1976d2;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-bands {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.event-band {
+  font-size: 10px;
+  color: #666666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-band-more {
+  font-size: 10px;
+  color: #999999;
+  font-style: italic;
+}
+
+/* Event Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 30px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #666666;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.modal-close:hover {
+  background-color: #f0f0f0;
+}
+
+.modal-title {
+  font-size: 24px;
+  color: #333333;
+  margin-bottom: 20px;
+}
+
+.modal-section {
+  margin-top: 20px;
+}
+
+.modal-section-title {
+  font-size: 16px;
+  color: #666666;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.modal-bands-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-band-item {
+  background-color: #f5f5f5;
+  padding: 10px 15px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333333;
+  border-left: 3px solid #2196f3;
+}
+
+@media (max-width: 1200px) {
+  .venue-calendar-day {
+    min-height: 100px;
+  }
+
+  .event-title {
+    font-size: 11px;
+  }
+
+  .event-band {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 768px) {
+  .venue-dashboard-content {
+    flex-direction: column;
+  }
+
+  .venue-calendar-days {
+    gap: 1px;
+  }
+
+  .venue-calendar-day {
+    min-height: 80px;
+    padding: 4px;
+  }
+
+  .calendar-day-name {
+    font-size: 12px;
+  }
+}
+

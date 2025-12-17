@@ -6,6 +6,7 @@ import InviteCodeEntry from "./components/Onboarding/InviteCodeEntry";
 import BandCreation from "./components/Onboarding/BandCreation";
 import InviteSuccess from "./components/Onboarding/InviteSuccess";
 import BandDashboard from "./components/Dashboard/BandDashboard";
+import VenueDashboard from "./components/Dashboard/VenueDashboard";
 import VenueInviteEntry from "./components/Onboarding/VenueInviteEntry";
 import VenueCreation from "./components/Onboarding/VenueCreation";
 import VenueSuccess from "./components/Onboarding/VenueSuccess";
@@ -200,6 +201,10 @@ const App = () => {
       case "dashboard":
         if (userBands.length > 0) {
           return <BandDashboard />;
+        }
+
+        if (userVenues.length > 0) {
+          return <VenueDashboard />;
         }
 
         return (
