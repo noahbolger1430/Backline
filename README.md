@@ -21,6 +21,45 @@ This platform solves the complex problem of coordinating schedules between band 
 - Track member instruments and roles
 - Band profile information (genre, location, description)
 
+### Availability Management (Models)
+- Individual band member availability tracking
+- Band-level availability blocking
+- Support for available, unavailable, and tentative states
+- Effective availability computation combining member and band availability
+- Bulk availability entry support
+- Date range querying capabilities
+
+## Data Model: Availability
+
+### Availability Status
+- `AVAILABLE` - Explicitly available for shows
+- `UNAVAILABLE` - Not available for shows
+- `TENTATIVE` - Potentially available, needs confirmation
+
+### Band Member Availability
+Individual band members can mark their availability for specific dates. Each entry includes:
+- The specific date
+- Availability status
+- Optional note (reason for unavailability)
+
+### Band Availability
+Band-level availability that applies regardless of individual member schedules. Used for:
+- Band hiatuses
+- Studio recording time
+- Travel/tour dates
+- Other band-wide commitments
+
+### Effective Availability Calculation
+A band's effective availability for a date is determined by:
+1. **Band Block Check**: If a `BandAvailability` entry exists with `UNAVAILABLE` status → band unavailable
+2. **Member Aggregation**: If ALL band members have `UNAVAILABLE` status → band unavailable
+3. **Default**: Otherwise → band available
+
+This allows for flexible scheduling where:
+- Individual members can mark personal conflicts
+- Band leadership can block dates for band-wide events
+- The system accurately reflects when the full band can perform
+
 ## Tech Stack
 
 - **Framework**: FastAPI

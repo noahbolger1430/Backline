@@ -1,4 +1,18 @@
 from app.schemas.auth import LoginRequest, Token, TokenData
+from app.schemas.availability import (
+    BandAvailabilityBulkCreate,
+    BandAvailabilityCreate,
+    BandAvailabilityResponse,
+    BandAvailabilityUpdate,
+    BandEffectiveAvailability,
+    BandEffectiveAvailabilityRange,
+    BandMemberAvailabilityBulkCreate,
+    BandMemberAvailabilityCreate,
+    BandMemberAvailabilityResponse,
+    BandMemberAvailabilityUpdate,
+    DateRange,
+    MemberAvailabilitySummary,
+)
 from app.schemas.band import (
     Band,
     BandCreate,
@@ -25,5 +39,17 @@ __all__ = [
     "Token",
     "TokenData",
     "LoginRequest",
+    "BandMemberAvailabilityCreate",
+    "BandMemberAvailabilityUpdate",
+    "BandMemberAvailabilityResponse",
+    "BandMemberAvailabilityBulkCreate",
+    "BandAvailabilityCreate",
+    "BandAvailabilityUpdate",
+    "BandAvailabilityResponse",
+    "BandAvailabilityBulkCreate",
+    "DateRange",
+    "MemberAvailabilitySummary",
+    "BandEffectiveAvailability",
+    "BandEffectiveAvailabilityRange",
 ]
 

@@ -73,3 +73,51 @@ class BandAlreadyExistsException(HTTPException):
             detail="Band with this name already exists",
         )
 
+
+class AvailabilityNotFoundException(HTTPException):
+    """
+    Exception raised when availability entry is not found.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Availability entry not found",
+        )
+
+
+class AvailabilityConflictException(HTTPException):
+    """
+    Exception raised when availability entry already exists for the date.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Availability entry already exists for this date",
+        )
+
+
+class InvalidDateRangeException(HTTPException):
+    """
+    Exception raised when an invalid date range is provided.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid date range: end_date must be on or after start_date",
+        )
+
+
+class BandMemberNotFoundException(HTTPException):
+    """
+    Exception raised when band member is not found.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Band member not found",
+        )
+
