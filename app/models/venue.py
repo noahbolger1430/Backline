@@ -1,4 +1,5 @@
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -35,4 +36,14 @@ class Venue(Base):
     events = relationship("Event", back_populates="venue", cascade="all, delete-orphan")
     operating_hours = relationship("VenueOperatingHours", back_populates="venue", cascade="all, delete-orphan")
     availabilities = relationship("VenueAvailability", back_populates="venue", cascade="all, delete-orphan")
+
+    @hybrid_property
+    def event_count(self) -> int:
+        """Return number of events for this venue."""
+        return len(self.events)
+
+    @hybrid_property
+    def staff_count(self) -> int:
+        """Return number of staff for this venue."""
+        return len(self.staff)
 

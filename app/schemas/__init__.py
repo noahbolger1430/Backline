@@ -53,6 +53,10 @@ from app.schemas.venue import (
     VenueStaffAdd,
     VenueStaffUpdate,
     VenueUpdate,
+    VenueResponse,
+    VenueListResponse,
+    VenueStaffCreate,
+    VenueStaffResponse,
 )
 from app.schemas.venue_availability import (
     VenueAvailabilityBulkCreate,
@@ -112,6 +116,10 @@ __all__ = [
     "VenueStaff",
     "VenueStaffAdd",
     "VenueStaffUpdate",
+    "VenueResponse",
+    "VenueListResponse",
+    "VenueStaffCreate",
+    "VenueStaffResponse",
     "Event",
     "EventCreate",
     "EventUpdate",
