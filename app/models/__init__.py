@@ -5,6 +5,8 @@ from app.models.event import Event
 from app.models.event_application import ApplicationStatus, EventApplication
 from app.models.user import User
 from app.models.venue import Venue
+from app.models.venue_availability import VenueAvailability, VenueAvailabilityStatus
+from app.models.venue_operating_hours import DayOfWeek, VenueOperatingHours
 from app.models.venue_staff import VenueRole, VenueStaff
 
 __all__ = [
@@ -18,6 +20,10 @@ __all__ = [
     "Venue",
     "VenueStaff",
     "VenueRole",
+    "VenueOperatingHours",
+    "DayOfWeek",
+    "VenueAvailability",
+    "VenueAvailabilityStatus",
     "Event",
     "EventApplication",
     "ApplicationStatus",

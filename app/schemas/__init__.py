@@ -42,6 +42,21 @@ from app.schemas.venue import (
     VenueStaffUpdate,
     VenueUpdate,
 )
+from app.schemas.venue_availability import (
+    VenueAvailabilityBulkCreate,
+    VenueAvailabilityBulkCreateByDayOfWeek,
+    VenueAvailabilityCreate,
+    VenueAvailabilityResponse,
+    VenueAvailabilityUpdate,
+    VenueAvailableDates,
+    VenueDateRange,
+    VenueEffectiveAvailability,
+    VenueEffectiveAvailabilityRange,
+    VenueOperatingHoursBulkCreate,
+    VenueOperatingHoursCreate,
+    VenueOperatingHoursResponse,
+    VenueOperatingHoursUpdate,
+)
 
 __all__ = [
     "User",
@@ -85,5 +100,18 @@ __all__ = [
     "EventApplicationCreate",
     "EventApplicationUpdate",
     "EventApplicationReview",
+    "VenueOperatingHoursCreate",
+    "VenueOperatingHoursUpdate",
+    "VenueOperatingHoursResponse",
+    "VenueOperatingHoursBulkCreate",
+    "VenueAvailabilityCreate",
+    "VenueAvailabilityUpdate",
+    "VenueAvailabilityResponse",
+    "VenueAvailabilityBulkCreate",
+    "VenueAvailabilityBulkCreateByDayOfWeek",
+    "VenueDateRange",
+    "VenueEffectiveAvailability",
+    "VenueEffectiveAvailabilityRange",
+    "VenueAvailableDates",
 ]
 

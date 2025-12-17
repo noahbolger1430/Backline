@@ -33,4 +33,6 @@ class Venue(Base):
 
     staff = relationship("VenueStaff", back_populates="venue", cascade="all, delete-orphan")
     events = relationship("Event", back_populates="venue", cascade="all, delete-orphan")
+    operating_hours = relationship("VenueOperatingHours", back_populates="venue", cascade="all, delete-orphan")
+    availabilities = relationship("VenueAvailability", back_populates="venue", cascade="all, delete-orphan")
 

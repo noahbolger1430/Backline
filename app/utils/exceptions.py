@@ -205,3 +205,75 @@ class InvalidApplicationStatusException(HTTPException):
             detail=message,
         )
 
+
+class VenueAvailabilityNotFoundException(HTTPException):
+    """
+    Exception raised when venue availability entry is not found.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Venue availability entry not found",
+        )
+
+
+class VenueAvailabilityConflictException(HTTPException):
+    """
+    Exception raised when venue availability entry already exists for the date.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Venue availability entry already exists for this date",
+        )
+
+
+class VenueOperatingHoursNotFoundException(HTTPException):
+    """
+    Exception raised when venue operating hours entry is not found.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Venue operating hours entry not found",
+        )
+
+
+class VenueOperatingHoursConflictException(HTTPException):
+    """
+    Exception raised when operating hours entry already exists for the day.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Operating hours entry already exists for this day",
+        )
+
+
+class VenueHasEventException(HTTPException):
+    """
+    Exception raised when attempting to mark venue available on a date with an event.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Venue has an event scheduled on this date and cannot be marked available",
+        )
+
+
+class VenueClosedOnDayException(HTTPException):
+    """
+    Exception raised when attempting operations on a day the venue is closed.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Venue is closed on this day according to operating hours",
+        )
+

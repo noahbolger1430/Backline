@@ -36,6 +36,13 @@ This platform solves the complex problem of coordinating schedules between band 
 - Event application system for bands
 - Application status tracking (Pending, Reviewed, Accepted, Rejected, Withdrawn)
 
+### Venue Availability Management (Models)
+- Venue operating hours by day of week
+- Explicit venue availability/unavailability blocks
+- Bulk availability management by day-of-week patterns
+- Support for available, unavailable, and hold states
+- Effective availability computation combining operating hours, events, and explicit blocks
+
 ## Data Model: Availability
 
 ### Availability Status
