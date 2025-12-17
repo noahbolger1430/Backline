@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import Column, DateTime, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -20,6 +22,13 @@ class Band(Base):
     description = Column(Text, nullable=True)
     genre = Column(String, nullable=True)
     location = Column(String, nullable=True)
+    invite_code = Column(
+        String,
+        unique=True,
+        index=True,
+        nullable=False,
+        default=lambda: str(uuid.uuid4()),
+    )
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False

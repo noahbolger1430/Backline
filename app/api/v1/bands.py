@@ -7,7 +7,7 @@ from app.api.deps import check_band_permission, get_band_or_404, get_current_act
 from app.database import get_db
 from app.models import Band as BandModel
 from app.models import BandMember, BandRole, User
-from app.schemas import Band, BandCreate, BandMemberAdd, BandMemberUpdate, BandUpdate
+from app.schemas import Band, BandCreate, BandJoinByInvite, BandMemberAdd, BandMemberUpdate, BandUpdate
 from app.utils.exceptions import BandAlreadyExistsException
 
 router = APIRouter()
@@ -64,6 +64,52 @@ def get_band(
     """
     band = get_band_or_404(band_id, db)
     check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN, BandRole.MEMBER])
+    return band
+
+
+@router.post("/join", response_model=Band, status_code=status.HTTP_200_OK)
+def join_band_with_invite(
+    join_data: BandJoinByInvite,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Band:
+    """
+    Join a band using an invite code.
+    """
+    band = db.query(BandModel).filter(BandModel.invite_code == join_data.invite_code).first()
+
+    if not band:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid invite code",
+        )
+
+    existing_membership = (
+        db.query(BandMember)
+        .filter(BandMember.band_id == band.id, BandMember.user_id == current_user.id)
+        .first()
+    )
+
+    if existing_membership:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You are already a member of this band",
+        )
+
+    new_member = BandMember(
+        user_id=current_user.id,
+        band_id=band.id,
+        role=BandRole.MEMBER.value,
+        instrument=join_data.instrument,
+    )
+    db.add(new_member)
+    db.commit()
+    db.refresh(band)
+
     return band
 
 

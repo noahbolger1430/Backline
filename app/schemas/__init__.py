@@ -23,6 +23,7 @@ from app.schemas.band import (
     BandMemberUpdate,
     BandUpdate,
     BandSummary,
+    BandJoinByInvite,
 )
 from app.schemas.band_event import (
     BandEventBase,
@@ -87,6 +88,7 @@ __all__ = [
     "BandMemberAdd",
     "BandMemberUpdate",
     "BandSummary",
+    "BandJoinByInvite",
     "BandEventBase",
     "BandEventCreate",
     "BandEventUpdate",

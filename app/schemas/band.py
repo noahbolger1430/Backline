@@ -120,6 +120,7 @@ class BandInDB(BandBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    invite_code: str
     created_at: datetime
     updated_at: datetime
 
@@ -130,6 +131,15 @@ class Band(BandInDB):
     """
 
     members: List[BandMember] = []
+
+
+class BandJoinByInvite(BaseModel):
+    """
+    Schema for joining a band with an invite code.
+    """
+
+    invite_code: str
+    instrument: Optional[str] = None
 
 
 class BandSummary(BaseModel):
