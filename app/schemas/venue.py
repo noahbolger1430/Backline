@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, time
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models.venue_staff import VenueRole
 from app.utils.validators import StringValidator
@@ -38,7 +38,9 @@ class VenueBase(BaseModel):
 class VenueCreate(VenueBase):
     """Schema for creating a venue."""
 
-    pass
+    contact_name: Optional[str] = Field(None, max_length=255)
+    contact_email: Optional[str] = Field(None, max_length=255)
+    contact_phone: Optional[str] = Field(None, max_length=20)
 
 
 class VenueUpdate(BaseModel):
@@ -54,6 +56,9 @@ class VenueUpdate(BaseModel):
     has_sound_provided: Optional[bool] = None
     has_parking: Optional[bool] = None
     age_restriction: Optional[int] = Field(None, ge=0, le=21)
+    contact_name: Optional[str] = Field(None, max_length=255)
+    contact_email: Optional[str] = Field(None, max_length=255)
+    contact_phone: Optional[str] = Field(None, max_length=20)
 
 
     @field_validator("name")
@@ -66,6 +71,25 @@ class VenueUpdate(BaseModel):
     def validate_address_fields(cls, v: Optional[str]) -> Optional[str]:
         return StringValidator.clean_and_validate(v, allow_none=True, error_msg="Address field cannot be empty")
 
+    @field_validator("contact_name")
+    @classmethod
+    def validate_contact_name(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            v = v.strip()
+            if v == "":
+                return None
+        return v
+
+    @field_validator("contact_phone")
+    @classmethod
+    def validate_contact_phone(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            # Remove common formatting characters for storage
+            v = v.strip()
+            if v == "":
+                return None
+        return v
+
 
 class VenueInDB(VenueBase):
     """
@@ -76,6 +100,9 @@ class VenueInDB(VenueBase):
 
     id: int
     invite_code: str
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -96,6 +123,9 @@ class VenueResponse(VenueBase):
     id: int
     invite_code: str
     image_path: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     event_count: int = 0
@@ -149,3 +179,28 @@ class VenueJoinByInvite(BaseModel):
 
     invite_code: str
 
+
+class VenueOperatingHoursBase(BaseModel):
+    """Base schema for venue operating hours."""
+
+    day_of_week: int = Field(..., ge=0, le=6, description="Day of week (0=Monday, 6=Sunday)")
+    is_closed: bool = False
+    open_time: Optional[time] = None
+    close_time: Optional[time] = None
+
+
+class VenueOperatingHoursUpdate(VenueOperatingHoursBase):
+    """Schema for updating venue operating hours."""
+
+    pass
+
+
+class VenueOperatingHoursResponse(VenueOperatingHoursBase):
+    """Schema for venue operating hours API responses."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    venue_id: int
+    created_at: datetime
+    updated_at: datetime

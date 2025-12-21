@@ -4,7 +4,7 @@ import Sidebar from "./Sidebar";
 import EventModal from "./EventModal";
 import LogoutModal from "./LogoutModal";
 import EventsView from "./EventsView";
-import UserProfile from "./UserProfile";
+import VenueProfile from "./VenueProfile";
 import { venueService } from "../../services/venueService";
 import { authService } from "../../services/authService";
 import logoImage from "../../logos/Backline logo.jpg";
@@ -105,6 +105,10 @@ const VenueDashboard = ({ venueId, onLogout }) => {
     // Switch back to calendar view after event creation
     setActiveTab("calendar");
     // TODO: Refresh events data
+  };
+
+  const handleVenueUpdate = (updatedVenue) => {
+    setVenue(updatedVenue);
   };
 
   if (loading) {
@@ -208,12 +212,12 @@ const VenueDashboard = ({ venueId, onLogout }) => {
         <div className="profile-view-overlay">
           <div className="profile-view-container">
             <div className="profile-view-header">
-              <h2>User Profile</h2>
+              <h2>Venue Profile</h2>
               <button className="profile-close-button" onClick={() => setShowProfile(false)}>
                 ×
               </button>
             </div>
-            <UserProfile onUserUpdate={() => {}} />
+            <VenueProfile venueId={venueId} onVenueUpdate={handleVenueUpdate} />
           </div>
         </div>
       ) : (

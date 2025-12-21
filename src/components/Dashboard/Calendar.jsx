@@ -47,6 +47,12 @@ const Calendar = ({ bandId }) => {
   const handleYearChange = (e) => {
     setCurrentDate(new Date(parseInt(e.target.value, 10), currentDate.getMonth(), 1));
   };
+  
+  const parseDateString = (dateString) => {
+    // Parse YYYY-MM-DD format without timezone issues
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day); // month is 0-indexed
+  };
 
   // Helper function to format date as YYYY-MM-DD
   const formatDateString = (date) => {
@@ -96,7 +102,7 @@ const Calendar = ({ bandId }) => {
 
         // Filter events for the current month
         const monthEvents = eventsData.filter((event) => {
-          const eventDate = new Date(event.event_date);
+          const eventDate = parseDateString(event.event_date);  // Use safe parser
           return (
             eventDate.getMonth() === currentDate.getMonth() &&
             eventDate.getFullYear() === currentDate.getFullYear()
@@ -143,7 +149,7 @@ const Calendar = ({ bandId }) => {
       
       // Check if there's an event on this date
       const dayEvents = events.filter((event) => {
-        const eventDate = formatDateString(new Date(event.event_date));
+        const eventDate = formatDateString(parseDateString(event.event_date));  // Use safe parser
         return eventDate === dateStr;
       });
       const hasEvent = dayEvents.length > 0;

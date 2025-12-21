@@ -4,7 +4,9 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 const EventsCarousel = ({ events }) => {
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
+    // Parse the date components manually to avoid timezone issues
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day); // month is 0-indexed in JS
     const options = { month: "short", day: "numeric", year: "numeric" };
     return date.toLocaleDateString("en-US", options);
   };

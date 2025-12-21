@@ -1649,10 +1649,8 @@
 .user-profile-value {
   font-size: 16px;
   color: #FFFFFF; /* High Contrast Text - Pure White */
-  padding: 12px 16px;
-  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
-  border-radius: 4px;
-  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  padding: 12px 0;
+  background-color: transparent;
   min-height: 20px;
 }
 
@@ -1775,3 +1773,342 @@
   margin-bottom: 16px;
 }
 
+/* Venue Profile Image Styles */
+.venue-profile-image-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.venue-profile-image-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #ddd;
+}
+
+.venue-profile-image-container.editable {
+  cursor: pointer;
+}
+
+.venue-profile-image-container.editable:hover .venue-profile-image-overlay {
+  opacity: 1;
+}
+
+.venue-profile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.venue-profile-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.venue-profile-image-overlay span {
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.venue-profile-image-placeholder {
+  width: 200px;
+  height: 200px;
+  border-radius: 8px;
+  border: 2px dashed #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  color: #888;
+  font-size: 14px;
+}
+
+.venue-profile-image-placeholder.editable {
+  cursor: pointer;
+  border-color: #999;
+}
+
+.venue-profile-image-placeholder.e ditable:hover {
+  border-color: #666;
+  background-color: #eee;
+}
+
+.venue-profile-remove-image-button {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #dc3545;
+  background-color: transparent;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.venue-profile-remove-image-button:hover {
+  background-color: #dc3545;
+  color: white;
+}
+
+.venue-profile-remove-image-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* User Profile Checkbox Styles */
+.user-profile-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-profile-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+}
+
+.user-profile-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Venue Operating Hours Styles */
+.venue-hours-section {
+  margin-top: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.venue-hours-toggle {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  text-align: left;
+  transition: background-color 0.2s ease;
+}
+
+.venue-hours-toggle:hover {
+  background-color: #2a3441; /* Lighter Charcoal Grey for hover */
+}
+
+.venue-hours-toggle-icon {
+  margin-right: 10px;
+  font-size: 10px;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.venue-hours-toggle-text {
+  flex: 1;
+}
+
+.venue-hours-content {
+  padding: 16px;
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  border-top: 1px solid #1F2833; /* Secondary Background - Charcoal Grey */
+}
+
+.venue-hours-loading {
+  text-align: center;
+  padding: 20px;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  font-size: 14px;
+}
+
+.venue-hours-error {
+  background-color: #fee;
+  color: #c00;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.venue-hours-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.venue-hours-day {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #1F2833; /* Secondary Background - Charcoal Grey */
+}
+
+.venue-hours-day:last-child {
+  border-bottom: none;
+}
+
+.venue-hours-day-label {
+  width: 100px;
+  font-weight: 500;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  font-size: 14px;
+}
+
+.venue-hours-day-inputs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.venue-hours-closed-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  cursor: pointer;
+  min-width: 70px;
+}
+
+.venue-hours-closed-label input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.venue-hours-time-input {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  width: 120px;
+}
+
+.venue-hours-time-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.venue-hours-time-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.venue-hours-separator {
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  font-size: 13px;
+}
+
+.venue-hours-day-display {
+  flex: 1;
+  font-size: 14px;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+}
+
+.venue-hours-closed {
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  font-style: italic;
+}
+
+.venue-hours-not-set {
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  font-style: italic;
+}
+
+.venue-hours-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #1F2833; /* Secondary Background - Charcoal Grey */
+}
+
+/* Responsive adjustments for operating hours */
+@media (max-width: 600px) {
+  .venue-hours-day {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .venue-hours-day-label {
+    width: 100%;
+  }
+
+  .venue-hours-day-inputs {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .venue-hours-time-input {
+    width: 100px;
+  }
+}
+/* Venue Contact Section Styles */
+.venue-contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.venue-contact-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.venue-contact-field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.venue-contact-field .user-profile-input {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.venue-contact-field .user-profile-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.venue-contact-field .user-profile-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.venue-contact-field .user-profile-value {
+  font-size: 14px;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  padding: 4px 0;
+}

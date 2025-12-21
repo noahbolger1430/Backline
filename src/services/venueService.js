@@ -133,6 +133,109 @@ export const venueService = {
     return await response.json();
   },
 
+  async updateVenue(venueId, venueData) {
+    const response = await fetch(`${API_BASE_URL}/venues/${venueId}`, {
+      method: "PATCH",
+      headers: this.getAuthHeader(),
+      body: JSON.stringify(venueData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      let errorMessage = "Failed to update venue";
+      if (errorData.detail) {
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => {
+            const field = err.loc ? err.loc.join('.') : 'field';
+            const msg = err.msg || err;
+            return `${field}: ${msg}`;
+          }).join(", ");
+        } else {
+          errorMessage = errorData.detail;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    return await response.json();
+  },
+
+  async updateVenueImage(venueId, imageFile) {
+    const formData = new FormData();
+    formData.append("image", imageFile);
+
+    const token = localStorage.getItem("access_token");
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/image`, {
+      method: "POST",
+      headers: headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      let errorMessage = "Failed to update venue image";
+      if (errorData.detail) {
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => {
+            const field = err.loc ? err.loc.join('.') : 'field';
+            const msg = err.msg || err;
+            return `${field}: ${msg}`;
+          }).join(", ");
+        } else {
+          errorMessage = errorData.detail;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    return await response.json();
+  },
+
+  async getVenueOperatingHours(venueId) {
+    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/operating-hours`, {
+      method: "GET",
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to fetch venue operating hours");
+    }
+
+    return await response.json();
+  },
+
+  async updateVenueOperatingHours(venueId, hoursData) {
+    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/operating-hours`, {
+      method: "PUT",
+      headers: this.getAuthHeader(),
+      body: JSON.stringify(hoursData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      let errorMessage = "Failed to update venue operating hours";
+      if (errorData.detail) {
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => {
+            const field = err.loc ? err.loc.join('.') : 'field';
+            const msg = err.msg || err;
+            return `${field}: ${msg}`;
+          }).join(", ");
+        } else {
+          errorMessage = errorData.detail;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    return await response.json();
+  },
+
   async getVenueStaff(venueId) {
     const response = await fetch(`${API_BASE_URL}/venues/${venueId}/staff`, {
       method: "GET",
@@ -172,4 +275,3 @@ export const venueService = {
     return await response.json();
   },
 };
-

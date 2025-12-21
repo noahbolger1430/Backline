@@ -2,7 +2,11 @@
 REM Quick start script for Backline backend
 REM Make sure you've completed setup steps first (see BACKEND_SETUP.md)
 
+REM Change to the directory where this script is located (project root)
+cd /d "%~dp0"
+
 echo Starting Backline Backend...
+echo Current directory: %CD%
 echo.
 
 REM Check if virtual environment exists
