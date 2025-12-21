@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import logoImage from "../../logos/Backline logo.jpg";
 import "./Onboarding.css";
 
-const RoleSelection = ({ onRoleSelect }) => {
+const RoleSelection = ({ onRoleSelect, onBackToLogin }) => {
   const [selectedRole, setSelectedRole] = useState(null);
   const [hasInviteCode, setHasInviteCode] = useState(null);
 
@@ -17,7 +18,7 @@ const RoleSelection = ({ onRoleSelect }) => {
   return (
     <div className="onboarding-container">
       <div className="onboarding-card">
-        <h1 className="app-title">BackLine</h1>
+        <img src={logoImage} alt="BackLine" className="app-title" />
         <h2 className="onboarding-heading">Welcome! Let's get you set up</h2>
 
         <div className="role-selection">
@@ -58,6 +59,18 @@ const RoleSelection = ({ onRoleSelect }) => {
                   {selectedRole === "band" ? "No, I'll create a new band" : "No, I'll create a new venue"}
                 </button>
               </div>
+            </div>
+          )}
+
+          {onBackToLogin && (
+            <div className="back-to-login">
+              <button 
+                className="button secondary" 
+                onClick={onBackToLogin}
+                style={{ marginTop: '20px' }}
+              >
+                Back to Login
+              </button>
             </div>
           )}
         </div>

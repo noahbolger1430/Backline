@@ -15,32 +15,106 @@ import { venueService } from "./services/venueService";
 import "./App.css";
 
 const App = () => {
-  const [currentView, setCurrentView] = useState("login");
+  // DEV MODE: Change to "bandDashboard" or "venueDashboard" to preview
+  const [currentView, setCurrentView] = useState("login"); // or "venueDashboard"
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userBands, setUserBands] = useState([]);
   const [userVenues, setUserVenues] = useState([]);
   const [currentBand, setCurrentBand] = useState(null);
   const [currentVenue, setCurrentVenue] = useState(null);
+  const [isCheckingEntities, setIsCheckingEntities] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (token) {
       setIsAuthenticated(true);
+      setIsCheckingEntities(true);
       checkUserEntities();
     }
   }, []);
 
   const checkUserEntities = async () => {
     try {
-      const [bands, venues] = await Promise.all([
-        bandService.getUserBands(),
-        venueService.getUserVenues(),
-      ]);
+      setIsCheckingEntities(true);
+      
+      // Add timeout wrapper function
+      const withTimeout = (promise, timeoutMs = 10000) => {
+        return Promise.race([
+          promise,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Request timeout - backend may not be running")), timeoutMs)
+          )
+        ]);
+      };
+      
+      // Use allSettled to get results from both calls even if one fails
+      let bandsResult, venuesResult;
+      try {
+        const results = await withTimeout(
+          Promise.allSettled([
+            bandService.getUserBands(),
+            venueService.getUserVenues(),
+          ])
+        );
+        bandsResult = results[0];
+        venuesResult = results[1];
+      } catch (timeoutError) {
+        // Timeout or network error - treat both calls as failed
+        console.error("Network error or timeout:", timeoutError);
+        bandsResult = { status: 'rejected', reason: timeoutError };
+        venuesResult = { status: 'rejected', reason: timeoutError };
+      }
+      
+      // Check for 401 errors first (authentication failure)
+      const errors = [bandsResult, venuesResult].filter(r => r.status === 'rejected').map(r => r.reason);
+      const has401Error = errors.some(err => err?.status === 401);
+      const hasTimeout = errors.some(err => err?.isTimeout || err?.status === 408);
+      
+      if (has401Error) {
+        // Unauthorized - clear token and go to login
+        localStorage.removeItem("access_token");
+        setIsAuthenticated(false);
+        setCurrentView("login");
+        setIsCheckingEntities(false);
+        return;
+      }
+      
+      // If we have timeouts, log them but continue with empty arrays
+      if (hasTimeout) {
+        console.warn("Some API calls timed out. Backend may be slow or unavailable.");
+      }
+      
+      // Extract values, defaulting to empty arrays on error
+      const bands = bandsResult.status === 'fulfilled' ? bandsResult.value : [];
+      const venues = venuesResult.status === 'fulfilled' ? venuesResult.value : [];
+      
+      // Log any errors for debugging
+      if (bandsResult.status === 'rejected') {
+        console.error("Error fetching bands:", bandsResult.reason);
+      }
+      if (venuesResult.status === 'rejected') {
+        console.error("Error fetching venues:", venuesResult.reason);
+      }
+      
+      console.log("bands", bands);
+      console.log("venues", venues);
 
-      setUserBands(bands);
-      setUserVenues(venues);
+      // Ensure bands and venues are arrays (defensive check)
+      const bandsArray = Array.isArray(bands) ? bands : [];
+      const venuesArray = Array.isArray(venues) ? venues : [];
+      
+      // If API returns empty but we have currentBand, use it as fallback
+      let finalBands = bandsArray;
+      if (bandsArray.length === 0 && currentBand) {
+        finalBands = [currentBand];
+      }
 
-      if (bands.length > 0 || venues.length > 0) {
+      setUserBands(finalBands);
+      setUserVenues(venuesArray);
+
+      const bandsLength = finalBands.length;
+      const venuesLength = venuesArray.length;
+      if (bandsLength > 0 || venuesLength > 0) {
         setCurrentView("dashboard");
       } else {
         setCurrentView("roleSelection");
@@ -48,7 +122,27 @@ const App = () => {
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Error fetching user entities:", error);
-      setCurrentView("roleSelection");
+      // Check for 401 by status code (more reliable than message)
+      const isUnauthorized = error?.status === 401 || (error?.message && typeof error.message === 'string' && error.message.includes("401"));
+      if (isUnauthorized) {
+        // Unauthorized - clear token and go to login
+        localStorage.removeItem("access_token");
+        setIsAuthenticated(false);
+        setCurrentView("login");
+      } else {
+        // For network errors or timeouts, check if backend is reachable
+        // If we can't reach the backend and have a token, clear it and show login
+        if (error?.message?.includes("timeout") || error?.message?.includes("Failed to fetch")) {
+          console.warn("Backend appears to be unreachable. Clearing token and showing login.");
+          localStorage.removeItem("access_token");
+          setIsAuthenticated(false);
+          setCurrentView("login");
+        } else {
+          setCurrentView("roleSelection");
+        }
+      }
+    } finally {
+      setIsCheckingEntities(false);
     }
   };
 
@@ -99,8 +193,10 @@ const App = () => {
     setCurrentView("venueJoinSuccess");
   };
 
-  const handleContinueToDashboard = () => {
-    setCurrentView("dashboard");
+  const handleContinueToDashboard = async () => {
+    // Refresh user entities to ensure we have the latest data
+    await checkUserEntities();
+    // checkUserEntities will set the view to dashboard if bands/venues exist
   };
 
   const handleLogout = () => {
@@ -110,6 +206,15 @@ const App = () => {
   };
 
   const renderView = () => {
+    // Show loading state while checking user entities
+    if (isCheckingEntities && isAuthenticated) {
+      return (
+        <div className="app">
+          <div className="loading-message">Loading...</div>
+        </div>
+      );
+    }
+
     switch (currentView) {
       case "login":
         return (
@@ -128,7 +233,12 @@ const App = () => {
         );
 
       case "roleSelection":
-        return <RoleSelection onRoleSelect={handleRoleSelect} />;
+        return (
+          <RoleSelection 
+            onRoleSelect={handleRoleSelect}
+            onBackToLogin={handleLogout}
+          />
+        );
 
       case "bandInviteEntry":
         return (
@@ -199,14 +309,17 @@ const App = () => {
         );
 
       case "dashboard":
+        // If we have bands, show band dashboard
         if (userBands.length > 0) {
-          return <BandDashboard />;
+          return <BandDashboard bandId={userBands[0].id} onLogout={handleLogout} />;
         }
 
+        // If we have venues, show venue dashboard
         if (userVenues.length > 0) {
-          return <VenueDashboard />;
+          return <VenueDashboard venueId={userVenues[0].id} onLogout={handleLogout} />;
         }
 
+        // No bands or venues - show placeholder to create/join
         return (
           <div className="dashboard-placeholder">
             <h1>Welcome to BackLine</h1>
@@ -215,6 +328,23 @@ const App = () => {
             <button onClick={handleLogout}>Logout</button>
           </div>
         );
+
+      // DEV MODE: Direct dashboard views
+      case "bandDashboard":
+        // In dev mode, use first band if available, otherwise show error
+        if (userBands.length > 0) {
+          return <BandDashboard bandId={userBands[0].id} onLogout={handleLogout} />;
+        }
+        return (
+          <div className="dashboard-placeholder">
+            <h1>Dev Mode: No Bands</h1>
+            <p>Please create a band first or switch to login view</p>
+          </div>
+        );
+
+      case "venueDashboard":
+        return <VenueDashboard onLogout={handleLogout} />;
+
 
       default:
         return <Login onSwitchToSignup={() => setCurrentView("signup")} />;

@@ -1,4 +1,5 @@
 from datetime import datetime, time
+from enum import Enum
 from typing import Optional, TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -8,7 +9,7 @@ if TYPE_CHECKING:
     from app.schemas.event import EventSummary
 
 
-class BandEventStatus(str):
+class BandEventStatus(str, Enum):
     """
     Enumeration of band event participation statuses.
     """

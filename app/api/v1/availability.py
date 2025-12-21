@@ -26,6 +26,8 @@ from app.schemas.availability import (
     BandAvailabilityBulkCreate,
     BandAvailabilityCreate,
     BandAvailabilityResponse,
+    BandEffectiveAvailability,
+    BandEffectiveAvailabilityRange,
     BandMemberAvailabilityBulkCreate,
     BandMemberAvailabilityCreate,
     BandMemberAvailabilityResponse,
@@ -36,14 +38,127 @@ from app.schemas.venue_availability import (
     VenueAvailabilityCreate,
     VenueAvailabilityResponse,
 )
+from app.services.availability_service import AvailabilityService
 from app.utils.exceptions import (
     AvailabilityConflictException,
     BandMemberNotFoundException,
+    InvalidDateRangeException,
     UnauthorizedBandAccessException,
     VenueAvailabilityConflictException,
 )
 
 router = APIRouter()
+
+
+@router.get(
+    "/bands/{band_id}/members/me/availability",
+    response_model=List[BandMemberAvailabilityResponse],
+)
+def get_band_member_availability(
+    band_id: int,
+    start_date: Optional[date] = Query(None, description="Start date for availability range"),
+    end_date: Optional[date] = Query(None, description="End date for availability range"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> List[BandMemberAvailabilityResponse]:
+    """
+    Get availability entries for the current user as a band member.
+    
+    If start_date and end_date are provided, returns availability for that date range.
+    Otherwise, returns all availability entries for the user.
+    """
+    band = get_band_or_404(band_id, db)
+
+    membership = None
+    for member in band.members:
+        if member.user_id == current_user.id:
+            membership = member
+            break
+
+    if not membership:
+        raise UnauthorizedBandAccessException()
+
+    query = db.query(BandMemberAvailability).filter(
+        BandMemberAvailability.band_member_id == membership.id
+    )
+
+    if start_date:
+        query = query.filter(BandMemberAvailability.date >= start_date)
+    if end_date:
+        query = query.filter(BandMemberAvailability.date <= end_date)
+
+    availabilities = query.order_by(BandMemberAvailability.date).all()
+    return availabilities
+
+
+@router.get(
+    "/bands/{band_id}/availability",
+    response_model=BandEffectiveAvailabilityRange,
+)
+def get_band_availability_range(
+    band_id: int,
+    start_date: date = Query(..., description="Start date for availability range"),
+    end_date: date = Query(..., description="End date for availability range"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> BandEffectiveAvailabilityRange:
+    """
+    Get effective availability for all band members across a date range.
+    
+    Returns detailed availability information for each date, including:
+    - Which members are unavailable
+    - Total counts of available/unavailable/tentative members
+    - Member names and details
+    """
+    if end_date < start_date:
+        raise InvalidDateRangeException()
+    
+    band = get_band_or_404(band_id, db)
+    check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN, BandRole.MEMBER])
+    
+    availability_list = []
+    current_date = start_date
+    
+    while current_date <= end_date:
+        is_available, member_details = AvailabilityService.get_band_effective_availability(
+            db, band, current_date
+        )
+        
+        unavailable_count = sum(1 for m in member_details if m.status.value == "unavailable")
+        available_count = sum(1 for m in member_details if m.status.value == "available")
+        tentative_count = sum(1 for m in member_details if m.status.value == "tentative")
+        
+        # Check for explicit band block
+        band_block = (
+            db.query(BandAvailability)
+            .filter(BandAvailability.band_id == band_id, BandAvailability.date == current_date)
+            .first()
+        )
+        
+        availability_list.append(
+            BandEffectiveAvailability(
+                date=current_date,
+                is_available=is_available,
+                has_explicit_band_block=band_block is not None and band_block.status == "unavailable",
+                band_block_note=band_block.note if band_block else None,
+                band_event_id=band_block.band_event_id if band_block else None,
+                total_members=len(band.members),
+                available_members=available_count,
+                unavailable_members=unavailable_count,
+                tentative_members=tentative_count,
+                member_details=member_details,
+            )
+        )
+        
+        current_date += timedelta(days=1)
+    
+    return BandEffectiveAvailabilityRange(
+        band_id=band.id,
+        band_name=band.name,
+        start_date=start_date,
+        end_date=end_date,
+        availability=availability_list,
+    )
 
 
 @router.post(

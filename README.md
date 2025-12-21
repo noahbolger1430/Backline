@@ -119,45 +119,86 @@ Additional documentation is available in the `docs/` directory:
 
 ### Prerequisites
 
-- Python 3.11+
-- PostgreSQL 14+
-- pip or poetry
+- Python 3.10+
+- PostgreSQL 13+
+- Node.js 16+ (for frontend)
+- npm or yarn
 
-### Installation
+### Quick Start
 
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd band-scheduling-platform
-Create a virtual environment:
-bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-Install dependencies:
-bash
-pip install -r requirements.txt
-Create a .env file based on .env.example:
-bash
-cp .env.example .env
-Update the .env file with your database credentials and secret key:
-env
-DATABASE_URL=postgresql://user:password@localhost:5432/band_scheduler
-SECRET_KEY=your-secret-key-here
-Create the database:
-bash
-createdb band_scheduler
-Run database migrations:
-bash
-alembic upgrade head
-Running the Application
-Development server:
+For a quick setup, see **[QUICK_START.md](QUICK_START.md)** - includes Windows setup scripts!
 
-bash
-uvicorn app.main:app --reload
+For detailed backend setup instructions, see **[BACKEND_SETUP.md](BACKEND_SETUP.md)**
 
-The API will be available at http://localhost:8000
+### Fast Setup (Windows)
 
-Interactive API documentation: http://localhost:8000/docs
+1. **Install PostgreSQL** and create database
+2. **Run setup script:**
+   ```bash
+   setup_backend.bat
+   ```
+3. **Edit `.env`** with your database credentials
+4. **Start backend:**
+   ```bash
+   start_backend.bat
+   ```
+5. **Start frontend:**
+   ```bash
+   npm install
+   npm start
+   ```
+
+### Manual Setup
+
+1. Create virtual environment:
+   ```bash
+   python -m venv venv
+   venv\Scripts\activate  # Windows
+   # source venv/bin/activate  # Linux/Mac
+   ```
+
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Create PostgreSQL database:
+   ```sql
+   CREATE DATABASE backline_db;
+   CREATE USER backline_user WITH PASSWORD 'your_password';
+   GRANT ALL PRIVILEGES ON DATABASE backline_db TO backline_user;
+   ```
+
+4. Create `.env` file:
+   ```env
+   DATABASE_URL=postgresql://backline_user:your_password@localhost:5432/backline_db
+   SECRET_KEY=your-secret-key-here
+   ALGORITHM=HS256
+   ACCESS_TOKEN_EXPIRE_MINUTES=30
+   ```
+
+5. Run migrations:
+   ```bash
+   alembic upgrade head
+   ```
+
+6. Start backend:
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+
+7. Start frontend (new terminal):
+   ```bash
+   npm install
+   npm start
+   ```
+
+### Access Points
+
+- **Frontend:** http://localhost:3000
+- **Backend API:** http://localhost:8000
+- **API Documentation:** http://localhost:8000/docs
+- **Alternative Docs:** http://localhost:8000/redoc
 
 API Endpoints
 Authentication

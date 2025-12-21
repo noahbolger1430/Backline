@@ -1,7 +1,25 @@
 import React from "react";
 
-const Sidebar = ({ activeTab }) => {
-  const tabs = [{ id: "calendar", icon: "📅", label: "Calendar" }];
+const Sidebar = ({ activeTab, onTabChange, isVenue = false }) => {
+  const baseTabs = [
+    { id: "band", icon: "👥", label: "Band" },
+    { id: "calendar", icon: "📅", label: "Calendar" },
+    { id: "venues", icon: "🏢", label: "Venues" },
+    { id: "gigs", icon: "🎸", label: "Gigs" }
+  ];
+  
+  const venueTabs = [
+    { id: "events", icon: "🎟️", label: "Events" },
+    { id: "calendar", icon: "📅", label: "Calendar" }
+  ];
+
+  const tabs = isVenue ? venueTabs : baseTabs;
+
+  const handleTabClick = (tabId) => {
+    if (onTabChange) {
+      onTabChange(tabId);
+    }
+  };
 
   return (
     <aside className="dashboard-sidebar">
@@ -11,6 +29,7 @@ const Sidebar = ({ activeTab }) => {
             key={tab.id}
             className={`sidebar-tab ${activeTab === tab.id ? "active" : ""}`}
             title={tab.label}
+            onClick={() => handleTabClick(tab.id)}
           >
             <span className="tab-icon">{tab.icon}</span>
             <span className="tab-label">{tab.label}</span>
@@ -22,4 +41,3 @@ const Sidebar = ({ activeTab }) => {
 };
 
 export default Sidebar;
-

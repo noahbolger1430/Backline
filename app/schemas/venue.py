@@ -16,17 +16,13 @@ class VenueBase(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
     street_address: str = Field(..., min_length=1)
     city: str = Field(..., min_length=1)
-    state: str = Field(..., min_length=2, max_length=2)
-    zip_code: str = Field(..., pattern=r"^\d{5}(-\d{4})?$")
+    state: str = Field(..., min_length=1, max_length=2)
+    zip_code: str = Field(..., min_length=1, max_length=6)
     capacity: Optional[int] = Field(None, gt=0)
     has_sound_provided: bool = False
     has_parking: bool = False
     age_restriction: Optional[int] = Field(None, ge=0, le=21)
 
-    @field_validator("state")
-    @classmethod
-    def validate_state(cls, v: str) -> str:
-        return v.upper()
 
     @field_validator("name")
     @classmethod
@@ -53,16 +49,12 @@ class VenueUpdate(BaseModel):
     street_address: Optional[str] = Field(None, min_length=1)
     city: Optional[str] = Field(None, min_length=1)
     state: Optional[str] = Field(None, min_length=2, max_length=2)
-    zip_code: Optional[str] = Field(None, pattern=r"^\d{5}(-\d{4})?$")
+    zip_code: Optional[str] = Field(None, min_length=1, max_length=6)
     capacity: Optional[int] = Field(None, gt=0)
     has_sound_provided: Optional[bool] = None
     has_parking: Optional[bool] = None
     age_restriction: Optional[int] = Field(None, ge=0, le=21)
 
-    @field_validator("state")
-    @classmethod
-    def validate_state(cls, v: Optional[str]) -> Optional[str]:
-        return v.upper() if v else v
 
     @field_validator("name")
     @classmethod
@@ -103,6 +95,7 @@ class VenueResponse(VenueBase):
 
     id: int
     invite_code: str
+    image_path: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     event_count: int = 0

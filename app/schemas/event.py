@@ -104,6 +104,7 @@ class EventResponse(EventBase):
     id: int
     venue_id: int
     venue_name: str
+    image_path: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     band_count: int = 0
@@ -186,4 +187,27 @@ class EventApplication(EventApplicationInDB):
     """
 
     pass
+
+
+class EventSummary(BaseModel):
+    """
+    Schema for event summary in nested responses.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    event_date: date
+    show_time: time
+    venue_id: int
+    venue_name: str
+
+
+class EventWithBands(EventResponse):
+    """
+    Schema for event with associated bands.
+    """
+
+    bands: List[BandEventResponse] = []
 

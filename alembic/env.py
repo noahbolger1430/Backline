@@ -10,7 +10,8 @@ from app.models import Band, BandMember, User
 config = context.config
 settings = get_settings()
 
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# Don't set sqlalchemy.url via config.set_main_option as it causes issues with URL-encoded passwords
+# Instead, we'll pass it directly to engine_from_config in run_migrations_online()
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -22,7 +23,8 @@ def run_migrations_offline() -> None:
     """
     Run migrations in 'offline' mode.
     """
-    url = config.get_main_option("sqlalchemy.url")
+    # Use database URL directly from settings
+    url = settings.database_url
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -38,8 +40,10 @@ def run_migrations_online() -> None:
     """
     Run migrations in 'online' mode.
     """
+    # Use database URL directly from settings to ensure proper connection
+    database_url = settings.database_url
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        {"sqlalchemy.url": database_url},
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

@@ -15,6 +15,8 @@ const VenueCreation = ({ onSuccess, onBack }) => {
     has_parking: false,
     age_restriction: "",
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,26 +28,76 @@ const VenueCreation = ({ onSuccess, onBack }) => {
     });
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError("Please select an image file");
+        return;
+      }
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
     try {
+      // Clean and format data before sending
       const venueData = {
-        name: formData.name,
-        description: formData.description || null,
-        street_address: formData.street_address,
-        city: formData.city,
-        state: formData.state,
-        zip_code: formData.zip_code,
+        name: formData.name.trim(),
+        description: formData.description?.trim() || null,
+        street_address: formData.street_address.trim(),
+        city: formData.city.trim(),
+        state: formData.state.trim(),
+        zip_code: formData.zip_code.trim(),
         capacity: formData.capacity ? parseInt(formData.capacity, 10) : null,
         has_sound_provided: formData.has_sound_provided,
         has_parking: formData.has_parking,
         age_restriction: formData.age_restriction ? parseInt(formData.age_restriction, 10) : null,
       };
 
-      const venue = await venueService.createVenue(venueData);
+      // Validate required fields
+      if (!venueData.name || venueData.name.length === 0) {
+        setError("Venue name is required");
+        return;
+      }
+      if (!venueData.street_address || venueData.street_address.length === 0) {
+        setError("Street address is required");
+        return;
+      }
+      if (!venueData.city || venueData.city.length === 0) {
+        setError("City is required");
+        return;
+      }
+      if (!venueData.state || venueData.state.length === 0) {
+        setError("State is required");
+        return;
+      }
+      if (venueData.state.length > 2) {
+        setError("State must be 2 characters or less");
+        return;
+      }
+      if (!venueData.zip_code || venueData.zip_code.length === 0) {
+        setError("ZIP code is required");
+        return;
+      }
+      if (venueData.zip_code.length > 6) {
+        setError("ZIP code must be 6 characters or less");
+        return;
+      }
+
+      const venue = await venueService.createVenue(venueData, imageFile);
       onSuccess(venue);
     } catch (err) {
       setError(err.message);
@@ -92,6 +144,23 @@ const VenueCreation = ({ onSuccess, onBack }) => {
                 disabled={isLoading}
               />
             </div>
+
+            <div className="form-group">
+              <label htmlFor="image">Venue Image</label>
+              <input
+                type="file"
+                id="image"
+                name="image"
+                accept="image/*"
+                onChange={handleImageChange}
+                disabled={isLoading}
+              />
+              {imagePreview && (
+                <div className="image-preview" style={{ marginTop: '12px', maxWidth: '300px' }}>
+                  <img src={imagePreview} alt="Preview" style={{ width: '100%', height: 'auto', borderRadius: '4px' }} />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="form-section">
@@ -134,7 +203,7 @@ const VenueCreation = ({ onSuccess, onBack }) => {
                   name="state"
                   value={formData.state}
                   onChange={handleChange}
-                  placeholder="State"
+                  placeholder="State (max 2 characters)"
                   maxLength="2"
                   required
                   disabled={isLoading}
@@ -149,7 +218,8 @@ const VenueCreation = ({ onSuccess, onBack }) => {
                   name="zip_code"
                   value={formData.zip_code}
                   onChange={handleChange}
-                  placeholder="12345"
+                  placeholder="ZIP Code (max 6 characters)"
+                  maxLength="6"
                   required
                   disabled={isLoading}
                 />

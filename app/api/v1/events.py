@@ -1,8 +1,11 @@
 from datetime import date
 from typing import List, Optional
+import os
+import uuid
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_band_or_404, get_event_or_404, get_venue_or_404
 from app.database import get_db
@@ -17,34 +20,204 @@ from app.schemas.event import (
     EventResponse,
     EventUpdate,
 )
+from app.schemas.band_event import BandEventStatus
 from app.services.event_service import EventService
 
 router = APIRouter()
 
 
+def serialize_event_with_details(event: Event) -> dict:
+    """
+    Serialize an event with venue name and band count.
+    """
+    # Safely access venue name
+    venue_name = ""
+    try:
+        if hasattr(event, 'venue') and event.venue:
+            venue_name = event.venue.name
+    except Exception:
+        # If venue relationship is not loaded, try to get it from the venue_id
+        pass
+    
+    # Safely access band count
+    band_count = 0
+    try:
+        if hasattr(event, 'bands') and event.bands:
+            band_count = len(event.bands)
+    except Exception:
+        pass
+    
+    event_dict = {
+        "id": event.id,
+        "venue_id": event.venue_id,
+        "name": event.name,
+        "description": event.description,
+        "event_date": event.event_date,
+        "doors_time": event.doors_time,
+        "show_time": event.show_time,
+        "is_ticketed": event.is_ticketed,
+        "ticket_price": event.ticket_price,
+        "is_age_restricted": event.is_age_restricted,
+        "age_restriction": event.age_restriction,
+        "image_path": event.image_path,
+        "created_at": event.created_at,
+        "updated_at": event.updated_at,
+        "venue_name": venue_name,
+        "band_count": band_count,
+    }
+    return event_dict
+
+
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
-def create_event(event_data: EventCreate, db: Session = Depends(get_db)) -> EventResponse:
+async def create_event(
+    venue_id: int = Form(...),
+    name: str = Form(...),
+    description: Optional[str] = Form(None),
+    event_date: date = Form(...),
+    doors_time: Optional[str] = Form(None),
+    show_time: str = Form(...),
+    is_ticketed: bool = Form(False),
+    ticket_price: Optional[int] = Form(None),
+    is_age_restricted: bool = Form(False),
+    age_restriction: Optional[int] = Form(None),
+    image: Optional[UploadFile] = File(None),
+    band_ids: Optional[str] = Form(None, description="Comma-separated list of band IDs to add to the event"),
+    db: Session = Depends(get_db),
+) -> EventResponse:
     """
     Create a new event at a venue.
 
     This will automatically mark the venue as unavailable on the event date.
     """
-    venue = get_venue_or_404(event_data.venue_id, db)
+    venue = get_venue_or_404(venue_id, db)
 
     existing_event = (
         db.query(Event)
-        .filter(Event.venue_id == venue.id, Event.event_date == event_data.event_date)
+        .filter(Event.venue_id == venue.id, Event.event_date == event_date)
         .first()
     )
 
     if existing_event:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Venue already has an event on {event_data.event_date}",
+            detail=f"Venue already has an event on {event_date}",
         )
 
-    event = EventService.create_event(db, event_data)
-    return EventResponse.model_validate(event)
+    # Handle image upload
+    image_path = None
+    if image and image.filename:
+        # Create images directory if it doesn't exist
+        images_dir = Path("images")
+        images_dir.mkdir(exist_ok=True)
+        
+        # Generate unique filename
+        file_extension = Path(image.filename).suffix
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        image_path = f"images/{unique_filename}"
+        
+        # Save file
+        file_path = images_dir / unique_filename
+        with open(file_path, "wb") as buffer:
+            content = await image.read()
+            buffer.write(content)
+
+    # Parse time strings
+    from datetime import time as time_type
+    show_time_obj = None
+    doors_time_obj = None
+    
+    if show_time:
+        try:
+            time_parts = show_time.split(":")
+            show_time_obj = time_type(int(time_parts[0]), int(time_parts[1]))
+        except (ValueError, IndexError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid show_time format. Use HH:MM format.",
+            )
+    
+    if doors_time:
+        try:
+            time_parts = doors_time.split(":")
+            doors_time_obj = time_type(int(time_parts[0]), int(time_parts[1]))
+        except (ValueError, IndexError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid doors_time format. Use HH:MM format.",
+            )
+
+    # Create event data
+    event_data_dict = {
+        "venue_id": venue_id,
+        "name": name,
+        "description": description,
+        "event_date": event_date,
+        "doors_time": doors_time_obj,
+        "show_time": show_time_obj,
+        "is_ticketed": is_ticketed,
+        "ticket_price": ticket_price,
+        "is_age_restricted": is_age_restricted,
+        "age_restriction": age_restriction,
+    }
+    
+    event_data = EventCreate(**event_data_dict)
+
+    try:
+        event = EventService.create_event(db, event_data)
+        
+        # Update image_path if image was uploaded
+        if image_path:
+            event.image_path = image_path
+            db.commit()
+            db.refresh(event)
+        
+        # Add bands to event if band_ids provided
+        if band_ids:
+            try:
+                band_id_list = [int(bid.strip()) for bid in band_ids.split(",") if bid.strip()]
+                for band_id in band_id_list:
+                    band = get_band_or_404(band_id, db)
+                    # Check if band is already added to this event
+                    existing_band_event = (
+                        db.query(BandEvent)
+                        .filter(BandEvent.event_id == event.id, BandEvent.band_id == band.id)
+                        .first()
+                    )
+                    if not existing_band_event:
+                        # Create BandEvent with default status "confirmed" (venue owner is adding them)
+                        band_event_data = BandEventCreate(
+                            band_id=band.id,
+                            event_id=event.id,
+                            status=BandEventStatus.CONFIRMED.value,
+                            set_time=None,
+                            set_length_minutes=None,
+                            performance_order=None,
+                        )
+                        EventService.add_band_to_event(db, event, band, band_event_data)
+            except ValueError:
+                # Invalid band ID format - skip
+                pass
+        
+        # Reload event with relationships to ensure venue_name and band_count work
+        event = (
+            db.query(Event)
+            .options(joinedload(Event.venue), joinedload(Event.bands))
+            .filter(Event.id == event.id)
+            .first()
+        )
+        
+        serialized = serialize_event_with_details(event)
+        return EventResponse.model_validate(serialized)
+    except HTTPException:
+        raise
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error creating event: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}",
+        )
 
 
 @router.get("/{event_id}", response_model=EventResponse)
@@ -52,8 +225,17 @@ def get_event(event_id: int, db: Session = Depends(get_db)) -> EventResponse:
     """
     Get event details by ID.
     """
-    event = get_event_or_404(event_id, db)
-    return EventResponse.model_validate(event)
+    event = (
+        db.query(Event)
+        .options(joinedload(Event.venue), joinedload(Event.bands))
+        .filter(Event.id == event_id)
+        .first()
+    )
+    
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    
+    return EventResponse.model_validate(serialize_event_with_details(event))
 
 
 @router.get("/", response_model=EventListResponse)
@@ -81,8 +263,20 @@ def list_events(
         limit=limit,
     )
 
+    # Reload events with relationships
+    event_ids = [e.id for e in events]
+    events_with_details = (
+        db.query(Event)
+        .options(joinedload(Event.venue), joinedload(Event.bands))
+        .filter(Event.id.in_(event_ids))
+        .all()
+    )
+    
+    # Create a map for quick lookup
+    events_map = {e.id: e for e in events_with_details}
+    
     return EventListResponse(
-        events=[EventResponse.model_validate(e) for e in events],
+        events=[EventResponse.model_validate(serialize_event_with_details(events_map.get(e.id, e))) for e in events],
         total=total,
         skip=skip,
         limit=limit,
@@ -116,7 +310,16 @@ def update_event(event_id: int, event_data: EventUpdate, db: Session = Depends(g
             )
 
     updated_event = EventService.update_event(db, event, event_data)
-    return EventResponse.model_validate(updated_event)
+    
+    # Reload event with relationships
+    updated_event = (
+        db.query(Event)
+        .options(joinedload(Event.venue), joinedload(Event.bands))
+        .filter(Event.id == updated_event.id)
+        .first()
+    )
+    
+    return EventResponse.model_validate(serialize_event_with_details(updated_event))
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)

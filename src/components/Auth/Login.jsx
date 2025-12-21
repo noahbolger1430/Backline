@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { authService } from "../../services/authService";
+import logoImage from "../../logos/Backline logo.jpg";
 import "./Auth.css";
 
 const Login = ({ onSwitchToSignup, onLoginSuccess }) => {
@@ -28,8 +29,7 @@ const Login = ({ onSwitchToSignup, onLoginSuccess }) => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1 className="app-title">BackLine</h1>
-        <h2 className="auth-heading">Sign In</h2>
+        <img src={logoImage} alt="BackLine" className="app-title" />
 
         <form onSubmit={handleSubmit} className="auth-form">
           {error && <div className="auth-error">{error}</div>}

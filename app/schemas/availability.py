@@ -1,10 +1,13 @@
 from datetime import date, datetime
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.availability import AvailabilityStatus
 from app.utils.validators import BulkOperationValidator, DateRangeValidator, StringValidator
+
+if TYPE_CHECKING:
+    from app.schemas.band_event import BandEventResponse
 
 
 class BandMemberAvailabilityBase(BaseModel):
@@ -141,9 +144,7 @@ class BandAvailabilityWithEvent(BandAvailabilityResponse):
     Schema for band availability with event details.
     """
 
-    from app.schemas.band_event import BandEventResponse
-
-    band_event: Optional[BandEventResponse] = None
+    band_event: Optional["BandEventResponse"] = None
 
 
 class BandMemberAvailabilityBulkCreate(BaseModel):

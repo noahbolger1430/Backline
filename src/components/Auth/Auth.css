@@ -15,11 +15,11 @@
 }
 
 .app-title {
-  font-size: 48px;
-  font-weight: bold;
-  color: #ffffff;
-  margin-bottom: 40px;
-  letter-spacing: 2px;
+  height: 180px;
+  width: auto;
+  margin: 0 auto 40px auto;
+  object-fit: contain;
+  display: block;
 }
 
 .auth-heading {

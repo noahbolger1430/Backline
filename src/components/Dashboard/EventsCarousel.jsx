@@ -1,16 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 const EventsCarousel = ({ events }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  const handlePrevious = () => {
-    setCurrentIndex((prevIndex) => (prevIndex === 0 ? events.length - 1 : prevIndex - 1));
-  };
-
-  const handleNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex === events.length - 1 ? 0 : prevIndex + 1));
-  };
-
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = { month: "short", day: "numeric", year: "numeric" };
@@ -31,35 +23,43 @@ const EventsCarousel = ({ events }) => {
   return (
     <div className="events-carousel">
       <h3 className="carousel-title">Upcoming Events</h3>
-
-      <div className="carousel-content">
-        <button className="carousel-nav carousel-nav-prev" onClick={handlePrevious} aria-label="Previous event">
-          ‹
-        </button>
-
-        <div className="event-card">
-          <div className="event-venue">{events[currentIndex].venueName}</div>
-          <div className="event-date">{formatDate(events[currentIndex].date)}</div>
+      
+      {/* Map over ALL events instead of just showing the first one */}
+      {events.map((event) => (
+        <div key={event.id} className="event-card-upcoming">
+          {event.image_path && (
+            <div className="event-card-image">
+              <img
+                src={`${API_BASE_URL}/${event.image_path}`}
+                alt={event.name || "Event"}
+                className="event-thumbnail"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  const placeholder = e.target.parentElement.querySelector('.event-image-placeholder');
+                  if (placeholder) placeholder.style.display = 'flex';
+                }}
+              />
+              <div className="event-image-placeholder" style={{ display: event.image_path ? 'none' : 'flex' }}>
+                🎸
+              </div>
+            </div>
+          )}
+          {!event.image_path && (
+            <div className="event-card-image">
+              <div className="event-image-placeholder">
+                🎸
+              </div>
+            </div>
+          )}
+          <div className="event-card-content">
+            <div className="event-name">{event.name || "Event"}</div>
+            <div className="event-venue">{event.venueName}</div>
+            <div className="event-date">{formatDate(event.date)}</div>
+          </div>
         </div>
-
-        <button className="carousel-nav carousel-nav-next" onClick={handleNext} aria-label="Next event">
-          ›
-        </button>
-      </div>
-
-      <div className="carousel-indicators">
-        {events.map((_, index) => (
-          <button
-            key={index}
-            className={`indicator ${index === currentIndex ? "active" : ""}`}
-            onClick={() => setCurrentIndex(index)}
-            aria-label={`Go to event ${index + 1}`}
-          />
-        ))}
-      </div>
+      ))}
     </div>
   );
 };
 
 export default EventsCarousel;
-

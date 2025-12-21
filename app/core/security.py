@@ -8,20 +8,28 @@ from app.config import get_settings
 
 settings = get_settings()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Use Argon2 instead of bcrypt - no 72-byte limit and more secure
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Verify a plain password against a hashed password.
+    Uses Argon2 which supports passwords of any length.
     """
     return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
     """
-    Hash a plain password using bcrypt.
+    Hash a plain password using Argon2.
+    Argon2 supports passwords of any length without limitations.
     """
+    # Ensure password is a string
+    if not isinstance(password, str):
+        password = str(password)
+    
+    # Argon2 can handle passwords of any length - no pre-hashing needed
     return pwd_context.hash(password)
 
 

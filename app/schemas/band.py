@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models.band_member import BandRole
 
@@ -32,8 +32,8 @@ class BandBase(BaseModel):
             cleaned = " ".join(v.split())
             if not cleaned:
                 raise ValueError("Genre cannot be empty or only whitespace")
-            if not re.match(r"^[a-zA-Z0-9\s\-/&]+$", cleaned):
-                raise ValueError("Genre can only contain letters, numbers, spaces, hyphens, slashes, and ampersands")
+            if not re.match(r"^[a-zA-Z0-9\s\-/&,]+$", cleaned):
+                raise ValueError("Genre can only contain letters, numbers, spaces, hyphens, slashes, commas, and ampersands")
             return cleaned
         return v
 
@@ -66,6 +66,18 @@ class BandUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
     genre: Optional[str] = Field(None, min_length=1, max_length=100)
     location: Optional[str] = Field(None, min_length=1, max_length=255)
+
+    @field_validator("genre")
+    @classmethod
+    def validate_genre(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            cleaned = " ".join(v.split())
+            if not cleaned:
+                raise ValueError("Genre cannot be empty or only whitespace")
+            if not re.match(r"^[a-zA-Z0-9\s\-/&,]+$", cleaned):
+                raise ValueError("Genre can only contain letters, numbers, spaces, hyphens, slashes, commas, and ampersands")
+            return cleaned
+        return v
 
 
 class BandMemberBase(BaseModel):
@@ -106,10 +118,27 @@ class BandMemberInDB(BandMemberBase):
 
 class BandMember(BandMemberInDB):
     """
-    Schema for band member responses.
+    Schema for band member responses with user information.
     """
 
-    pass
+    user_name: Optional[str] = None
+    user_email: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def add_user_info(cls, data):
+        """
+        Add user information from the relationship if available.
+        """
+        if isinstance(data, dict):
+            return data
+        # If data is a model instance with user relationship
+        if hasattr(data, "user") and data.user:
+            if not hasattr(data, "user_name") or data.user_name is None:
+                data.user_name = data.user.full_name
+            if not hasattr(data, "user_email") or data.user_email is None:
+                data.user_email = data.user.email
+        return data
 
 
 class BandInDB(BandBase):
@@ -121,6 +150,7 @@ class BandInDB(BandBase):
 
     id: int
     invite_code: str
+    image_path: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -140,6 +170,14 @@ class BandJoinByInvite(BaseModel):
 
     invite_code: str
     instrument: Optional[str] = None
+
+    @field_validator("instrument", mode="before")
+    @classmethod
+    def validate_instrument(cls, v):
+        # Convert empty string to None
+        if v == "" or (isinstance(v, str) and not v.strip()):
+            return None
+        return v
 
 
 class BandSummary(BaseModel):
@@ -194,6 +232,30 @@ class BandMemberUpdate(BaseModel):
             cleaned = " ".join(v.split())
             if not cleaned:
                 raise ValueError("Instrument cannot be empty or only whitespace")
+            if not re.match(r"^[a-zA-Z0-9\s\-/&,]+$", cleaned):
+                raise ValueError(
+                    "Instrument can only contain letters, numbers, spaces, hyphens, slashes, commas, and ampersands"
+                )
+            return cleaned
+        return v
+
+
+class BandMemberSelfUpdate(BaseModel):
+    """
+    Schema for users to update their own band member information.
+    Only allows updating instrument, not role.
+    """
+    
+    instrument: Optional[str] = Field(default=None, max_length=100)  # Remove min_length=1
+
+    @field_validator("instrument")
+    @classmethod
+    def validate_instrument(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            cleaned = " ".join(v.split())
+            if not cleaned:
+                # If empty after cleaning, treat as None
+                return None
             if not re.match(r"^[a-zA-Z0-9\s\-/&,]+$", cleaned):
                 raise ValueError(
                     "Instrument can only contain letters, numbers, spaces, hyphens, slashes, commas, and ampersands"

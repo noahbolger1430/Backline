@@ -13,6 +13,8 @@ ENV/
 htmlcov/
 dist/
 build/
+node_modules/
+package-lock.json
 *.egg-info/
 .DS_Store
 turns/

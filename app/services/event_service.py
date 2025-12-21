@@ -155,7 +155,7 @@ class EventService:
             query = query.filter(Event.venue_id == venue_id)
 
         if band_id is not None:
-            query = query.join(BandEvent).filter(BandEvent.band_id == band_id)
+            query = query.join(BandEvent).filter(BandEvent.band_id == band_id).distinct()
 
         if start_date is not None:
             query = query.filter(Event.event_date >= start_date)
