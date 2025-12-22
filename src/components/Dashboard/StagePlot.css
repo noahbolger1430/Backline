@@ -1,151 +1,274 @@
 .stage-plot-container {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    background-color: #0B0C10;
-  }
-  
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #0B0C10;
+}
+
+.stage-plot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 30px;
+  background-color: #1F2833;
+  border-bottom: 1px solid #C5C6C7;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #FFFFFF;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.back-button:hover {
+  background-color: #2F3843;
+}
+
+.back-arrow {
+  font-size: 20px;
+}
+
+.stage-plot-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.stage-plot-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.action-button {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-button {
+  background-color: #6F22D2;
+  color: #FFFFFF;
+  border: 2px solid #0B0C10;
+}
+
+.save-button:hover {
+  background-color: #8B2FE8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(111, 34, 210, 0.4);
+}
+
+.export-button {
+  background-color: #1F2833;
+  color: #FFFFFF;
+  border: 2px solid #C5C6C7;
+}
+
+.export-button:hover {
+  background-color: #2F3843;
+  border-color: #FFFFFF;
+}
+
+.stage-plot-editor {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.editor-canvas {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background-color: #0B0C10;
+}
+
+.stage-svg {
+  width: 100%;
+  height: 100%;
+  max-width: 800px;
+  max-height: 600px;
+  user-select: none;
+}
+
+.stage-rect {
+  cursor: default;
+}
+
+.stage-item {
+  transition: opacity 0.2s;
+}
+
+.stage-item:hover {
+  opacity: 0.95;
+}
+
+.editor-sidebar {
+  width: 300px;
+  background-color: #1F2833;
+  border-left: 1px solid #C5C6C7;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.sidebar-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0 0 8px 0;
+}
+
+.sidebar-hint {
+  font-size: 14px;
+  color: #8E8E93;
+  margin: 0 0 24px 0;
+}
+
+.equipment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.equipment-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: #0B0C10;
+  border: 2px solid #C5C6C7;
+  border-radius: 8px;
+  cursor: grab;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.equipment-item:hover {
+  border-color: #6F22D2;
+  background-color: #1a1d24;
+  transform: translateX(4px);
+}
+
+.equipment-item:active {
+  cursor: grabbing;
+}
+
+.equipment-icon-box {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1F2833;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.equipment-icon {
+  font-size: 24px;
+}
+
+.equipment-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #FFFFFF;
+  line-height: 1.3;
+  flex: 1;
+}
+
+/* Custom drag image styles */
+.custom-drag-image {
+  position: fixed;
+  top: -1000px;
+  left: -1000px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.drag-item-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #6F22D2;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.drag-item-icon {
+  font-size: 24px;
+}
+
+.drag-item-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+@media (max-width: 768px) {
   .stage-plot-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 30px;
-    background-color: #1F2833;
-    border-bottom: 1px solid #C5C6C7;
-  }
-  
-  .back-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: none;
-    border: none;
-    color: #FFFFFF;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 8px 12px;
-    border-radius: 4px;
-    transition: all 0.2s;
-  }
-  
-  .back-button:hover {
-    background-color: #2F3843;
-  }
-  
-  .back-arrow {
-    font-size: 20px;
-  }
-  
-  .stage-plot-title {
-    font-size: 24px;
-    font-weight: bold;
-    color: #FFFFFF;
-    margin: 0;
-  }
-  
-  .stage-plot-actions {
-    display: flex;
+    flex-wrap: wrap;
     gap: 12px;
   }
-  
-  .action-button {
-    padding: 8px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .save-button {
-    background-color: #6F22D2;
-    color: #FFFFFF;
-    border: 2px solid #0B0C10;
-  }
-  
-  .save-button:hover {
-    background-color: #8B2FE8;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(111, 34, 210, 0.4);
-  }
-  
-  .export-button {
-    background-color: #1F2833;
-    color: #FFFFFF;
-    border: 2px solid #C5C6C7;
-  }
-  
-  .export-button:hover {
-    background-color: #2F3843;
-    border-color: #FFFFFF;
-  }
-  
-  .stage-plot-editor {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
-  }
-  
-  .editor-canvas {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px;
-    background-color: #0B0C10;
-  }
-  
-  .stage-svg {
+
+  .stage-plot-title {
     width: 100%;
-    height: 100%;
-    max-width: 800px;
-    max-height: 600px;
+    text-align: center;
+    order: -1;
   }
-  
-  .stage-rect {
-    cursor: default;
+
+  .stage-plot-editor {
+    flex-direction: column;
   }
   
   .editor-sidebar {
-    width: 300px;
-    background-color: #1F2833;
-    border-left: 1px solid #C5C6C7;
-    padding: 24px;
-    overflow-y: auto;
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid #C5C6C7;
+    max-height: 200px;
   }
   
-  .sidebar-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #FFFFFF;
-    margin: 0 0 8px 0;
+  .editor-canvas {
+    padding: 20px;
   }
-  
-  .sidebar-hint {
-    font-size: 14px;
-    color: #8E8E93;
-    margin: 0 0 24px 0;
-  }
-  
+
   .equipment-list {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+
+  .equipment-item {
     flex-direction: column;
-    gap: 12px;
+    text-align: center;
+    padding: 10px;
   }
-  
-  @media (max-width: 768px) {
-    .stage-plot-editor {
-      flex-direction: column;
-    }
-    
-    .editor-sidebar {
-      width: 100%;
-      border-left: none;
-      border-top: 1px solid #C5C6C7;
-    }
-    
-    .editor-canvas {
-      padding: 20px;
-    }
+
+  .equipment-icon-box {
+    width: 48px;
+    height: 48px;
   }
+
+  .equipment-icon {
+    font-size: 28px;
+  }
+
+  .equipment-name {
+    font-size: 12px;
+    text-align: center;
+  }
+}
