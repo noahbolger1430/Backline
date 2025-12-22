@@ -11,6 +11,7 @@ from app.api.deps import get_band_or_404, get_event_or_404, get_venue_or_404
 from app.database import get_db
 from app.models import Band, BandAvailability, BandEvent, Event, Venue
 from app.models.availability import AvailabilityStatus
+from app.models.event import EventStatus
 from app.schemas.event import (
     BandEventCreate,
     BandEventResponse,
@@ -55,6 +56,8 @@ def serialize_event_with_details(event: Event) -> dict:
         "event_date": event.event_date,
         "doors_time": event.doors_time,
         "show_time": event.show_time,
+        "status": event.status,
+        "is_open_for_applications": event.is_open_for_applications,
         "is_ticketed": event.is_ticketed,
         "ticket_price": event.ticket_price,
         "is_age_restricted": event.is_age_restricted,
@@ -76,6 +79,8 @@ async def create_event(
     event_date: date = Form(...),
     doors_time: Optional[str] = Form(None),
     show_time: str = Form(...),
+    status: str = Form(EventStatus.CONFIRMED.value),
+    is_open_for_applications: bool = Form(False),
     is_ticketed: bool = Form(False),
     ticket_price: Optional[int] = Form(None),
     is_age_restricted: bool = Form(False),
@@ -88,6 +93,7 @@ async def create_event(
     Create a new event at a venue.
 
     This will automatically mark the venue as unavailable on the event date.
+    Set status to "pending" and is_open_for_applications to true to allow bands to apply.
     """
     venue = get_venue_or_404(venue_id, db)
 
@@ -101,6 +107,22 @@ async def create_event(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Venue already has an event on {event_date}",
+        )
+
+    # Validate status value
+    try:
+        event_status = EventStatus(status)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status. Must be one of: {', '.join([s.value for s in EventStatus])}",
+        )
+
+    # Validate that only pending events can be open for applications
+    if is_open_for_applications and event_status != EventStatus.PENDING:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only pending events can be open for applications",
         )
 
     # Handle image upload
@@ -154,6 +176,8 @@ async def create_event(
         "event_date": event_date,
         "doors_time": doors_time_obj,
         "show_time": show_time_obj,
+        "status": event_status,
+        "is_open_for_applications": is_open_for_applications,
         "is_ticketed": is_ticketed,
         "ticket_price": ticket_price,
         "is_age_restricted": is_age_restricted,
@@ -244,6 +268,8 @@ def list_events(
     band_id: Optional[int] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    status: Optional[str] = None,
+    is_open_for_applications: Optional[bool] = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -251,7 +277,7 @@ def list_events(
     """
     List events with optional filters.
 
-    Filter by venue, band, or date range.
+    Filter by venue, band, date range, status, or application availability.
     """
     events, total = EventService.list_events(
         db,
@@ -259,6 +285,8 @@ def list_events(
         band_id=band_id,
         start_date=start_date,
         end_date=end_date,
+        status=status,
+        is_open_for_applications=is_open_for_applications,
         skip=skip,
         limit=limit,
     )
@@ -309,6 +337,16 @@ def update_event(event_id: int, event_data: EventUpdate, db: Session = Depends(g
                 detail=f"Venue already has an event on {event_data.event_date}",
             )
 
+    # Validate that only pending events can be open for applications
+    new_status = event_data.status if event_data.status else event.status
+    new_open_for_apps = event_data.is_open_for_applications if event_data.is_open_for_applications is not None else event.is_open_for_applications
+    
+    if new_open_for_apps and new_status != EventStatus.PENDING.value and new_status != EventStatus.PENDING:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only pending events can be open for applications",
+        )
+
     updated_event = EventService.update_event(db, event, event_data)
     
     # Reload event with relationships
@@ -320,6 +358,85 @@ def update_event(event_id: int, event_data: EventUpdate, db: Session = Depends(g
     )
     
     return EventResponse.model_validate(serialize_event_with_details(updated_event))
+
+
+@router.post("/{event_id}/open-applications", response_model=EventResponse)
+def open_event_for_applications(event_id: int, db: Session = Depends(get_db)) -> EventResponse:
+    """
+    Open a pending event for band applications.
+    """
+    event = get_event_or_404(event_id, db)
+    
+    if event.status != EventStatus.PENDING.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only pending events can be opened for applications",
+        )
+    
+    event.is_open_for_applications = True
+    db.commit()
+    db.refresh(event)
+    
+    # Reload event with relationships
+    event = (
+        db.query(Event)
+        .options(joinedload(Event.venue), joinedload(Event.bands))
+        .filter(Event.id == event.id)
+        .first()
+    )
+    
+    return EventResponse.model_validate(serialize_event_with_details(event))
+
+
+@router.post("/{event_id}/close-applications", response_model=EventResponse)
+def close_event_applications(event_id: int, db: Session = Depends(get_db)) -> EventResponse:
+    """
+    Close an event for band applications.
+    """
+    event = get_event_or_404(event_id, db)
+    
+    event.is_open_for_applications = False
+    db.commit()
+    db.refresh(event)
+    
+    # Reload event with relationships
+    event = (
+        db.query(Event)
+        .options(joinedload(Event.venue), joinedload(Event.bands))
+        .filter(Event.id == event.id)
+        .first()
+    )
+    
+    return EventResponse.model_validate(serialize_event_with_details(event))
+
+
+@router.post("/{event_id}/confirm", response_model=EventResponse)
+def confirm_event(event_id: int, db: Session = Depends(get_db)) -> EventResponse:
+    """
+    Confirm a pending event, closing it for applications.
+    """
+    event = get_event_or_404(event_id, db)
+    
+    if event.status != EventStatus.PENDING.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only pending events can be confirmed",
+        )
+    
+    event.status = EventStatus.CONFIRMED.value
+    event.is_open_for_applications = False
+    db.commit()
+    db.refresh(event)
+    
+    # Reload event with relationships
+    event = (
+        db.query(Event)
+        .options(joinedload(Event.venue), joinedload(Event.bands))
+        .filter(Event.id == event.id)
+        .first()
+    )
+    
+    return EventResponse.model_validate(serialize_event_with_details(event))
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -413,4 +530,3 @@ def get_event_bands(event_id: int, db: Session = Depends(get_db)) -> List[BandEv
     event = get_event_or_404(event_id, db)
     band_events = EventService.get_event_bands(db, event)
     return [BandEventResponse.model_validate(be) for be in band_events]
-

@@ -10,6 +10,8 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
     event_date: "",
     doors_time: "",
     show_time: "",
+    is_pending: false,
+    is_open_for_applications: false,
     is_ticketed: false,
     ticket_price: "",
     is_age_restricted: false,
@@ -23,6 +25,18 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    // Special handling for is_pending checkbox
+    if (name === "is_pending" && !checked) {
+      // If unchecking pending, also uncheck open for applications
+      setFormData((prev) => ({
+        ...prev,
+        is_pending: false,
+        is_open_for_applications: false,
+      }));
+      return;
+    }
+    
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -62,6 +76,8 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
         event_date: formData.event_date,
         doors_time: formData.doors_time && formData.doors_time.trim() ? formData.doors_time.trim() : null,
         show_time: formData.show_time && formData.show_time.trim() ? formData.show_time.trim() : null,
+        status: formData.is_pending ? "pending" : "confirmed",
+        is_open_for_applications: formData.is_pending ? formData.is_open_for_applications : false,
         is_ticketed: formData.is_ticketed,
         ticket_price: formData.is_ticketed && formData.ticket_price 
           ? parseInt(formData.ticket_price, 10) 
@@ -130,12 +146,62 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
           />
         </div>
 
-        <div className="form-group">
-          <BandSearchSelect
-            selectedBands={selectedBands}
-            onBandsChange={setSelectedBands}
-          />
+        <div className="form-section">
+          <h3 className="form-section-title">Event Status</h3>
+          
+          <div className="form-group checkbox-group">
+            <label>
+              <input
+                type="checkbox"
+                name="is_pending"
+                checked={formData.is_pending}
+                onChange={handleChange}
+              />
+              <span>Create as pending event</span>
+            </label>
+            <p className="form-help-text">
+              Pending events allow you to build the lineup before confirming the event.
+            </p>
+          </div>
+
+          {formData.is_pending && (
+            <div className="form-group checkbox-group nested-checkbox">
+              <label>
+                <input
+                  type="checkbox"
+                  name="is_open_for_applications"
+                  checked={formData.is_open_for_applications}
+                  onChange={handleChange}
+                />
+                <span>Open for band applications</span>
+              </label>
+              <p className="form-help-text">
+                Allow bands to submit applications to perform at this event.
+              </p>
+            </div>
+          )}
         </div>
+
+        {!formData.is_pending && (
+          <div className="form-group">
+            <BandSearchSelect
+              selectedBands={selectedBands}
+              onBandsChange={setSelectedBands}
+            />
+          </div>
+        )}
+
+        {formData.is_pending && !formData.is_open_for_applications && (
+          <div className="form-group">
+            <BandSearchSelect
+              selectedBands={selectedBands}
+              onBandsChange={setSelectedBands}
+            />
+            <p className="form-help-text">
+              You can also add bands directly while the event is pending.
+            </p>
+          </div>
+        )}
 
         <div className="form-group">
           <label htmlFor="image">Event Image/Poster</label>
@@ -261,7 +327,7 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
             className="btn-submit"
             disabled={loading}
           >
-            {loading ? "Creating..." : "Create Event"}
+            {loading ? "Creating..." : formData.is_pending ? "Create Pending Event" : "Create Event"}
           </button>
         </div>
       </form>

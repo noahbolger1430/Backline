@@ -1,8 +1,20 @@
+from enum import Enum as PyEnum
+
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String, Text, Time
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
+
+
+class EventStatus(str, PyEnum):
+    """
+    Enumeration of possible states for an event.
+    """
+
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
 
 
 class Event(Base):
@@ -23,6 +35,8 @@ class Event(Base):
     event_date = Column(Date, nullable=False, index=True)
     doors_time = Column(Time, nullable=True)
     show_time = Column(Time, nullable=False)
+    status = Column(String, nullable=False, default=EventStatus.CONFIRMED.value, index=True)
+    is_open_for_applications = Column(Boolean, default=False, nullable=False)
     is_ticketed = Column(Boolean, default=False, nullable=False)
     ticket_price = Column(Integer, nullable=True)
     is_age_restricted = Column(Boolean, default=False, nullable=False)
@@ -36,4 +50,3 @@ class Event(Base):
     venue = relationship("Venue", back_populates="events")
     applications = relationship("EventApplication", back_populates="event", cascade="all, delete-orphan")
     bands = relationship("BandEvent", back_populates="event", cascade="all, delete-orphan")
-

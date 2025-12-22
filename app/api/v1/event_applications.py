@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_band_or_404, get_current_user, get_event_or_404
 from app.database import get_db
 from app.models import Band, Event, EventApplication, User
+from app.models.event import EventStatus
 from app.models.event_application import ApplicationStatus
 from app.schemas.event_application import (
     EventApplicationCreate,
@@ -34,9 +35,24 @@ def submit_application(
     """
     Submit an application for a band to perform at an event.
     User must be a member of the band to submit an application.
+    Event must be open for applications.
     """
     event = get_event_or_404(event_id, db)
     band = get_band_or_404(band_id, db)
+
+    # Check if event is open for applications
+    if not event.is_open_for_applications:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This event is not currently accepting applications",
+        )
+
+    # Check if event is pending
+    if event.status != EventStatus.PENDING.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Can only apply to pending events",
+        )
 
     if not EventApplicationService.user_can_manage_band(db, current_user, band):
         raise HTTPException(
@@ -235,4 +251,3 @@ def withdraw_application(application_id: int, current_user: User = Depends(get_c
 
     withdrawn_application = EventApplicationService.withdraw_application(db, application)
     return EventApplicationResponse.model_validate(withdrawn_application)
-

@@ -143,6 +143,8 @@ class EventService:
         band_id: Optional[int] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
+        status: Optional[str] = None,
+        is_open_for_applications: Optional[bool] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> Tuple[List[Event], int]:
@@ -163,6 +165,12 @@ class EventService:
         if end_date is not None:
             query = query.filter(Event.event_date <= end_date)
 
+        if status is not None:
+            query = query.filter(Event.status == status)
+
+        if is_open_for_applications is not None:
+            query = query.filter(Event.is_open_for_applications == is_open_for_applications)
+
         total = query.count()
         events = (
             query.order_by(Event.event_date, Event.show_time)
@@ -172,4 +180,3 @@ class EventService:
         )
 
         return events, total
-

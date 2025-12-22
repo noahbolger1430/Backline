@@ -1,0 +1,251 @@
+.gig-application-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  
+  .gig-application-modal {
+    background: #ffffff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  }
+  
+  .gig-application-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .gig-application-modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #333333;
+  }
+  
+  .modal-close-button {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #666666;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s ease;
+  }
+  
+  .modal-close-button:hover {
+    color: #333333;
+  }
+  
+  .gig-application-event-details {
+    display: flex;
+    gap: 20px;
+    padding: 24px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .event-image-container {
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .event-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .event-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+  }
+  
+  .event-info {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .event-info .event-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333333;
+    margin: 0 0 8px 0;
+  }
+  
+  .event-info .event-venue {
+    font-size: 14px;
+    color: #666666;
+    margin: 0 0 4px 0;
+  }
+  
+  .event-info .event-date {
+    font-size: 14px;
+    color: #888888;
+    margin: 0 0 12px 0;
+  }
+  
+  .event-info .event-description {
+    font-size: 13px;
+    color: #666666;
+    margin: 0;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .application-error {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 12px 24px;
+    border-left: 3px solid #c62828;
+    margin: 0;
+  }
+  
+  .gig-application-form {
+    padding: 24px;
+  }
+  
+  .gig-application-form .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .gig-application-form label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333333;
+    margin-bottom: 8px;
+  }
+  
+  .gig-application-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 120px;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+  }
+  
+  .gig-application-form textarea:focus {
+    outline: none;
+    border-color: #2196f3;
+  }
+  
+  .gig-application-form textarea:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }
+  
+  .character-count {
+    font-size: 12px;
+    color: #888888;
+    text-align: right;
+    margin-top: 6px;
+  }
+  
+  .gig-application-form .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #e0e0e0;
+  }
+  
+  .gig-application-form .btn-cancel,
+  .gig-application-form .btn-submit {
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .gig-application-form .btn-cancel {
+    background-color: #f5f5f5;
+    color: #666666;
+    border: 1px solid #d0d0d0;
+  }
+  
+  .gig-application-form .btn-cancel:hover:not(:disabled) {
+    background-color: #e0e0e0;
+  }
+  
+  .gig-application-form .btn-submit {
+    background-color: #4caf50;
+    color: #ffffff;
+    border: none;
+  }
+  
+  .gig-application-form .btn-submit:hover:not(:disabled) {
+    background-color: #43a047;
+  }
+  
+  .gig-application-form .btn-cancel:disabled,
+  .gig-application-form .btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  @media (max-width: 600px) {
+    .gig-application-modal-overlay {
+      padding: 0;
+      align-items: flex-end;
+    }
+  
+    .gig-application-modal {
+      max-height: 95vh;
+      border-radius: 12px 12px 0 0;
+    }
+  
+    .gig-application-event-details {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+  
+    .event-image-container {
+      width: 100px;
+      height: 100px;
+    }
+  
+    .gig-application-form .form-actions {
+      flex-direction: column;
+    }
+  
+    .gig-application-form .btn-cancel,
+    .gig-application-form .btn-submit {
+      width: 100%;
+    }
+  }
+  

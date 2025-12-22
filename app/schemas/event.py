@@ -5,6 +5,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.models.event import EventStatus
 from app.models.event_application import ApplicationStatus
 from app.schemas.band_event import BandEventCreate, BandEventResponse, BandEventStatus, BandEventUpdate
 from app.utils.validators import PriceValidator, StringValidator
@@ -20,6 +21,8 @@ class EventBase(BaseModel):
     event_date: date
     doors_time: Optional[time] = None
     show_time: time
+    status: EventStatus = EventStatus.CONFIRMED
+    is_open_for_applications: bool = False
     is_ticketed: bool = False
     ticket_price: Optional[int] = Field(None, ge=0)
     is_age_restricted: bool = False
@@ -45,6 +48,17 @@ class EventBase(BaseModel):
             raise ValueError("Age restriction required for age-restricted events")
         return v
 
+    @field_validator("is_open_for_applications")
+    @classmethod
+    def validate_open_for_applications(cls, v: bool, info) -> bool:
+        """
+        Validate that only pending events can be open for applications.
+        """
+        status = info.data.get("status")
+        if v and status and status != EventStatus.PENDING:
+            raise ValueError("Only pending events can be open for applications")
+        return v
+
 
 class EventCreate(EventBase):
     """
@@ -65,6 +79,8 @@ class EventUpdate(BaseModel):
     event_date: Optional[date] = None
     doors_time: Optional[time] = None
     show_time: Optional[time] = None
+    status: Optional[EventStatus] = None
+    is_open_for_applications: Optional[bool] = None
     is_ticketed: Optional[bool] = None
     ticket_price: Optional[int] = Field(None, ge=0)
     is_age_restricted: Optional[bool] = None
@@ -210,4 +226,3 @@ class EventWithBands(EventResponse):
     """
 
     bands: List[BandEventResponse] = []
-

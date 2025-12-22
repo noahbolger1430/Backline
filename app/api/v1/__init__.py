@@ -11,5 +11,5 @@ api_router.include_router(venue_availability.router, prefix="/venues", tags=["ve
 api_router.include_router(venues.router, prefix="/venues", tags=["venues"])
 api_router.include_router(availability.router, prefix="/availability", tags=["availability"])
 api_router.include_router(events.router, prefix="/events", tags=["events"])
-api_router.include_router(event_applications.router, prefix="/applications", tags=["event-applications"])
+api_router.include_router(event_applications.router, prefix="/event-applications", tags=["event-applications"])
 

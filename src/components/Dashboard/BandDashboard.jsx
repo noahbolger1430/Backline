@@ -195,7 +195,7 @@ const BandDashboard = ({ bandId, onLogout }) => {
             ) : activeTab === "venues" ? (
               <VenuesView />
             ) : activeTab === "gigs" ? (
-              <GigsView />
+              <GigsView bandId={bandId} />
             ) : null}
           </div>
 

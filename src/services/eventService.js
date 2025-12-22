@@ -23,6 +23,15 @@ export const eventService = {
       formData.append("doors_time", eventData.doors_time);
     }
     formData.append("show_time", eventData.show_time);
+    
+    // Add status field (pending or confirmed)
+    if (eventData.status) {
+      formData.append("status", eventData.status);
+    }
+    
+    // Add is_open_for_applications field
+    formData.append("is_open_for_applications", eventData.is_open_for_applications || false);
+    
     formData.append("is_ticketed", eventData.is_ticketed);
     if (eventData.ticket_price !== null && eventData.ticket_price !== undefined) {
       formData.append("ticket_price", eventData.ticket_price);
@@ -181,14 +190,14 @@ export const eventService = {
     return await response.json();
   },
 
-  async deleteEvent(eventId) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
-      method: "DELETE",
+  async openEventForApplications(eventId) {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/open-applications`, {
+      method: "POST",
       headers: this.getAuthHeader(),
     });
 
     if (!response.ok) {
-      let errorMessage = "Failed to delete event";
+      let errorMessage = "Failed to open event for applications";
       try {
         const error = await response.json();
         errorMessage = typeof error.detail === 'string' 
@@ -202,7 +211,54 @@ export const eventService = {
       throw err;
     }
 
-    // DELETE returns 204 No Content, so no JSON to parse
-    return true;
+    return await response.json();
+  },
+
+  async closeEventApplications(eventId) {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/close-applications`, {
+      method: "POST",
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Failed to close event applications";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === 'string' 
+          ? error.detail 
+          : (error.detail?.message || JSON.stringify(error.detail) || errorMessage);
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return await response.json();
+  },
+
+  async confirmEvent(eventId) {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/confirm`, {
+      method: "POST",
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Failed to confirm event";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === 'string' 
+          ? error.detail 
+          : (error.detail?.message || JSON.stringify(error.detail) || errorMessage);
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return await response.json();
   },
 };
