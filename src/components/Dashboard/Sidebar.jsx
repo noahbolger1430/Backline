@@ -5,7 +5,8 @@ const Sidebar = ({ activeTab, onTabChange, isVenue = false }) => {
     { id: "band", icon: "👥", label: "Band" },
     { id: "calendar", icon: "📅", label: "Calendar" },
     { id: "venues", icon: "🏢", label: "Venues" },
-    { id: "gigs", icon: "🎸", label: "Gigs" }
+    { id: "gigs", icon: "🎸", label: "Gigs" },
+    { id: "tools", icon: "🛠️", label: "Tools" } // Added Tools tab
   ];
   
   const venueTabs = [

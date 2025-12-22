@@ -7,6 +7,8 @@ import GigsView from "./GigsView";
 import BandProfile from "./BandProfile";
 import UserProfile from "./UserProfile";
 import LogoutModal from "./LogoutModal";
+import ToolsView from "./ToolsView";
+import StagePlot from "./StagePlot";
 import { bandService } from "../../services/bandService";
 import { authService } from "../../services/authService";
 import logoImage from "../../logos/Backline logo.jpg";
@@ -21,6 +23,8 @@ const BandDashboard = ({ bandId, onLogout }) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [activeTab, setActiveTab] = useState("band");
+  const [selectedTool, setSelectedTool] = useState(null);
+
 
   useEffect(() => {
     const fetchBandData = async () => {
@@ -65,6 +69,14 @@ const BandDashboard = ({ bandId, onLogout }) => {
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
   };
+
+  const handleToolSelect = (toolId) => {
+    setSelectedTool(toolId);
+  };
+
+  const handleBackToTools = () => {
+    setSelectedTool(null);
+  };  
 
   const handleLogoutConfirm = () => {
     setShowLogoutModal(false);
@@ -196,6 +208,12 @@ const BandDashboard = ({ bandId, onLogout }) => {
               <VenuesView />
             ) : activeTab === "gigs" ? (
               <GigsView bandId={bandId} />
+            ) : activeTab === "tools" ? (
+              selectedTool === "stage-plot" ? (
+                <StagePlot onBack={handleBackToTools} />
+              ) : (
+                <ToolsView onToolSelect={handleToolSelect} />
+              )
             ) : null}
           </div>
 
