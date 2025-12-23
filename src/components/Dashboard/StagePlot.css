@@ -36,6 +36,12 @@
   font-size: 20px;
 }
 
+.stage-plot-title-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .stage-plot-title {
   font-size: 24px;
   font-weight: bold;
@@ -43,9 +49,33 @@
   margin: 0;
 }
 
+.unsaved-indicator {
+  color: #FFB800;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .stage-plot-actions {
   display: flex;
+  align-items: center;
   gap: 12px;
+}
+
+.save-status {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 4px;
+}
+
+.save-status-success {
+  color: #4CAF50;
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.save-status-error {
+  color: #FF4444;
+  background-color: rgba(255, 68, 68, 0.1);
 }
 
 .action-button {
@@ -58,13 +88,18 @@
   transition: all 0.2s;
 }
 
+.action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .save-button {
   background-color: #6F22D2;
   color: #FFFFFF;
   border: 2px solid #0B0C10;
 }
 
-.save-button:hover {
+.save-button:hover:not(:disabled) {
   background-color: #8B2FE8;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(111, 34, 210, 0.4);
@@ -85,6 +120,15 @@
   flex: 1;
   display: flex;
   overflow: hidden;
+}
+
+.stage-plot-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 18px;
 }
 
 .editor-canvas {
@@ -219,16 +263,128 @@
   color: #FFFFFF;
 }
 
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #1F2833;
+  border-radius: 8px;
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid #C5C6C7;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0 0 20px 0;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #C5C6C7;
+}
+
+.modal-input,
+.modal-textarea {
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 2px solid #C5C6C7;
+  border-radius: 4px;
+  background-color: #0B0C10;
+  color: #FFFFFF;
+  transition: border-color 0.2s;
+}
+
+.modal-input:focus,
+.modal-textarea:focus {
+  outline: none;
+  border-color: #6F22D2;
+}
+
+.modal-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.modal-button {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modal-button-secondary {
+  background-color: transparent;
+  color: #FFFFFF;
+  border: 2px solid #C5C6C7;
+}
+
+.modal-button-secondary:hover:not(:disabled) {
+  background-color: #2F3843;
+}
+
+.modal-button-primary {
+  background-color: #6F22D2;
+  color: #FFFFFF;
+}
+
+.modal-button-primary:hover:not(:disabled) {
+  background-color: #8B2FE8;
+}
+
 @media (max-width: 768px) {
   .stage-plot-header {
     flex-wrap: wrap;
     gap: 12px;
   }
 
-  .stage-plot-title {
+  .stage-plot-title-container {
     width: 100%;
-    text-align: center;
+    justify-content: center;
     order: -1;
+  }
+
+  .stage-plot-title {
+    text-align: center;
   }
 
   .stage-plot-editor {
@@ -270,5 +426,9 @@
   .equipment-name {
     font-size: 12px;
     text-align: center;
+  }
+
+  .modal-content {
+    margin: 20px;
   }
 }

@@ -1,10 +1,19 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { stagePlotService } from "../../services/stagePlotService";
 import "./StagePlot.css";
 
-const StagePlot = ({ onBack }) => {
+const StagePlot = ({ onBack, bandId, stagePlotId = null }) => {
   const [stageItems, setStageItems] = useState([]);
   const [draggedItem, setDraggedItem] = useState(null);
   const [nextId, setNextId] = useState(1);
+  const [plotName, setPlotName] = useState("Default Stage Plot");
+  const [plotDescription, setPlotDescription] = useState("");
+  const [currentPlotId, setCurrentPlotId] = useState(stagePlotId);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(null);
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const svgRef = useRef(null);
 
   const equipmentList = [
@@ -19,6 +28,133 @@ const StagePlot = ({ onBack }) => {
     { id: "di-box", name: "DI Box", icon: "📦" },
     { id: "drum-kit", name: "Drum Kit", icon: "🥁" }
   ];
+
+  // Load existing stage plot if stagePlotId is provided
+  const loadStagePlot = useCallback(async () => {
+    if (!stagePlotId) return;
+    
+    setIsLoading(true);
+    try {
+      const data = await stagePlotService.getStagePlot(stagePlotId);
+      setPlotName(data.name);
+      setPlotDescription(data.description || "");
+      setCurrentPlotId(data.id);
+      
+      const formattedItems = stagePlotService.formatItemsFromApi(data.items);
+      setStageItems(formattedItems);
+      
+      // Set nextId to be higher than any existing instance ID
+      if (formattedItems.length > 0) {
+        const maxId = Math.max(...formattedItems.map(item => item.instanceId));
+        setNextId(maxId + 1);
+      }
+      
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error("Failed to load stage plot:", error);
+      setSaveStatus({ type: "error", message: "Failed to load stage plot" });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [stagePlotId]);
+
+  useEffect(() => {
+    loadStagePlot();
+  }, [loadStagePlot]);
+
+  // Clear save status after 3 seconds
+  useEffect(() => {
+    if (saveStatus) {
+      const timer = setTimeout(() => setSaveStatus(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [saveStatus]);
+
+  const handleSave = async () => {
+    if (!bandId) {
+      setSaveStatus({ type: "error", message: "No band selected" });
+      return;
+    }
+
+    // If no plot name set yet and no current plot, show name modal
+    if (!currentPlotId && plotName === "Default Stage Plot") {
+      setShowNameModal(true);
+      return;
+    }
+
+    await saveStagePlot();
+  };
+
+  const saveStagePlot = async () => {
+    setIsSaving(true);
+    setSaveStatus(null);
+
+    try {
+      const formattedItems = stagePlotService.formatItemsForApi(stageItems);
+      
+      if (currentPlotId) {
+        // Update existing stage plot
+        await stagePlotService.updateStagePlot(currentPlotId, {
+          name: plotName,
+          description: plotDescription || null,
+          items: formattedItems,
+          settings: {
+            stage_width: 600,
+            stage_height: 300,
+            stage_x: 100,
+            stage_y: 150,
+          },
+        });
+        setSaveStatus({ type: "success", message: "Stage plot saved!" });
+      } else {
+        // Create new stage plot
+        const newPlot = await stagePlotService.createStagePlot({
+          band_id: bandId,
+          name: plotName,
+          description: plotDescription || null,
+          items: formattedItems,
+          settings: {
+            stage_width: 600,
+            stage_height: 300,
+            stage_x: 100,
+            stage_y: 150,
+          },
+        });
+        setCurrentPlotId(newPlot.id);
+        setSaveStatus({ type: "success", message: "Stage plot created!" });
+      }
+      
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error("Failed to save stage plot:", error);
+      setSaveStatus({ type: "error", message: error.message || "Failed to save stage plot" });
+    } finally {
+      setIsSaving(false);
+      setShowNameModal(false);
+    }
+  };
+
+  const handleExport = () => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    // Clone the SVG and prepare for export
+    const clonedSvg = svg.cloneNode(true);
+    clonedSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    
+    // Convert to blob and download
+    const svgData = new XMLSerializer().serializeToString(clonedSvg);
+    const blob = new Blob([svgData], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${plotName.replace(/[^a-z0-9]/gi, "_")}_stage_plot.svg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   const handleDragStart = (e, equipment) => {
     setDraggedItem(equipment);
@@ -79,6 +215,7 @@ const StagePlot = ({ onBack }) => {
 
       setStageItems([...stageItems, newItem]);
       setNextId(nextId + 1);
+      setHasUnsavedChanges(true);
     }
 
     setDraggedItem(null);
@@ -120,6 +257,7 @@ const StagePlot = ({ onBack }) => {
             ? { ...i, x: newX, y: newY }
             : i
         ));
+        setHasUnsavedChanges(true);
       }
     };
 
@@ -134,19 +272,61 @@ const StagePlot = ({ onBack }) => {
 
   const handleRemoveItem = (instanceId) => {
     setStageItems(stageItems.filter(item => item.instanceId !== instanceId));
+    setHasUnsavedChanges(true);
   };
+
+  const handleBack = () => {
+    if (hasUnsavedChanges) {
+      const confirmLeave = window.confirm(
+        "You have unsaved changes. Are you sure you want to leave?"
+      );
+      if (!confirmLeave) return;
+    }
+    onBack();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="stage-plot-container">
+        <div className="stage-plot-loading">
+          <span>Loading stage plot...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="stage-plot-container">
       <div className="stage-plot-header">
-        <button className="back-button" onClick={onBack}>
+        <button className="back-button" onClick={handleBack}>
           <span className="back-arrow">←</span>
           Back to Tools
         </button>
-        <h2 className="stage-plot-title">Stage Plot Editor</h2>
+        <div className="stage-plot-title-container">
+          <h2 className="stage-plot-title">{plotName}</h2>
+          {hasUnsavedChanges && (
+            <span className="unsaved-indicator">• Unsaved changes</span>
+          )}
+        </div>
         <div className="stage-plot-actions">
-          <button className="action-button save-button">Save</button>
-          <button className="action-button export-button">Export</button>
+          {saveStatus && (
+            <span className={`save-status save-status-${saveStatus.type}`}>
+              {saveStatus.message}
+            </span>
+          )}
+          <button 
+            className="action-button save-button" 
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? "Saving..." : "Save"}
+          </button>
+          <button 
+            className="action-button export-button"
+            onClick={handleExport}
+          >
+            Export
+          </button>
         </div>
       </div>
       
@@ -294,6 +474,52 @@ const StagePlot = ({ onBack }) => {
           </div>
         </div>
       </div>
+
+      {/* Name Modal */}
+      {showNameModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 className="modal-title">Save Stage Plot</h3>
+            <div className="modal-form">
+              <label className="modal-label">
+                Name
+                <input
+                  type="text"
+                  className="modal-input"
+                  value={plotName}
+                  onChange={(e) => setPlotName(e.target.value)}
+                  placeholder="Enter stage plot name"
+                />
+              </label>
+              <label className="modal-label">
+                Description (optional)
+                <textarea
+                  className="modal-textarea"
+                  value={plotDescription}
+                  onChange={(e) => setPlotDescription(e.target.value)}
+                  placeholder="Enter description"
+                  rows="3"
+                />
+              </label>
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="modal-button modal-button-secondary"
+                onClick={() => setShowNameModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-button modal-button-primary"
+                onClick={saveStagePlot}
+                disabled={!plotName.trim() || isSaving}
+              >
+                {isSaving ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

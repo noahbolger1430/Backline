@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config, pool
 
 from app.config import get_settings
 from app.database import Base
-from app.models import Band, BandMember, User
+from app.models import Band, BandMember, User, StagePlot
 
 config = context.config
 settings = get_settings()

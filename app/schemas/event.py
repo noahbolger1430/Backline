@@ -85,6 +85,7 @@ class EventUpdate(BaseModel):
     ticket_price: Optional[int] = Field(None, ge=0)
     is_age_restricted: Optional[bool] = None
     age_restriction: Optional[int] = Field(None, ge=0, le=100)
+    image_path: Optional[str] = None
 
     @field_validator("name")
     @classmethod

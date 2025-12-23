@@ -165,11 +165,68 @@ export const eventService = {
     return await response.json();
   },
 
-  async updateEvent(eventId, eventData) {
+  async updateEvent(eventId, eventData, imageFile = null, removeImage = false) {
+    // If there's an image file or removal flag, use FormData, otherwise use JSON
+    let body;
+    let headers = this.getAuthHeader();
+
+    if (imageFile || removeImage) {
+      const formData = new FormData();
+      
+      // Add all event data fields to FormData
+      if (eventData.name !== undefined) {
+        formData.append("name", eventData.name);
+      }
+      if (eventData.description !== undefined) {
+        formData.append("description", eventData.description || "");
+      }
+      if (eventData.event_date !== undefined) {
+        formData.append("event_date", eventData.event_date);
+      }
+      if (eventData.doors_time !== undefined) {
+        formData.append("doors_time", eventData.doors_time || "");
+      }
+      if (eventData.show_time !== undefined) {
+        formData.append("show_time", eventData.show_time);
+      }
+      if (eventData.status !== undefined) {
+        formData.append("status", eventData.status);
+      }
+      if (eventData.is_open_for_applications !== undefined) {
+        formData.append("is_open_for_applications", eventData.is_open_for_applications);
+      }
+      if (eventData.is_ticketed !== undefined) {
+        formData.append("is_ticketed", eventData.is_ticketed);
+      }
+      if (eventData.ticket_price !== undefined && eventData.ticket_price !== null) {
+        formData.append("ticket_price", eventData.ticket_price);
+      }
+      if (eventData.is_age_restricted !== undefined) {
+        formData.append("is_age_restricted", eventData.is_age_restricted);
+      }
+      if (eventData.age_restriction !== undefined && eventData.age_restriction !== null) {
+        formData.append("age_restriction", eventData.age_restriction);
+      }
+      
+      // Add image file or removal flag
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+      if (removeImage) {
+        formData.append("remove_image", "true");
+      }
+      
+      body = formData;
+      // Remove Content-Type to let browser set it with boundary
+      delete headers["Content-Type"];
+    } else {
+      body = JSON.stringify(eventData);
+    }
+
     const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
       method: "PATCH",
-      headers: this.getAuthHeader(),
-      body: JSON.stringify(eventData),
+      headers: headers,
+      body: body,
     });
 
     if (!response.ok) {
@@ -260,5 +317,84 @@ export const eventService = {
     }
 
     return await response.json();
+  },
+
+  async getEventBands(eventId) {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/bands`, {
+      method: "GET",
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Failed to fetch event bands";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === 'string' 
+          ? error.detail 
+          : (error.detail?.message || JSON.stringify(error.detail) || errorMessage);
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return await response.json();
+  },
+
+  async addBandToEvent(eventId, bandId, bandEventData = {}) {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/bands`, {
+      method: "POST",
+      headers: this.getAuthHeader(),
+      body: JSON.stringify({
+        band_id: bandId,
+        status: bandEventData.status || "confirmed",
+        set_time: bandEventData.set_time || null,
+        set_length_minutes: bandEventData.set_length_minutes || null,
+        performance_order: bandEventData.performance_order || null,
+      }),
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Failed to add band to event";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === 'string' 
+          ? error.detail 
+          : (error.detail?.message || JSON.stringify(error.detail) || errorMessage);
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return await response.json();
+  },
+
+  async removeBandFromEvent(eventId, bandId) {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/bands/${bandId}`, {
+      method: "DELETE",
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Failed to remove band from event";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === 'string' 
+          ? error.detail 
+          : (error.detail?.message || JSON.stringify(error.detail) || errorMessage);
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return true;
   },
 };

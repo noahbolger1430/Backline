@@ -9,7 +9,9 @@ import UserProfile from "./UserProfile";
 import LogoutModal from "./LogoutModal";
 import ToolsView from "./ToolsView";
 import StagePlot from "./StagePlot";
+import StagePlotList from "./StagePlotList";
 import { bandService } from "../../services/bandService";
+import { stagePlotService } from "../../services/stagePlotService";
 import { authService } from "../../services/authService";
 import logoImage from "../../logos/Backline logo.jpg";
 import "./Dashboard.css";
@@ -24,7 +26,8 @@ const BandDashboard = ({ bandId, onLogout }) => {
   const [showProfile, setShowProfile] = useState(false);
   const [activeTab, setActiveTab] = useState("band");
   const [selectedTool, setSelectedTool] = useState(null);
-
+  const [selectedStagePlotId, setSelectedStagePlotId] = useState(null);
+  const [showStagePlotList, setShowStagePlotList] = useState(false);
 
   useEffect(() => {
     const fetchBandData = async () => {
@@ -71,12 +74,33 @@ const BandDashboard = ({ bandId, onLogout }) => {
   };
 
   const handleToolSelect = (toolId) => {
+    if (toolId === "stage-plot") {
+      // Show stage plot list first to let user choose
+      setShowStagePlotList(true);
+    }
     setSelectedTool(toolId);
   };
 
   const handleBackToTools = () => {
     setSelectedTool(null);
-  };  
+    setSelectedStagePlotId(null);
+    setShowStagePlotList(false);
+  };
+
+  const handleBackToStagePlotList = () => {
+    setSelectedStagePlotId(null);
+    setShowStagePlotList(true);
+  };
+
+  const handleStagePlotSelect = (stagePlotId) => {
+    setSelectedStagePlotId(stagePlotId);
+    setShowStagePlotList(false);
+  };
+
+  const handleCreateNewStagePlot = () => {
+    setSelectedStagePlotId(null);
+    setShowStagePlotList(false);
+  };
 
   const handleLogoutConfirm = () => {
     setShowLogoutModal(false);
@@ -210,7 +234,20 @@ const BandDashboard = ({ bandId, onLogout }) => {
               <GigsView bandId={bandId} />
             ) : activeTab === "tools" ? (
               selectedTool === "stage-plot" ? (
-                <StagePlot onBack={handleBackToTools} />
+                showStagePlotList ? (
+                  <StagePlotList
+                    bandId={bandId}
+                    onBack={handleBackToTools}
+                    onSelect={handleStagePlotSelect}
+                    onCreateNew={handleCreateNewStagePlot}
+                  />
+                ) : (
+                  <StagePlot 
+                    onBack={handleBackToStagePlotList} 
+                    bandId={bandId} 
+                    stagePlotId={selectedStagePlotId}
+                  />
+                )
               ) : (
                 <ToolsView onToolSelect={handleToolSelect} />
               )

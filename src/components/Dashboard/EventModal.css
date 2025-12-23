@@ -1,0 +1,334 @@
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(11, 12, 16, 0.8); /* Primary Background with opacity */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  
+  /* Modal Content */
+  .modal-content {
+    background: #1F2833; /* Secondary Background - Charcoal Grey */
+    border-radius: 12px;
+    max-width: 700px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  }
+  
+  /* Close Button */
+  .modal-close {
+    position: sticky;
+    top: 10px;
+    right: 10px;
+    float: right;
+    background: rgba(11, 12, 16, 0.7); /* Primary Background with opacity */
+    color: #FFFFFF; /* High Contrast Text - Pure White */
+    border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: background-color 0.2s;
+  }
+  
+  .modal-close:hover {
+    background: rgba(11, 12, 16, 0.9); /* Primary Background with higher opacity */
+  }
+  
+  /* Event Image */
+  .modal-image-container {
+    width: 100%;
+    max-height: 300px;
+    overflow: hidden;
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .modal-event-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  /* Modal Header */
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 24px 16px;
+    gap: 16px;
+  }
+  
+  .modal-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #FFFFFF; /* High Contrast Text - Pure White */
+    margin: 0;
+    flex: 1;
+  }
+  
+  /* Status Badge */
+  .status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  
+  .status-badge-confirmed {
+    background-color: rgba(76, 175, 80, 0.2); /* Green with opacity for dark theme */
+    color: #4CAF50; /* Green text */
+    border: 1px solid #4CAF50;
+  }
+  
+  .status-badge-pending {
+    background-color: rgba(255, 193, 7, 0.2); /* Yellow with opacity for dark theme */
+    color: #FFC107; /* Yellow text */
+    border: 1px solid #FFC107;
+  }
+  
+  .status-badge-cancelled {
+    background-color: rgba(244, 67, 54, 0.2); /* Red with opacity for dark theme */
+    color: #F44336; /* Red text */
+    border: 1px solid #F44336;
+  }
+  
+  .status-badge-default {
+    background-color: rgba(197, 198, 199, 0.2); /* Sterling Silver with opacity */
+    color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+    border: 1px solid #C5C6C7;
+  }
+  
+  /* Modal Sections */
+  .modal-section {
+    padding: 16px 24px;
+    border-bottom: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  }
+  
+  .modal-section:last-child {
+    border-bottom: none;
+    padding-bottom: 24px;
+  }
+  
+  .modal-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #FFFFFF; /* High Contrast Text - Pure White */
+    margin: 0 0 12px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  /* Info Rows */
+  .modal-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+  }
+  
+  .modal-info-label {
+    font-weight: 600;
+    color: #8E8E93; /* Subtle Text - Slate Silver */
+    font-size: 14px;
+  }
+  
+  .modal-info-value {
+    color: #FFFFFF; /* High Contrast Text - Pure White */
+    font-size: 14px;
+    text-align: right;
+  }
+  
+  .modal-price {
+    font-size: 18px;
+    font-weight: 700;
+    color: #6F22D2; /* Primary Accent - Electric Violet */
+  }
+  
+  /* Description */
+  .modal-description {
+    color: #8E8E93; /* Subtle Text - Slate Silver */
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-wrap;
+  }
+  
+  /* Bands List */
+  .modal-bands-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .modal-band-item {
+    background: #0B0C10; /* Primary Background - Obsidian Black */
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+    border-left: 4px solid #6F22D2; /* Primary Accent - Electric Violet */
+  }
+  
+  .band-item-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  
+  .band-order {
+    background: #6F22D2; /* Primary Accent - Electric Violet */
+    color: #FFFFFF; /* High Contrast Text - Pure White */
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  
+  .band-name {
+    font-weight: 600;
+    color: #FFFFFF; /* High Contrast Text - Pure White */
+    font-size: 16px;
+    flex: 1;
+  }
+  
+  .band-status {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  
+  .band-status.confirmed {
+    background-color: rgba(76, 175, 80, 0.2); /* Green with opacity for dark theme */
+    color: #4CAF50; /* Green text */
+    border: 1px solid #4CAF50;
+  }
+  
+  .band-status.pending {
+    background-color: rgba(255, 193, 7, 0.2); /* Yellow with opacity for dark theme */
+    color: #FFC107; /* Yellow text */
+    border: 1px solid #FFC107;
+  }
+  
+  .band-status.cancelled {
+    background-color: rgba(244, 67, 54, 0.2); /* Red with opacity for dark theme */
+    color: #F44336; /* Red text */
+    border: 1px solid #F44336;
+  }
+  
+  .band-item-details {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+  }
+  
+  .band-detail {
+    color: #8E8E93; /* Subtle Text - Slate Silver */
+    font-size: 13px;
+  }
+  
+  .modal-no-bands {
+    color: #8E8E93; /* Subtle Text - Slate Silver */
+    font-style: italic;
+    text-align: center;
+    padding: 16px;
+  }
+  
+  /* Loading and Error States */
+  .modal-loading,
+  .modal-error {
+    padding: 24px;
+    text-align: center;
+    font-size: 14px;
+  }
+  
+  .modal-loading {
+    color: #8E8E93; /* Subtle Text - Slate Silver */
+  }
+  
+  .modal-error {
+    color: #F44336; /* Red for errors */
+  }
+  
+  /* Text Utilities */
+  .text-success {
+    color: #4CAF50 !important; /* Green for success */
+    font-weight: 600;
+  }
+  
+  .text-muted {
+    color: #8E8E93 !important; /* Subtle Text - Slate Silver */
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .modal-content {
+      max-width: 100%;
+      max-height: 100vh;
+      border-radius: 0;
+    }
+  
+    .modal-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  
+    .modal-title {
+      font-size: 24px;
+    }
+  
+    .modal-info-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+  
+    .modal-info-value {
+      text-align: left;
+    }
+  
+    .band-item-details {
+      flex-direction: column;
+      gap: 4px;
+    }
+  }
+  
+  /* Scrollbar Styling */
+  .modal-content::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .modal-content::-webkit-scrollbar-track {
+    background: #0B0C10; /* Primary Background - Obsidian Black */
+    border-radius: 0 12px 12px 0;
+  }
+  
+  .modal-content::-webkit-scrollbar-thumb {
+    background: #C5C6C7; /* Secondary Accent - Sterling Silver */
+    border-radius: 4px;
+  }
+  
+  .modal-content::-webkit-scrollbar-thumb:hover {
+    background: #8E8E93; /* Subtle Text - Slate Silver */
+  }
+  

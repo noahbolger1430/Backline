@@ -74,6 +74,15 @@ from app.schemas.venue_availability import (
     VenueOperatingHoursResponse,
     VenueOperatingHoursUpdate,
 )
+from app.schemas.stage_plot import (
+    StagePlot,
+    StagePlotCreate,
+    StagePlotInDB,
+    StagePlotSettings,
+    StagePlotSummary,
+    StagePlotUpdate,
+    StageItem,
+)
 
 __all__ = [
     "User",
@@ -146,5 +155,12 @@ __all__ = [
     "VenueEffectiveAvailability",
     "VenueEffectiveAvailabilityRange",
     "VenueAvailableDates",
+    "StagePlot",
+    "StagePlotCreate",
+    "StagePlotInDB",
+    "StagePlotSettings",
+    "StagePlotSummary",
+    "StagePlotUpdate",
+    "StageItem",
 ]
 

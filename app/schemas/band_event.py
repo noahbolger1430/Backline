@@ -94,7 +94,7 @@ class BandEventResponse(BandEventInDB):
     Schema for band-event API responses.
     """
 
-    pass
+    band_name: Optional[str] = None  # Added for display purposes
 
 
 class BandEventWithDetails(BandEventInDB):
@@ -104,4 +104,3 @@ class BandEventWithDetails(BandEventInDB):
 
     band: "BandSummary"
     event: "EventSummary"
-

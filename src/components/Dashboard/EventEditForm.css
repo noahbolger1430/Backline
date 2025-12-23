@@ -1,0 +1,466 @@
+.event-edit-form-container {
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 16px;
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.event-details-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.event-detail-row {
+  display: flex;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  min-width: 150px;
+}
+
+.detail-value {
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  flex: 1;
+}
+
+.event-edit-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.btn-edit {
+  padding: 10px 20px;
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-edit:hover:not(:disabled) {
+  background-color: #5A1BA8; /* Darker shade of Electric Violet */
+}
+
+.event-form-error {
+  background-color: rgba(244, 67, 54, 0.2); /* Red with opacity for dark theme */
+  color: #F44336; /* Red text */
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border-left: 3px solid #F44336;
+}
+
+.event-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+}
+
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group input[type="time"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+  padding: 10px 12px;
+  border: 2px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #6F22D2; /* Primary Accent - Electric Violet */
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #6F22D2; /* Primary Accent - Electric Violet */
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 20px;
+  border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.btn-cancel,
+.btn-submit {
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel {
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+}
+
+.btn-submit {
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  border: none;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background-color: #5A1BA8; /* Darker shade of Electric Violet */
+}
+
+.btn-cancel:disabled,
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Image Section */
+.event-image-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.event-image-preview {
+  margin: 12px 0;
+  position: relative;
+  display: inline-block;
+}
+
+.event-image-preview img {
+  max-width: 300px;
+  max-height: 300px;
+  border-radius: 4px;
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  object-fit: cover;
+}
+
+.btn-remove-image {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background-color: rgba(244, 67, 54, 0.2); /* Red with opacity */
+  color: #F44336; /* Red text */
+  border: 1px solid #F44336;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-remove-image:hover {
+  background-color: rgba(244, 67, 54, 0.3);
+}
+
+.no-image {
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  font-style: italic;
+  padding: 12px;
+  margin: 8px 0;
+}
+
+.image-upload-section {
+  margin-top: 12px;
+}
+
+.btn-upload-image {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-upload-image:hover {
+  background-color: #5A1BA8; /* Darker shade of Electric Violet */
+}
+
+.image-preview {
+  margin-top: 12px;
+  margin-bottom: 12px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 2px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  max-width: 300px;
+}
+
+.image-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.form-group input[type="file"] {
+  padding: 8px;
+  cursor: pointer;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+}
+
+.form-group input[type="file"]::file-selector-button {
+  padding: 8px 16px;
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.form-group input[type="file"]::file-selector-button:hover {
+  background-color: #5A1BA8; /* Darker shade of Electric Violet */
+}
+
+/* Bands Section */
+.event-bands-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.event-bands-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.event-band-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border-radius: 4px;
+}
+
+.band-name {
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  font-weight: 500;
+}
+
+.btn-remove-band {
+  padding: 6px 12px;
+  background-color: rgba(244, 67, 54, 0.2); /* Red with opacity */
+  color: #F44336; /* Red text */
+  border: 1px solid #F44336;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-remove-band:hover:not(:disabled) {
+  background-color: rgba(244, 67, 54, 0.3);
+}
+
+.btn-remove-band:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.no-bands {
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  font-style: italic;
+  padding: 12px;
+  text-align: center;
+}
+
+.bands-loading {
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  padding: 12px;
+  text-align: center;
+}
+
+.add-bands-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.btn-add-bands {
+  margin-top: 12px;
+  padding: 10px 20px;
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-add-bands:hover:not(:disabled) {
+  background-color: #5A1BA8; /* Darker shade of Electric Violet */
+}
+
+.btn-add-bands:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Application Controls */
+.application-controls {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.application-controls-section {
+  margin-top: 20px;
+}
+
+.application-buttons {
+  margin-top: 12px;
+}
+
+.btn-open-applications,
+.btn-close-applications {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-open-applications {
+  background-color: #4CAF50; /* Green */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+}
+
+.btn-open-applications:hover:not(:disabled) {
+  background-color: #43a047;
+}
+
+.btn-close-applications {
+  background-color: rgba(244, 67, 54, 0.2); /* Red with opacity */
+  color: #F44336; /* Red text */
+  border: 1px solid #F44336;
+}
+
+.btn-close-applications:hover:not(:disabled) {
+  background-color: rgba(244, 67, 54, 0.3);
+}
+
+.btn-open-applications:disabled,
+.btn-close-applications:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bands-section {
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .event-edit-form-container {
+    padding: 16px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-cancel,
+  .btn-submit {
+    width: 100%;
+  }
+
+  .event-detail-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .detail-label {
+    min-width: auto;
+  }
+
+  .event-band-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .btn-remove-band {
+    width: 100%;
+  }
+}
+

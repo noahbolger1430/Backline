@@ -39,4 +39,4 @@ class Band(Base):
     events = relationship("BandEvent", back_populates="band", cascade="all, delete-orphan")
     availabilities = relationship("BandAvailability", back_populates="band", cascade="all, delete-orphan")
     event_applications = relationship("EventApplication", back_populates="band", cascade="all, delete-orphan")
-
+    stage_plots = relationship("StagePlot", back_populates="band", cascade="all, delete-orphan")

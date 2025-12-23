@@ -9,6 +9,7 @@ from app.models.venue import Venue
 from app.models.venue_availability import VenueAvailability, VenueAvailabilityStatus
 from app.models.venue_operating_hours import DayOfWeek, VenueOperatingHours
 from app.models.venue_staff import VenueRole, VenueStaff
+from app.models.stage_plot import StagePlot
 
 __all__ = [
     "User",
@@ -29,5 +30,6 @@ __all__ = [
     "Event",
     "EventApplication",
     "ApplicationStatus",
+    "StagePlot",
 ]
 

@@ -94,6 +94,12 @@
     flex: 1;
   }
   
+  /* Event Card Wrapper */
+  .event-card-wrapper {
+    display: flex;
+    flex-direction: column;
+  }
+
   /* Event Card */
   .event-card {
     display: flex;
@@ -103,11 +109,18 @@
     padding: 20px;
     transition: all 0.2s ease;
     position: relative;
+    cursor: pointer;
   }
-  
+
   .event-card:hover {
     border-color: #6F22D2; /* Primary Accent - Electric Violet */
     box-shadow: 0 2px 8px rgba(111, 34, 210, 0.3);
+  }
+
+  .event-card.expanded {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom: none;
   }
 
   .event-delete-btn {
@@ -232,7 +245,7 @@
   .event-card-date {
     font-size: 16px;
     font-weight: 600;
-    color: #333333;
+    color: #FFFFFF; /* High Contrast Text - Pure White */
     margin-bottom: 8px;
   }
   
@@ -250,12 +263,53 @@
   }
   
   .time-label {
-    color: #888888;
+    color: #8E8E93; /* Subtle Text - Slate Silver */
   }
   
   .time-value {
-    color: #333333;
+    color: #FFFFFF; /* High Contrast Text - Pure White */
     font-weight: 500;
+  }
+
+  /* Expanded Section */
+  .event-card-expanded {
+    background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+    border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 20px;
+  }
+
+  .event-expanded-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  }
+
+  .event-expanded-header h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #FFFFFF; /* High Contrast Text - Pure White */
+    margin: 0;
+  }
+
+  .btn-edit-event {
+    padding: 10px 20px;
+    background-color: #6F22D2; /* Primary Accent - Electric Violet */
+    color: #FFFFFF; /* High Contrast Text - Pure White */
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .btn-edit-event:hover {
+    background-color: #5A1BA8; /* Darker shade of Electric Violet */
   }
   
   @media (max-width: 900px) {

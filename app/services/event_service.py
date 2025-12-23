@@ -129,8 +129,10 @@ class EventService:
         """
         Get all bands performing at an event.
         """
+        from sqlalchemy.orm import joinedload
         return (
             db.query(BandEvent)
+            .options(joinedload(BandEvent.band))
             .filter(BandEvent.event_id == event.id)
             .order_by(BandEvent.performance_order.nullslast())
             .all()

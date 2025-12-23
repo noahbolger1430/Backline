@@ -21,6 +21,7 @@ from app.schemas.event import (
     EventResponse,
     EventUpdate,
 )
+from app.schemas.event import EventWithBands 
 from app.schemas.band_event import BandEventStatus
 from app.services.event_service import EventService
 
@@ -244,14 +245,17 @@ async def create_event(
         )
 
 
-@router.get("/{event_id}", response_model=EventResponse)
-def get_event(event_id: int, db: Session = Depends(get_db)) -> EventResponse:
+@router.get("/{event_id}", response_model=EventWithBands)
+def get_event(event_id: int, db: Session = Depends(get_db)) -> EventWithBands:
     """
-    Get event details by ID.
+    Get event details by ID with band information.
     """
     event = (
         db.query(Event)
-        .options(joinedload(Event.venue), joinedload(Event.bands))
+        .options(
+            joinedload(Event.venue), 
+            joinedload(Event.bands).joinedload(BandEvent.band)
+        )
         .filter(Event.id == event_id)
         .first()
     )
@@ -259,8 +263,25 @@ def get_event(event_id: int, db: Session = Depends(get_db)) -> EventResponse:
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     
-    return EventResponse.model_validate(serialize_event_with_details(event))
-
+    # Serialize with bands included
+    serialized = serialize_event_with_details(event)
+    serialized['bands'] = [
+        {
+            'id': be.id,
+            'band_id': be.band_id,
+            'band_name': be.band.name if be.band else 'Unknown',
+            'event_id': be.event_id,
+            'status': be.status,
+            'set_time': be.set_time,
+            'set_length_minutes': be.set_length_minutes,
+            'performance_order': be.performance_order,
+            'created_at': be.created_at,
+            'updated_at': be.updated_at,
+        }
+        for be in event.bands
+    ]
+    
+    return EventWithBands.model_validate(serialized)
 
 @router.get("/", response_model=EventListResponse)
 def list_events(
@@ -312,20 +333,99 @@ def list_events(
 
 
 @router.patch("/{event_id}", response_model=EventResponse)
-def update_event(event_id: int, event_data: EventUpdate, db: Session = Depends(get_db)) -> EventResponse:
+async def update_event(
+    event_id: int,
+    name: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
+    event_date: Optional[date] = Form(None),
+    doors_time: Optional[str] = Form(None),
+    show_time: Optional[str] = Form(None),
+    status: Optional[str] = Form(None),
+    is_open_for_applications: Optional[bool] = Form(None),
+    is_ticketed: Optional[bool] = Form(None),
+    ticket_price: Optional[int] = Form(None),
+    is_age_restricted: Optional[bool] = Form(None),
+    age_restriction: Optional[int] = Form(None),
+    image: Optional[UploadFile] = File(None),
+    remove_image: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+) -> EventResponse:
     """
     Update event details.
 
     If the event date changes, this will update venue availability accordingly.
+    Supports both JSON and FormData (for image uploads).
     """
     event = get_event_or_404(event_id, db)
 
-    if event_data.event_date and event_data.event_date != event.event_date:
+    # Build update data from form fields
+    update_data = {}
+    if name is not None:
+        update_data["name"] = name
+    if description is not None:
+        update_data["description"] = description if description.strip() else None
+    if event_date is not None:
+        update_data["event_date"] = event_date
+    if doors_time is not None:
+        update_data["doors_time"] = doors_time if doors_time.strip() else None
+    if show_time is not None:
+        update_data["show_time"] = show_time
+    if status is not None:
+        update_data["status"] = status
+    if is_open_for_applications is not None:
+        update_data["is_open_for_applications"] = is_open_for_applications
+    if is_ticketed is not None:
+        update_data["is_ticketed"] = is_ticketed
+    if ticket_price is not None:
+        update_data["ticket_price"] = ticket_price
+    if is_age_restricted is not None:
+        update_data["is_age_restricted"] = is_age_restricted
+    if age_restriction is not None:
+        update_data["age_restriction"] = age_restriction
+
+    # Handle image upload or removal
+    image_path = None
+    remove_image_flag = remove_image == "true"
+    if image and image.filename:
+        # Create images directory if it doesn't exist
+        images_dir = Path("images")
+        images_dir.mkdir(exist_ok=True)
+        
+        # Delete old image if it exists
+        if event.image_path and os.path.exists(event.image_path):
+            try:
+                os.remove(event.image_path)
+            except Exception:
+                pass  # Ignore errors when deleting old image
+        
+        # Generate unique filename
+        file_extension = Path(image.filename).suffix
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        image_path = f"images/{unique_filename}"
+        
+        # Save file
+        file_path = images_dir / unique_filename
+        with open(file_path, "wb") as buffer:
+            content = await image.read()
+            buffer.write(content)
+        
+        update_data["image_path"] = image_path
+    elif remove_image_flag:
+        # Remove existing image
+        if event.image_path and os.path.exists(event.image_path):
+            try:
+                os.remove(event.image_path)
+            except Exception:
+                pass  # Ignore errors when deleting image
+        update_data["image_path"] = None
+
+    # Validate event_date change
+    if update_data.get("event_date") and update_data["event_date"] != event.event_date:
         existing_event = (
             db.query(Event)
             .filter(
                 Event.venue_id == event.venue_id,
-                Event.event_date == event_data.event_date,
+                Event.event_date == update_data["event_date"],
                 Event.id != event_id,
             )
             .first()
@@ -334,12 +434,12 @@ def update_event(event_id: int, event_data: EventUpdate, db: Session = Depends(g
         if existing_event:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Venue already has an event on {event_data.event_date}",
+                detail=f"Venue already has an event on {update_data['event_date']}",
             )
 
     # Validate that only pending events can be open for applications
-    new_status = event_data.status if event_data.status else event.status
-    new_open_for_apps = event_data.is_open_for_applications if event_data.is_open_for_applications is not None else event.is_open_for_applications
+    new_status = update_data.get("status") if "status" in update_data else event.status
+    new_open_for_apps = update_data.get("is_open_for_applications") if "is_open_for_applications" in update_data else event.is_open_for_applications
     
     if new_open_for_apps and new_status != EventStatus.PENDING.value and new_status != EventStatus.PENDING:
         raise HTTPException(
@@ -347,7 +447,30 @@ def update_event(event_id: int, event_data: EventUpdate, db: Session = Depends(g
             detail="Only pending events can be open for applications",
         )
 
-    updated_event = EventService.update_event(db, event, event_data)
+    # Create EventUpdate schema from update_data
+    from datetime import time as time_type
+    if "show_time" in update_data and update_data["show_time"]:
+        try:
+            time_parts = update_data["show_time"].split(":")
+            update_data["show_time"] = time_type(int(time_parts[0]), int(time_parts[1]))
+        except (ValueError, IndexError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid show_time format. Use HH:MM",
+            )
+    
+    if "doors_time" in update_data and update_data["doors_time"]:
+        try:
+            time_parts = update_data["doors_time"].split(":")
+            update_data["doors_time"] = time_type(int(time_parts[0]), int(time_parts[1]))
+        except (ValueError, IndexError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid doors_time format. Use HH:MM",
+            )
+
+    event_update = EventUpdate(**update_data)
+    updated_event = EventService.update_event(db, event, event_update)
     
     # Reload event with relationships
     updated_event = (
@@ -529,4 +652,12 @@ def get_event_bands(event_id: int, db: Session = Depends(get_db)) -> List[BandEv
     """
     event = get_event_or_404(event_id, db)
     band_events = EventService.get_event_bands(db, event)
-    return [BandEventResponse.model_validate(be) for be in band_events]
+    # Serialize with band_name included
+    result = []
+    for be in band_events:
+        band_event_response = BandEventResponse.model_validate(be)
+        # Add band_name if band is loaded
+        if be.band:
+            band_event_response.band_name = be.band.name
+        result.append(band_event_response)
+    return result
