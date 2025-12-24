@@ -9,9 +9,12 @@
     "eject": "react-scripts eject"
   },
   "dependencies": {
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "three": "^0.160.1"
   },
   "browserslist": {
     "production": [
@@ -26,15 +29,3 @@
     ]
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-

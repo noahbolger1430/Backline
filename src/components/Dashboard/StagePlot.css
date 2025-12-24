@@ -140,6 +140,52 @@
   background-color: #0B0C10;
 }
 
+.editor-canvas-3d {
+  flex: 1;
+  position: relative;
+  background-color: #0B0C10;
+  overflow: hidden;
+}
+
+.editor-canvas-3d.dragging-over {
+  border: 2px dashed #6F22D2; /* Primary Accent - Electric Violet */
+  background-color: rgba(111, 34, 210, 0.1);
+}
+
+.editor-canvas-3d canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.canvas-instructions {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background-color: rgba(31, 40, 51, 0.9); /* Secondary Background with opacity */
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  font-size: 12px;
+  line-height: 1.6;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.canvas-instructions p {
+  margin: 4px 0;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+}
+
+.canvas-instructions .drop-hint {
+  color: #6F22D2 !important; /* Primary Accent - Electric Violet */
+  font-weight: 600;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #C5C6C7;
+}
+
 .stage-svg {
   width: 100%;
   height: 100%;
