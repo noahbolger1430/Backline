@@ -203,7 +203,7 @@
     font-weight: 600;
   }
   
-  .band-name {
+  .modal-band-item .band-name {
     font-weight: 600;
     color: #FFFFFF; /* High Contrast Text - Pure White */
     font-size: 16px;

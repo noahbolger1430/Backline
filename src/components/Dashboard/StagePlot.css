@@ -11,7 +11,6 @@
   justify-content: space-between;
   padding: 20px 30px;
   background-color: #1F2833;
-  border-bottom: 1px solid #C5C6C7;
 }
 
 .back-button {
@@ -208,8 +207,7 @@
 
 .editor-sidebar {
   width: 300px;
-  background-color: #1F2833;
-  border-left: 1px solid #C5C6C7;
+  background-color: #010202;
   padding: 24px;
   overflow-y: auto;
 }

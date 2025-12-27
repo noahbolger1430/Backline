@@ -46,6 +46,13 @@ from app.schemas.event import (
     EventUpdate,
     EventWithBands,
 )
+from app.schemas.notification import (
+    NotificationBase,
+    NotificationCreate,
+    NotificationListResponse,
+    NotificationResponse,
+    NotificationUpdate,
+)
 from app.schemas.user import User, UserCreate, UserInDB, UserUpdate
 from app.schemas.venue import (
     Venue,
@@ -162,5 +169,10 @@ __all__ = [
     "StagePlotSummary",
     "StagePlotUpdate",
     "StageItem",
+    "NotificationBase",
+    "NotificationCreate",
+    "NotificationResponse",
+    "NotificationListResponse",
+    "NotificationUpdate",
 ]
 

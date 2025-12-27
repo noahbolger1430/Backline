@@ -1,6 +1,6 @@
 .dashboard-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #0B0C10;
   display: flex;
   flex-direction: column;
 }
@@ -8,7 +8,7 @@
 .dashboard-header {
   background-color: #000000;
   color: #ffffff;
-  height: 60px;
+  height: 75px;
   display: flex;
   align-items: center;
   padding: 0 20px;
@@ -33,8 +33,8 @@
   text-align: center;
 }
 
-.band-name {
-  font-size: 20px;
+.dashboard-header .band-name {
+  font-size: 28px;
   font-weight: normal;
   margin: 0;
   color: #FFFFFF; /* High Contrast Text - Pure White */
@@ -46,6 +46,42 @@
   justify-content: flex-end;
   align-items: center;
   gap: 12px;
+}
+
+.member-bubbles {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+  position: relative;
+}
+
+.member-bubble {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid #0B0C10; /* Primary Background - Obsidian Black */
+  margin-left: -8px; /* Overlap with previous bubble */
+  position: relative;
+  z-index: 1;
+}
+
+.member-bubble:first-child {
+  margin-left: 0;
+}
+
+.member-bubble.current-user {
+  border-color: #6F22D2; /* Primary Accent - Electric Violet */
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  z-index: 10; /* Current user bubble appears on top */
+  box-shadow: 0 0 0 2px #0B0C10; /* Black outline to separate from others */
 }
 
 .profile-button {
@@ -92,58 +128,10 @@
   border-color: #0B0C10; /* Keep obsidian border */
 }
 
-.members-bar {
-  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
-  padding: 15px 20px;
-  border-bottom: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
-}
-
-.members-container {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.member-pill {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 16px;
-  border-radius: 20px;
-  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
-  background-color: #0B0C10; /* Primary Background - Obsidian Black */
-  color: #8E8E93; /* Subtle Text - Slate Silver */
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.member-pill.active {
-  background-color: #6F22D2; /* Primary Accent - Electric Violet */
-  color: #FFFFFF; /* High Contrast Text - Pure White */
-  border-color: #6F22D2; /* Primary Accent - Electric Violet */
-}
-
-.member-pill:hover:not(.active) {
-  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
-  border-color: #C5C6C7; /* Secondary Accent - Sterling Silver */
-}
-
-.member-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: inherit;
-}
-
-.member-instrument {
-  font-size: 12px;
-  opacity: 0.9;
-  color: inherit;
-}
-
 .dashboard-content {
   flex: 1;
   display: flex;
-  height: calc(100vh - 60px - 85px);
+  height: calc(100vh - 75px);
 }
 
 .dashboard-sidebar {
@@ -499,6 +487,11 @@
   max-width: 350px;
   padding: 30px 20px;
   background-color: #0B0C10;
+  height: calc(100vh - 75px);
+  max-height: calc(100vh - 75px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .events-carousel {
@@ -509,9 +502,32 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px; /* Add this line */
-  overflow-y: auto; /* Add this to enable scrolling */
+  gap: 16px;
+  overflow-y: auto;
+  position: relative;
+  /* Custom scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: #6F22D2 #1F2833;
 }
+
+.events-carousel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.events-carousel::-webkit-scrollbar-track {
+  background: #1F2833;
+  border-radius: 4px;
+}
+
+.events-carousel::-webkit-scrollbar-thumb {
+  background: #6F22D2;
+  border-radius: 4px;
+}
+
+.events-carousel::-webkit-scrollbar-thumb:hover {
+  background: #8B2FE8;
+}
+
 
 .carousel-title {
   font-size: 18px;
@@ -529,23 +545,30 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  flex-shrink: 0;
 }
+
 
 .event-card-image {
   width: 100%;
   height: 200px;
+  min-height: 200px;
   background-color: #1F2833; /* Secondary Background - Charcoal Grey */
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   position: relative;
+  flex-shrink: 0;
 }
 
 .event-thumbnail {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+  position: relative;
+  z-index: 1;
 }
 
 .event-image-placeholder {
@@ -622,14 +645,14 @@
 
 /* Venue Dashboard Specific */
 .venue-name {
-  font-size: 20px;
+  font-size: 28px;
   font-weight: normal;
   margin: 0;
   color: #FFFFFF; /* High Contrast Text - Pure White */
 }
 
 .venue-dashboard-content {
-  height: calc(100vh - 60px - 85px);
+  height: calc(100vh - 75px);
 }
 
 .venue-main-content {
@@ -921,11 +944,168 @@
   margin-bottom: 30px;
 }
 
+/* Search and Filter Styles */
+.venues-search-filter {
+  margin-bottom: 30px;
+}
+
+.venues-search-section {
+  margin-bottom: 20px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  max-width: 600px;
+}
+
+.venues-search-input {
+  width: 100%;
+  padding: 14px 16px 14px 45px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: #0B0C10; /* Primary Background - Obsidian Black - same as venues view */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  outline: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.venues-search-input:focus {
+  box-shadow: 0 2px 12px rgba(111, 34, 210, 0.3);
+}
+
+.venues-search-input::placeholder {
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  pointer-events: none;
+}
+
+.venues-filter-section {
+  padding: 0;
+  margin-bottom: 20px;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 150px;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.filter-input,
+.filter-select {
+  padding: 10px 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  outline: none;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+  box-shadow: 0 0 0 2px rgba(111, 34, 210, 0.1);
+}
+
+.filter-input::placeholder {
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+}
+
+.filter-select {
+  cursor: pointer;
+}
+
+.filter-select option {
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+}
+
+.filter-checkbox-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: auto;
+}
+
+.filter-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  margin-top: 24px;
+}
+
+.filter-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #6F22D2; /* Primary Accent - Electric Violet */
+}
+
+.clear-filters-button {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #6F22D2; /* Primary Accent - Electric Violet */
+  border-radius: 6px;
+  background-color: transparent;
+  color: #6F22D2; /* Primary Accent - Electric Violet */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-self: flex-end;
+  white-space: nowrap;
+}
+
+.clear-filters-button:hover {
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+}
+
+.filter-results-info {
+  font-size: 14px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  margin-top: 12px;
+  padding: 8px 12px;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border-radius: 6px;
+  display: inline-block;
+}
+
 .venues-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 24px;
   padding: 0;
+  align-items: start;
 }
 
 .venue-card {
@@ -937,6 +1117,8 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
+  height: auto;
+  align-self: start;
 }
 
 .venue-card:hover {
@@ -986,7 +1168,106 @@
 .venue-location {
   font-size: 14px;
   color: #8E8E93; /* Subtle Text - Slate Silver */
+  margin: 0 0 8px 0;
+}
+
+.venue-contact {
+  font-size: 13px;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.venue-expand-button {
+  background: none;
+  border: none;
+  color: #6F22D2; /* Primary Accent - Electric Violet */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  margin-top: auto;
+}
+
+.venue-expand-button:hover {
+  color: #8B3FE8;
+}
+
+.venue-expand-text {
+  margin-right: 8px;
+}
+
+.venue-caret {
+  font-size: 12px;
+  transition: transform 0.3s ease;
+  display: inline-block;
+}
+
+.venue-caret.expanded {
+  transform: rotate(180deg);
+}
+
+.venue-expanded-content {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
+}
+
+.venue-info-section {
+  margin-bottom: 16px;
+}
+
+.venue-info-section:last-child {
+  margin-bottom: 0;
+}
+
+.venue-info-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 6px 0;
+}
+
+.venue-info-value {
+  font-size: 14px;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
   margin: 0;
+  line-height: 1.5;
+}
+
+.venue-amenities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.venue-amenity-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .no-venues {
@@ -1015,6 +1296,28 @@
   .venue-name {
     font-size: 18px;
   }
+
+  .venues-filter-section {
+    padding: 0;
+  }
+
+  .filter-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .filter-group {
+    min-width: 100%;
+  }
+
+  .clear-filters-button {
+    align-self: stretch;
+    width: 100%;
+  }
+
+  .search-input-wrapper {
+    max-width: 100%;
+  }
 }
 
 /* Gigs View Styles */
@@ -1025,11 +1328,108 @@
   background-color: #0B0C10; /* Primary Background - Obsidian Black */
 }
 
+.gigs-header {
+  margin-bottom: 30px;
+}
+
 .gigs-title {
   font-size: 28px;
   font-weight: bold;
   color: #FFFFFF; /* High Contrast Text - Pure White */
+  margin: 0 0 8px 0;
+}
+
+.gigs-subtitle {
+  font-size: 14px;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  margin: 0;
+}
+
+.gigs-filter-section {
   margin-bottom: 30px;
+}
+
+.gigs-filter-section .filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.gigs-filter-section .filter-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 150px;
+}
+
+.gigs-filter-section .filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.gigs-filter-section .filter-input {
+  padding: 10px 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  outline: none;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.gigs-filter-section .filter-input:focus {
+  box-shadow: 0 0 0 2px rgba(111, 34, 210, 0.1);
+}
+
+.gigs-filter-section .filter-input::placeholder {
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+}
+
+/* Style calendar icon for date inputs */
+.gigs-filter-section .filter-input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.gigs-filter-section .filter-input[type="date"]::-moz-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.gigs-filter-section .clear-filters-button {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #6F22D2; /* Primary Accent - Electric Violet */
+  border-radius: 6px;
+  background-color: transparent;
+  color: #6F22D2; /* Primary Accent - Electric Violet */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-self: flex-end;
+  white-space: nowrap;
+}
+
+.gigs-filter-section .clear-filters-button:hover {
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+}
+
+.gigs-filter-section .filter-results-info {
+  font-size: 14px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  margin-top: 12px;
+  padding: 8px 12px;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border-radius: 6px;
+  display: inline-block;
 }
 
 .gigs-grid {
@@ -1110,6 +1510,8 @@
   bottom: 20px;
   right: 20px;
   font-weight: 500;
+  z-index: 2;
+  white-space: nowrap;
 }
 
 .no-gigs {
@@ -1129,6 +1531,20 @@
   .gigs-title {
     font-size: 24px;
     margin-bottom: 20px;
+  }
+
+  .gigs-filter-section .filter-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .gigs-filter-section .filter-group {
+    min-width: 100%;
+  }
+
+  .gigs-filter-section .clear-filters-button {
+    align-self: stretch;
+    width: 100%;
   }
 
   .gig-image-placeholder {
@@ -1221,6 +1637,25 @@
   color: #C5C6C7; /* Secondary Accent - Sterling Silver */
   margin-top: 4px;
   font-style: italic;
+}
+
+.band-social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #6F22D2; /* Primary Accent - Electric Violet */
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.band-social-link:hover {
+  color: #8B3FE8;
+  text-decoration: underline;
+}
+
+.social-icon {
+  font-size: 18px;
+  display: inline-block;
 }
 
 .band-profile-image-display {
@@ -2126,13 +2561,13 @@
 .gigs-title {
   font-size: 28px;
   font-weight: bold;
-  color: #333333;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
   margin: 0 0 8px 0;
 }
 
 .gigs-subtitle {
   font-size: 14px;
-  color: #666666;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
   margin: 0;
 }
 
@@ -2220,6 +2655,10 @@
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
+  max-width: calc(100% - 120px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-dot {
@@ -2291,13 +2730,13 @@
 .gigs-title {
   font-size: 28px;
   font-weight: bold;
-  color: #333333;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
   margin: 0 0 8px 0;
 }
 
 .gigs-subtitle {
   font-size: 14px;
-  color: #666666;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
   margin: 0;
 }
 
@@ -2396,6 +2835,11 @@
   border-radius: 16px;
   font-size: 12px;
   font-weight: 500;
+  max-width: calc(100% - 140px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 8px;
 }
 
 .gig-status-badge.accepting {

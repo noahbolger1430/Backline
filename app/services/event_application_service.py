@@ -5,7 +5,11 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models import Band, BandEvent, BandMember, Event, EventApplication, User, Venue, VenueStaff
 from app.models.event_application import ApplicationStatus
+from app.models.notification import NotificationType
 from app.schemas.event_application import EventApplicationCreate, EventApplicationReview, EventApplicationUpdate
+from app.schemas.notification import NotificationCreate
+from app.services.notification_service import NotificationService
+from app.services.venue_service import VenueService
 
 
 class EventApplicationService:
@@ -24,6 +28,40 @@ class EventApplicationService:
         db.add(application)
         db.commit()
         db.refresh(application)
+        
+        # Create notifications for venue staff when a band applies
+        # Reload event with venue and venue staff
+        event_with_venue = (
+            db.query(Event)
+            .options(joinedload(Event.venue).joinedload(Venue.staff).joinedload(VenueStaff.user))
+            .filter(Event.id == event.id)
+            .first()
+        )
+        
+        if event_with_venue and event_with_venue.venue:
+            # Get all venue staff
+            venue_staff = VenueService.get_venue_staff(db, event_with_venue.venue)
+            
+            # Convert event_date (Date) to datetime for notification
+            from datetime import date
+            if isinstance(event_with_venue.event_date, date):
+                gig_date = datetime.combine(event_with_venue.event_date, datetime.min.time())
+            else:
+                gig_date = event_with_venue.event_date
+            
+            # Create notification for each venue staff member
+            for staff in venue_staff:
+                notification_data = NotificationCreate(
+                    user_id=staff.user_id,
+                    type=NotificationType.BAND_APPLICATION.value,
+                    value=band.name,  # Store band name in value field
+                    venue_name=event_with_venue.venue.name,
+                    gig_name=event_with_venue.name,
+                    gig_date=gig_date,
+                    event_application_id=application.id,
+                )
+                NotificationService.create_notification(db, notification_data)
+        
         return application
 
     @staticmethod
@@ -39,6 +77,7 @@ class EventApplicationService:
     def review_application(
         db: Session, application: EventApplication, review_data: EventApplicationReview, reviewer: User
     ) -> EventApplication:
+        old_status = application.status
         application.status = review_data.status.value
         application.response_note = review_data.response_note
         application.reviewed_at = datetime.utcnow()
@@ -46,6 +85,47 @@ class EventApplicationService:
 
         db.commit()
         db.refresh(application)
+        
+        # Create notifications for band members when status changes to accepted or rejected
+        if review_data.status in [ApplicationStatus.ACCEPTED, ApplicationStatus.REJECTED]:
+            # Reload application with relationships
+            application = (
+                db.query(EventApplication)
+                .options(joinedload(EventApplication.band).joinedload(Band.members).joinedload(BandMember.user))
+                .filter(EventApplication.id == application.id)
+                .first()
+            )
+            
+            if application and application.band:
+                # Get event with venue
+                event = (
+                    db.query(Event)
+                    .options(joinedload(Event.venue))
+                    .filter(Event.id == application.event_id)
+                    .first()
+                )
+                
+                if event:
+                    # Create notification for each band member
+                    for member in application.band.members:
+                        # Convert event_date (Date) to datetime for notification
+                        from datetime import date
+                        if isinstance(event.event_date, date):
+                            gig_date = datetime.combine(event.event_date, datetime.min.time())
+                        else:
+                            gig_date = event.event_date
+                        
+                        notification_data = NotificationCreate(
+                            user_id=member.user_id,
+                            type=NotificationType.APPLICATION_STATUS.value,
+                            value=review_data.status.value,
+                            venue_name=event.venue.name if event.venue else "Unknown Venue",
+                            gig_name=event.name,
+                            gig_date=gig_date,
+                            event_application_id=application.id,
+                        )
+                        NotificationService.create_notification(db, notification_data)
+        
         return application
 
     @staticmethod

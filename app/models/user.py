@@ -27,4 +27,5 @@ class User(Base):
 
     band_memberships = relationship("BandMember", back_populates="user", cascade="all, delete-orphan")
     venue_memberships = relationship("VenueStaff", back_populates="user", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
 

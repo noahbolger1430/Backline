@@ -168,6 +168,18 @@ export const bandService = {
     if (bandData.location !== undefined) {
       formData.append("location", bandData.location || "");
     }
+    if (bandData.instagram_url !== undefined) {
+      formData.append("instagram_url", bandData.instagram_url || "");
+    }
+    if (bandData.facebook_url !== undefined) {
+      formData.append("facebook_url", bandData.facebook_url || "");
+    }
+    if (bandData.spotify_url !== undefined) {
+      formData.append("spotify_url", bandData.spotify_url || "");
+    }
+    if (bandData.website_url !== undefined) {
+      formData.append("website_url", bandData.website_url || "");
+    }
     
     // Add image file if provided
     if (imageFile) {

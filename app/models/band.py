@@ -30,6 +30,10 @@ class Band(Base):
         default=lambda: str(uuid.uuid4()),
     )
     image_path = Column(String, nullable=True)
+    instagram_url = Column(String, nullable=True)
+    facebook_url = Column(String, nullable=True)
+    spotify_url = Column(String, nullable=True)
+    website_url = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False

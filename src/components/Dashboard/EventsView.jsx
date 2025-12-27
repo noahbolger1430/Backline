@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import EventCreateForm from "./EventCreateForm";
 import EventEditForm from "./EventEditForm";
+import EventApplicationsList from "./EventApplicationsList";
 import { eventService } from "../../services/eventService";
 import "./EventsView.css";
 
@@ -119,6 +120,22 @@ const EventCard = ({ event, onDelete, onUpdate, isExpanded, onToggleExpand }) =>
       
       {isExpanded && (
         <div className="event-card-expanded">
+          {/* Show applications for pending events without requiring edit mode */}
+          {event.status === 'pending' && (
+            <div className="event-applications-section">
+              <h3 className="applications-section-title">Band Applications</h3>
+              <EventApplicationsList 
+                eventId={event.id} 
+                isOpenForApplications={event.is_open_for_applications}
+                onApplicationReviewed={async () => {
+                  // Refresh event data after application review
+                  if (onUpdate) {
+                    onUpdate();
+                  }
+                }}
+              />
+            </div>
+          )}
           <EventEditForm
             event={event}
             onUpdate={onUpdate}

@@ -1,22 +1,20 @@
 .event-create-form-container {
-  background-color: #ffffff;
+  background-color: transparent;
   border-radius: 8px;
   padding: 30px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   max-width: 700px;
   margin: 0 auto;
 }
 
 .event-create-form-header {
   margin-bottom: 25px;
-  border-bottom: 1px solid #e0e0e0;
   padding-bottom: 15px;
 }
 
 .event-create-form-header h2 {
   font-size: 24px;
   font-weight: bold;
-  color: #333333;
+  color: #ffffff;
   margin: 0;
 }
 
@@ -62,6 +60,19 @@
 
 .form-group input[type="file"] {
   padding: 8px;
+  cursor: pointer;
+}
+
+/* Make date and time picker icons white */
+.form-group input[type="date"]::-webkit-calendar-picker-indicator,
+.form-group input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.form-group input[type="date"]::-moz-calendar-picker-indicator,
+.form-group input[type="time"]::-moz-calendar-picker-indicator {
+  filter: invert(1);
   cursor: pointer;
 }
 
@@ -130,7 +141,6 @@
   gap: 12px;
   margin-top: 10px;
   padding-top: 20px;
-  border-top: 1px solid #e0e0e0;
 }
 
 .btn-cancel,

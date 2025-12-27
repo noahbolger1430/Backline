@@ -10,6 +10,7 @@ import LogoutModal from "./LogoutModal";
 import ToolsView from "./ToolsView";
 import StagePlot from "./StagePlot";
 import StagePlotList from "./StagePlotList";
+import NotificationBell from "./NotificationBell";
 import { bandService } from "../../services/bandService";
 import { stagePlotService } from "../../services/stagePlotService";
 import { authService } from "../../services/authService";
@@ -17,7 +18,6 @@ import logoImage from "../../logos/Backline logo.jpg";
 import "./Dashboard.css";
 
 const BandDashboard = ({ bandId, onLogout }) => {
-  const [selectedMember, setSelectedMember] = useState(0);
   const [band, setBand] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -157,13 +157,30 @@ const BandDashboard = ({ bandId, onLogout }) => {
 
   const currentUserEmail = getCurrentUserEmail();
   
+  // Helper function to get initials from name
+  const getInitials = (name) => {
+    if (!name) return "?";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name[0].toUpperCase();
+  };
+  
   // Transform members to match component format
-  const bandMembers = band.members?.map((member) => ({
+  const allMembers = band.members?.map((member) => ({
     id: member.id,
     name: member.user_name || `User ${member.user_id}`,
     instrument: member.instrument || "Unknown",
     isCurrentUser: member.user_email === currentUserEmail,
   })) || [];
+  
+  // Sort members: current user last (so it appears on top/front)
+  const bandMembers = [...allMembers].sort((a, b) => {
+    if (a.isCurrentUser) return 1;
+    if (b.isCurrentUser) return -1;
+    return 0;
+  });
 
   return (
     <div className="dashboard-container">
@@ -175,6 +192,20 @@ const BandDashboard = ({ bandId, onLogout }) => {
           <h2 className="band-name">{band.name}</h2>
         </div>
         <div className="header-right">
+          <div className="member-bubbles">
+            {bandMembers.length > 0 ? (
+              bandMembers.map((member, index) => (
+                <div
+                  key={member.id || index}
+                  className={`member-bubble ${member.isCurrentUser ? "current-user" : ""}`}
+                  title={member.name}
+                >
+                  {getInitials(member.name)}
+                </div>
+              ))
+            ) : null}
+          </div>
+          <NotificationBell />
           <button className="profile-button" onClick={() => setShowProfile(true)}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M8 8C10.2091 8 12 6.20914 12 4C12 1.79086 10.2091 0 8 0C5.79086 0 4 1.79086 4 4C4 6.20914 5.79086 8 8 8Z" fill="#FFFFFF"/>
@@ -187,25 +218,6 @@ const BandDashboard = ({ bandId, onLogout }) => {
           </button>
         </div>
       </header>
-
-      <div className="members-bar">
-        <div className="members-container">
-          {bandMembers.length > 0 ? (
-            bandMembers.map((member, index) => (
-              <button
-                key={member.id || index}
-                className={`member-pill ${member.isCurrentUser ? "active" : ""}`}
-                onClick={() => setSelectedMember(index)}
-              >
-                <span className="member-name">{member.name}</span>
-                <span className="member-instrument">{member.instrument}</span>
-              </button>
-            ))
-          ) : (
-            <div className="no-members">No members yet</div>
-          )}
-        </div>
-      </div>
 
       {showProfile ? (
         <div className="profile-view-overlay">

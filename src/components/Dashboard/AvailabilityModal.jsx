@@ -28,38 +28,48 @@ const AvailabilityModal = ({ date, isCurrentlyUnavailable = false, onConfirm, on
             : "By default, you are available for all dates. Mark this date as unavailable if you cannot perform."}
         </p>
         
-        <div className="availability-option">
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={isUnavailable}
-              onChange={(e) => setIsUnavailable(e.target.checked)}
-            />
-            <span>{isCurrentlyUnavailable ? "Keep as unavailable" : "Mark as unavailable"}</span>
-          </label>
-        </div>
+        {!isCurrentlyUnavailable && (
+          <>
+            <div className="availability-option">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={isUnavailable}
+                  onChange={(e) => setIsUnavailable(e.target.checked)}
+                />
+                <span>Mark as unavailable</span>
+              </label>
+            </div>
 
-        {isUnavailable && (
-          <div className="note-section">
-            <label htmlFor="availability-note">Optional note:</label>
-            <textarea
-              id="availability-note"
-              className="note-textarea"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="e.g., Out of town, Work conflict, etc."
-              rows={3}
-            />
-          </div>
+            {isUnavailable && (
+              <div className="note-section">
+                <label htmlFor="availability-note">Optional note:</label>
+                <textarea
+                  id="availability-note"
+                  className="note-textarea"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="e.g., Out of town, Work conflict, etc."
+                  rows={3}
+                />
+              </div>
+            )}
+          </>
         )}
 
         <div className="modal-actions">
           <button className="modal-button cancel-button" onClick={onCancel}>
             Cancel
           </button>
-          <button className="modal-button confirm-button" onClick={handleConfirm}>
-            {isUnavailable ? "Set Unavailable" : "Set Available"}
-          </button>
+          {isCurrentlyUnavailable ? (
+            <button className="modal-button confirm-button" onClick={() => onConfirm("available", null)}>
+              Set Available
+            </button>
+          ) : isUnavailable ? (
+            <button className="modal-button confirm-button" onClick={handleConfirm}>
+              Set Unavailable
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

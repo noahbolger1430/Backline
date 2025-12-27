@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.api.deps import check_band_permission, get_band_or_404, get_current_active_user
 from app.database import get_db
 from app.models import Band as BandModel
-from app.models import BandMember, BandRole, User
+from app.models import BandMember, BandRole, User, BandEvent, Event, Venue, VenueStaff, VenueRole, EventApplication
 from app.schemas import Band, BandCreate, BandJoinByInvite, BandMemberAdd, BandMemberSelfUpdate, BandMemberUpdate, BandUpdate
 from app.utils.exceptions import BandAlreadyExistsException
 
@@ -28,6 +28,10 @@ def serialize_band_with_members(band: BandModel) -> dict:
         "location": band.location,
         "invite_code": band.invite_code,
         "image_path": band.image_path,
+        "instagram_url": getattr(band, "instagram_url", None),
+        "facebook_url": getattr(band, "facebook_url", None),
+        "spotify_url": getattr(band, "spotify_url", None),
+        "website_url": getattr(band, "website_url", None),
         "created_at": band.created_at,
         "updated_at": band.updated_at,
         "members": [],
@@ -144,6 +148,9 @@ def get_band(
 ) -> Band:
     """
     Get details of a specific band.
+    Allows access if:
+    - User is a member of the band, OR
+    - User is a venue owner/staff and the band is associated with an event at their venue
     """
     # Query band with eager loading of members and users
     band = (
@@ -157,7 +164,41 @@ def get_band(
         from fastapi import HTTPException, status
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Band not found")
     
-    check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN, BandRole.MEMBER])
+    # Check if user is a band member
+    is_band_member = any(member.user_id == current_user.id for member in band.members)
+    
+    if not is_band_member:
+        # Check if user is a venue owner/staff and the band is associated with their venue's events
+        # Check if band is on an event at venues the user manages (via BandEvent)
+        band_event_exists = (
+            db.query(BandEvent)
+            .join(Event, BandEvent.event_id == Event.id)
+            .join(Venue, Event.venue_id == Venue.id)
+            .join(VenueStaff, Venue.id == VenueStaff.venue_id)
+            .filter(
+                BandEvent.band_id == band_id,
+                VenueStaff.user_id == current_user.id
+            )
+            .first()
+        )
+        
+        # Also check if band has applied to an event at venues the user manages (via EventApplication)
+        if not band_event_exists:
+            band_application_exists = (
+                db.query(EventApplication)
+                .join(Event, EventApplication.event_id == Event.id)
+                .join(Venue, Event.venue_id == Venue.id)
+                .join(VenueStaff, Venue.id == VenueStaff.venue_id)
+                .filter(
+                    EventApplication.band_id == band_id,
+                    VenueStaff.user_id == current_user.id
+                )
+                .first()
+            )
+            
+            if not band_application_exists:
+                from app.utils.exceptions import UnauthorizedBandAccessException
+                raise UnauthorizedBandAccessException()
     
     return Band.model_validate(serialize_band_with_members(band))
 
@@ -245,6 +286,10 @@ async def update_band(
     description: Optional[str] = Form(None),
     genre: Optional[str] = Form(None),
     location: Optional[str] = Form(None),
+    instagram_url: Optional[str] = Form(None),
+    facebook_url: Optional[str] = Form(None),
+    spotify_url: Optional[str] = Form(None),
+    website_url: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
@@ -282,6 +327,14 @@ async def update_band(
         band.genre = genre if genre.strip() else None
     if location is not None:
         band.location = location if location.strip() else None
+    if instagram_url is not None:
+        band.instagram_url = instagram_url if instagram_url.strip() else None
+    if facebook_url is not None:
+        band.facebook_url = facebook_url if facebook_url.strip() else None
+    if spotify_url is not None:
+        band.spotify_url = spotify_url if spotify_url.strip() else None
+    if website_url is not None:
+        band.website_url = website_url if website_url.strip() else None
     if image_path is not None:
         band.image_path = image_path
 

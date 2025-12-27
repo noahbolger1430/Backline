@@ -1,17 +1,19 @@
 from datetime import date
 from typing import List, Optional
+import logging
 import os
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
 from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_band_or_404, get_event_or_404, get_venue_or_404
 from app.database import get_db
-from app.models import Band, BandAvailability, BandEvent, Event, Venue
+from app.models import Band, BandAvailability, BandEvent, BandMember, Event, Venue
 from app.models.availability import AvailabilityStatus
 from app.models.event import EventStatus
+from app.models.notification import NotificationType
 from app.schemas.event import (
     BandEventCreate,
     BandEventResponse,
@@ -23,7 +25,9 @@ from app.schemas.event import (
 )
 from app.schemas.event import EventWithBands 
 from app.schemas.band_event import BandEventStatus
+from app.schemas.notification import NotificationCreate
 from app.services.event_service import EventService
+from app.services.notification_service import NotificationService
 
 router = APIRouter()
 
@@ -60,9 +64,9 @@ def serialize_event_with_details(event: Event) -> dict:
         "status": event.status,
         "is_open_for_applications": event.is_open_for_applications,
         "is_ticketed": event.is_ticketed,
-        "ticket_price": event.ticket_price,
+        "ticket_price": int(event.ticket_price) if event.ticket_price is not None else None,
         "is_age_restricted": event.is_age_restricted,
-        "age_restriction": event.age_restriction,
+        "age_restriction": int(event.age_restriction) if event.age_restriction is not None else None,
         "image_path": event.image_path,
         "created_at": event.created_at,
         "updated_at": event.updated_at,
@@ -180,9 +184,9 @@ async def create_event(
         "status": event_status,
         "is_open_for_applications": is_open_for_applications,
         "is_ticketed": is_ticketed,
-        "ticket_price": ticket_price,
+        "ticket_price": int(float(ticket_price)) if ticket_price is not None else None,
         "is_age_restricted": is_age_restricted,
-        "age_restriction": age_restriction,
+        "age_restriction": int(float(age_restriction)) if age_restriction is not None else None,
     }
     
     event_data = EventCreate(**event_data_dict)
@@ -230,6 +234,35 @@ async def create_event(
             .filter(Event.id == event.id)
             .first()
         )
+        
+        # If event is open for applications, notify all band members
+        if event.is_open_for_applications and event.status == "pending":
+            from datetime import datetime
+            # Get all band members from all bands
+            all_band_members = (
+                db.query(BandMember)
+                .options(joinedload(BandMember.user))
+                .all()
+            )
+            
+            # Convert event_date (Date) to datetime for notification
+            if isinstance(event.event_date, date):
+                gig_date = datetime.combine(event.event_date, datetime.min.time())
+            else:
+                gig_date = event.event_date
+            
+            # Create notification for each band member
+            for band_member in all_band_members:
+                notification_data = NotificationCreate(
+                    user_id=band_member.user_id,
+                    type=NotificationType.GIG_AVAILABLE.value,
+                    value="",  # Not used for this notification type
+                    venue_name=event.venue.name,
+                    gig_name=event.name,
+                    gig_date=gig_date,
+                    event_application_id=None,
+                )
+                NotificationService.create_notification(db, notification_data)
         
         serialized = serialize_event_with_details(event)
         return EventResponse.model_validate(serialized)
@@ -358,6 +391,20 @@ async def update_event(
     """
     event = get_event_or_404(event_id, db)
 
+    # Debug: Print all received form data
+    print(f"=== UPDATE EVENT DEBUG ===")
+    print(f"event_id: {event_id}")
+    print(f"name: {name}, type: {type(name)}")
+    print(f"description: {description}, type: {type(description)}")
+    print(f"event_date: {event_date}, type: {type(event_date)}")
+    print(f"is_ticketed: {is_ticketed}, type: {type(is_ticketed)}")
+    print(f"ticket_price: {ticket_price}, type: {type(ticket_price)}")
+    print(f"is_age_restricted: {is_age_restricted}, type: {type(is_age_restricted)}")
+    print(f"age_restriction: {age_restriction}, type: {type(age_restriction)}")
+    print(f"status: {status}, type: {type(status)}")
+    print(f"is_open_for_applications: {is_open_for_applications}, type: {type(is_open_for_applications)}")
+    print(f"========================")
+
     # Build update data from form fields
     update_data = {}
     if name is not None:
@@ -376,12 +423,51 @@ async def update_event(
         update_data["is_open_for_applications"] = is_open_for_applications
     if is_ticketed is not None:
         update_data["is_ticketed"] = is_ticketed
+        # If event is not ticketed, explicitly set ticket_price to None
+        if not is_ticketed:
+            update_data["ticket_price"] = None
+            print("Event is not ticketed, setting ticket_price to None")
+    
     if ticket_price is not None:
-        update_data["ticket_price"] = ticket_price
+        # Ensure ticket_price is an integer (in cents)
+        # Handle both string and int inputs from FormData
+        print(f"Received ticket_price: {ticket_price}, type: {type(ticket_price)}")
+        try:
+            if isinstance(ticket_price, str):
+                # If it's a string, try to parse it as float first (in case it's "1000.0") then convert to int
+                update_data["ticket_price"] = int(float(ticket_price))
+            else:
+                update_data["ticket_price"] = int(ticket_price)
+            print(f"Converted ticket_price to: {update_data['ticket_price']}")
+        except (ValueError, TypeError) as e:
+            print(f"Error converting ticket_price: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"ticket_price must be a valid integer (price in cents). Received: {ticket_price}, type: {type(ticket_price)}"
+            )
     if is_age_restricted is not None:
         update_data["is_age_restricted"] = is_age_restricted
+        # If event is not age restricted, explicitly set age_restriction to None
+        if not is_age_restricted:
+            update_data["age_restriction"] = None
+            print("Event is not age restricted, setting age_restriction to None")
+    
     if age_restriction is not None:
-        update_data["age_restriction"] = age_restriction
+        # Ensure age_restriction is an integer
+        print(f"Received age_restriction: {age_restriction}, type: {type(age_restriction)}")
+        try:
+            if isinstance(age_restriction, str):
+                # If it's a string, try to parse it as float first then convert to int
+                update_data["age_restriction"] = int(float(age_restriction))
+            else:
+                update_data["age_restriction"] = int(age_restriction)
+            print(f"Converted age_restriction to: {update_data['age_restriction']}")
+        except (ValueError, TypeError) as e:
+            print(f"Error converting age_restriction: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"age_restriction must be a valid integer. Received: {age_restriction}, type: {type(age_restriction)}"
+            )
 
     # Handle image upload or removal
     image_path = None
@@ -469,8 +555,18 @@ async def update_event(
                 detail="Invalid doors_time format. Use HH:MM",
             )
 
+    # Check if is_open_for_applications is being changed to True
+    was_open_for_applications = event.is_open_for_applications
+    
+    # Log update_data before creating EventUpdate
+    print(f"update_data before EventUpdate creation: {update_data}")
+    
     event_update = EventUpdate(**update_data)
+    print(f"EventUpdate created with ticket_price: {event_update.ticket_price}, age_restriction: {event_update.age_restriction}")
+    print(f"EventUpdate model_dump: {event_update.model_dump(exclude_unset=True)}")
+    
     updated_event = EventService.update_event(db, event, event_update)
+    print(f"Event after update - ticket_price: {updated_event.ticket_price}, age_restriction: {updated_event.age_restriction}")
     
     # Reload event with relationships
     updated_event = (
@@ -479,6 +575,41 @@ async def update_event(
         .filter(Event.id == updated_event.id)
         .first()
     )
+    
+    # If event is being opened for applications, notify all band members
+    is_opening_for_applications = (
+        updated_event.is_open_for_applications and
+        not was_open_for_applications and
+        updated_event.status == "pending"
+    )
+    
+    if is_opening_for_applications:
+        from datetime import datetime
+        # Get all band members from all bands
+        all_band_members = (
+            db.query(BandMember)
+            .options(joinedload(BandMember.user))
+            .all()
+        )
+        
+        # Convert event_date (Date) to datetime for notification
+        if isinstance(updated_event.event_date, date):
+            gig_date = datetime.combine(updated_event.event_date, datetime.min.time())
+        else:
+            gig_date = updated_event.event_date
+        
+        # Create notification for each band member
+        for band_member in all_band_members:
+            notification_data = NotificationCreate(
+                user_id=band_member.user_id,
+                type=NotificationType.GIG_AVAILABLE.value,
+                value="",  # Not used for this notification type
+                venue_name=updated_event.venue.name,
+                gig_name=updated_event.name,
+                gig_date=gig_date,
+                event_application_id=None,
+            )
+            NotificationService.create_notification(db, notification_data)
     
     return EventResponse.model_validate(serialize_event_with_details(updated_event))
 
@@ -496,6 +627,9 @@ def open_event_for_applications(event_id: int, db: Session = Depends(get_db)) ->
             detail="Only pending events can be opened for applications",
         )
     
+    # Check if event was already open for applications
+    was_open_for_applications = event.is_open_for_applications
+    
     event.is_open_for_applications = True
     db.commit()
     db.refresh(event)
@@ -507,6 +641,35 @@ def open_event_for_applications(event_id: int, db: Session = Depends(get_db)) ->
         .filter(Event.id == event.id)
         .first()
     )
+    
+    # If event is being opened for applications (wasn't already open), notify all band members
+    if not was_open_for_applications:
+        from datetime import datetime
+        # Get all band members from all bands
+        all_band_members = (
+            db.query(BandMember)
+            .options(joinedload(BandMember.user))
+            .all()
+        )
+        
+        # Convert event_date (Date) to datetime for notification
+        if isinstance(event.event_date, date):
+            gig_date = datetime.combine(event.event_date, datetime.min.time())
+        else:
+            gig_date = event.event_date
+        
+        # Create notification for each band member
+        for band_member in all_band_members:
+            notification_data = NotificationCreate(
+                user_id=band_member.user_id,
+                type=NotificationType.GIG_AVAILABLE.value,
+                value="",  # Not used for this notification type
+                venue_name=event.venue.name,
+                gig_name=event.name,
+                gig_date=gig_date,
+                event_application_id=None,
+            )
+            NotificationService.create_notification(db, notification_data)
     
     return EventResponse.model_validate(serialize_event_with_details(event))
 
@@ -596,7 +759,13 @@ def add_band_to_event(event_id: int, band_event_data: BandEventCreate, db: Sessi
         )
 
     band_event = EventService.add_band_to_event(db, event, band, band_event_data)
-    return BandEventResponse.model_validate(band_event)
+    # Refresh to get the loaded band relationship
+    db.refresh(band_event, ["band"])
+    band_event_response = BandEventResponse.model_validate(band_event)
+    if band_event.band:
+        band_event_response.band_name = band_event.band.name
+        band_event_response.band_image_path = band_event.band.image_path
+    return band_event_response
 
 
 @router.patch("/{event_id}/bands/{band_id}", response_model=BandEventResponse)
@@ -622,7 +791,13 @@ def update_band_event(
         )
 
     updated_band_event = EventService.update_band_event(db, band_event, band_event_data)
-    return BandEventResponse.model_validate(updated_band_event)
+    # Refresh to get the loaded band relationship
+    db.refresh(updated_band_event, ["band"])
+    band_event_response = BandEventResponse.model_validate(updated_band_event)
+    if updated_band_event.band:
+        band_event_response.band_name = updated_band_event.band.name
+        band_event_response.band_image_path = updated_band_event.band.image_path
+    return band_event_response
 
 
 @router.delete("/{event_id}/bands/{band_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -652,12 +827,13 @@ def get_event_bands(event_id: int, db: Session = Depends(get_db)) -> List[BandEv
     """
     event = get_event_or_404(event_id, db)
     band_events = EventService.get_event_bands(db, event)
-    # Serialize with band_name included
+    # Serialize with band_name and band_image_path included
     result = []
     for be in band_events:
         band_event_response = BandEventResponse.model_validate(be)
-        # Add band_name if band is loaded
+        # Add band_name and band_image_path if band is loaded
         if be.band:
             band_event_response.band_name = be.band.name
+            band_event_response.band_image_path = be.band.image_path
         result.append(band_event_response)
     return result

@@ -3,7 +3,6 @@
   border-radius: 8px;
   padding: 20px;
   margin-top: 16px;
-  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
 }
 
 .event-details-view {
@@ -13,21 +12,35 @@
   margin-bottom: 16px;
 }
 
+.event-details-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.event-details-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .event-detail-row {
   display: flex;
-  gap: 12px;
-  font-size: 14px;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 16px;
 }
 
 .detail-label {
   font-weight: 600;
   color: #8E8E93; /* Subtle Text - Slate Silver */
-  min-width: 150px;
+  font-size: 16px;
 }
 
 .detail-value {
   color: #FFFFFF; /* High Contrast Text - Pure White */
-  flex: 1;
+  font-size: 16px;
 }
 
 .event-edit-actions {
@@ -35,7 +48,6 @@
   gap: 12px;
   justify-content: flex-end;
   padding-top: 16px;
-  border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
 }
 
 .btn-edit {
@@ -136,7 +148,6 @@
   gap: 12px;
   margin-top: 10px;
   padding-top: 20px;
-  border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
 }
 
 .btn-cancel,
@@ -177,40 +188,63 @@
 
 /* Image Section */
 .event-image-section {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .event-image-preview {
-  margin: 12px 0;
   position: relative;
   display: inline-block;
+  width: 100%;
+  max-width: 400px;
 }
 
 .event-image-preview img {
-  max-width: 300px;
-  max-height: 300px;
+  width: 100%;
+  max-height: 400px;
   border-radius: 4px;
   border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
   object-fit: cover;
+  display: block;
 }
 
-.btn-remove-image {
-  margin-top: 8px;
-  padding: 6px 12px;
-  background-color: rgba(244, 67, 54, 0.2); /* Red with opacity */
-  color: #F44336; /* Red text */
-  border: 1px solid #F44336;
+.btn-remove-image-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(244, 67, 54, 0.9); /* Red with high opacity */
+  color: #FFFFFF;
+  border: none;
   border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  padding: 0;
+  z-index: 10;
 }
 
-.btn-remove-image:hover {
-  background-color: rgba(244, 67, 54, 0.3);
+.event-image-preview:hover .btn-remove-image-icon {
+  opacity: 1;
+}
+
+.btn-remove-image-icon:hover {
+  background-color: #F44336; /* Solid red on hover */
+}
+
+.btn-remove-image-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-remove-image-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
 .no-image {
@@ -222,6 +256,7 @@
 
 .image-upload-section {
   margin-top: 12px;
+  background-color: transparent;
 }
 
 .btn-upload-image {
@@ -242,12 +277,15 @@
 }
 
 .image-preview {
+  position: relative;
+  display: inline-block;
   margin-top: 12px;
   margin-bottom: 12px;
   border-radius: 4px;
   overflow: hidden;
   border: 2px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
   max-width: 300px;
+  width: 100%;
 }
 
 .image-preview img {
@@ -256,10 +294,50 @@
   display: block;
 }
 
+/* Trash icon for edit form image preview */
+.image-preview .btn-remove-image-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(244, 67, 54, 0.9); /* Red with high opacity */
+  color: #FFFFFF;
+  border: none;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+  z-index: 10;
+}
+
+.image-preview:hover .btn-remove-image-icon {
+  opacity: 1;
+}
+
+.image-preview .btn-remove-image-icon:hover {
+  background-color: #F44336; /* Solid red on hover */
+}
+
+.image-preview .btn-remove-image-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.image-preview .btn-remove-image-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
 .form-group input[type="file"] {
   padding: 8px;
   cursor: pointer;
   color: #FFFFFF; /* High Contrast Text - Pure White */
+  background-color: transparent;
+  border: none;
 }
 
 .form-group input[type="file"]::file-selector-button {
@@ -283,50 +361,112 @@
 .event-bands-section {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
 }
 
-.event-bands-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.event-bands-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
   margin: 12px 0;
 }
 
-.event-band-item {
+.event-band-card {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 12px;
+  flex-direction: column;
+  gap: 8px;
   background-color: #0B0C10; /* Primary Background - Obsidian Black */
   border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
-  border-radius: 4px;
+  border-radius: 8px;
+  padding: 8px;
+  transition: border-color 0.2s ease;
 }
 
-.band-name {
+.event-band-card:hover {
+  border-color: #8E8E93; /* Subtle Text - Slate Silver */
+}
+
+.event-band-card.clickable-band-card {
+  cursor: pointer;
+}
+
+.event-band-card.clickable-band-card:hover {
+  border-color: #6F22D2; /* Primary Accent - Electric Violet */
+  box-shadow: 0 2px 8px rgba(111, 34, 210, 0.2);
+}
+
+.band-card-image-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+}
+
+.band-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.band-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  font-size: 12px;
+  text-align: center;
+  padding: 8px;
+}
+
+.band-card-name {
   color: #FFFFFF; /* High Contrast Text - Pure White */
   font-weight: 500;
+  font-size: 14px;
+  text-align: center;
+  padding: 4px 0;
+  word-break: break-word;
 }
 
-.btn-remove-band {
-  padding: 6px 12px;
-  background-color: rgba(244, 67, 54, 0.2); /* Red with opacity */
-  color: #F44336; /* Red text */
-  border: 1px solid #F44336;
+.btn-remove-band-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(244, 67, 54, 0.9); /* Red with high opacity */
+  color: #FFFFFF;
+  border: none;
   border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  padding: 0;
+  z-index: 10;
 }
 
-.btn-remove-band:hover:not(:disabled) {
-  background-color: rgba(244, 67, 54, 0.3);
+.band-card-image-container:hover .btn-remove-band-icon {
+  opacity: 1;
 }
 
-.btn-remove-band:disabled {
-  opacity: 0.6;
+.btn-remove-band-icon:hover {
+  background-color: #F44336; /* Solid red on hover */
+}
+
+.btn-remove-band-icon:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn-remove-band-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
 .no-bands {
@@ -345,7 +485,6 @@
 .add-bands-section {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
 }
 
 .btn-add-bands {
@@ -374,11 +513,61 @@
 .application-controls {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.form-section {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  margin-bottom: 24px;
+}
+
+.form-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  margin: 0 0 12px 0;
 }
 
 .application-controls-section {
   margin-top: 20px;
+}
+
+.application-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.application-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 12px;
+  flex-wrap: nowrap;
+}
+
+.application-status-row .event-detail-row {
+  flex: 1;
+  margin-bottom: 0;
+  min-width: 0; /* Prevent flex item from overflowing */
+}
+
+.application-button-container {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 0;
+  flex-shrink: 0;
+  padding-top: 0;
+}
+
+/* Ensure button aligns with the label text */
+.application-button-container .btn-close-applications,
+.application-button-container .btn-open-applications {
+  margin-top: 0;
+  white-space: nowrap;
 }
 
 .application-buttons {
@@ -421,11 +610,6 @@
   cursor: not-allowed;
 }
 
-.bands-section {
-  background-color: #0B0C10; /* Primary Background - Obsidian Black */
-  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
-}
-
 @media (max-width: 768px) {
   .form-row {
     grid-template-columns: 1fr;
@@ -446,21 +630,356 @@
 
   .event-detail-row {
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
   }
 
   .detail-label {
-    min-width: auto;
+    font-size: 14px;
   }
 
-  .event-band-item {
+  .detail-value {
+    font-size: 14px;
+  }
+
+  .event-bands-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+  }
+
+  .event-details-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .event-image-preview {
+    max-width: 100%;
+  }
+}
+
+/* Stage Plot Modal */
+.stage-plot-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.stage-plot-modal-content {
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  border-radius: 8px;
+  width: 95%;
+  height: 90vh;
+  max-width: 1400px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.stage-plot-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.stage-plot-modal-header h2 {
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.stage-plot-modal-close {
+  background: none;
+  border: none;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  font-size: 32px;
+  cursor: pointer;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.stage-plot-modal-close:hover {
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+}
+
+.stage-plot-modal-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.stage-plot-modal-body .stage-plot-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.stage-plot-modal-body .stage-plot-editor {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+}
+
+.stage-plot-modal-body .editor-canvas-3d {
+  flex: 1;
+}
+
+.btn-view-stage-plot {
+  margin-top: 8px;
+  padding: 8px 16px;
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  width: 100%;
+}
+
+.btn-view-stage-plot:hover {
+  background-color: #5A1BA8; /* Darker shade of Electric Violet */
+}
+
+/* Band Info Modal */
+.band-info-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  padding: 20px;
+}
+
+.band-info-modal-content {
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  border-radius: 12px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.band-info-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.band-info-modal-header h2 {
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.band-info-modal-close {
+  background: none;
+  border: none;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  font-size: 32px;
+  cursor: pointer;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  line-height: 1;
+}
+
+.band-info-modal-close:hover {
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+}
+
+.band-info-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.band-info-loading,
+.band-info-error {
+  text-align: center;
+  padding: 40px 20px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+}
+
+.band-info-error {
+  color: #F44336; /* Red */
+}
+
+.band-info-main {
+  margin-bottom: 24px;
+}
+
+.band-info-name {
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+}
+
+.band-info-description {
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.band-info-section-title {
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px 0;
+}
+
+.band-info-social {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #1F2833; /* Secondary Background - Charcoal Grey */
+}
+
+.band-info-social-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.band-social-link-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border-radius: 6px;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.band-social-link-item:hover {
+  border-color: #6F22D2; /* Primary Accent - Electric Violet */
+  background-color: #2A1F3D;
+  color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(111, 34, 210, 0.3);
+}
+
+.band-social-link-item .social-icon {
+  font-size: 18px;
+  display: inline-block;
+}
+
+.band-info-spotify {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #1F2833; /* Secondary Background - Charcoal Grey */
+}
+
+.spotify-embed-container {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.spotify-embed-container iframe {
+  width: 100%;
+  min-height: 352px;
+  border: none;
+}
+
+.spotify-link {
+  background-color: #1DB954; /* Spotify Green */
+  border-color: #1DB954;
+}
+
+.spotify-link:hover {
+  background-color: #1ed760;
+  border-color: #1ed760;
+}
+
+.band-info-additional {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.band-info-item {
+  display: flex;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.band-info-label {
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  font-weight: 600;
+  min-width: 80px;
+}
+
+.band-info-value {
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+}
+
+@media (max-width: 768px) {
+  .band-info-modal-content {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .band-info-modal-header {
+    padding: 16px 20px;
+  }
+
+  .band-info-modal-body {
+    padding: 20px;
+  }
+
+  .band-info-name {
+    font-size: 24px;
+  }
+
+  .band-info-social-links {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
   }
 
-  .btn-remove-band {
+  .band-social-link-item {
     width: 100%;
+    justify-content: center;
   }
 }
 

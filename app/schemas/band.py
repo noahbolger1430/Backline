@@ -66,6 +66,10 @@ class BandUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
     genre: Optional[str] = Field(None, min_length=1, max_length=100)
     location: Optional[str] = Field(None, min_length=1, max_length=255)
+    instagram_url: Optional[str] = Field(None, max_length=500)
+    facebook_url: Optional[str] = Field(None, max_length=500)
+    spotify_url: Optional[str] = Field(None, max_length=500)
+    website_url: Optional[str] = Field(None, max_length=500)
 
     @field_validator("genre")
     @classmethod
@@ -151,6 +155,10 @@ class BandInDB(BandBase):
     id: int
     invite_code: str
     image_path: Optional[str] = None
+    instagram_url: Optional[str] = None
+    facebook_url: Optional[str] = None
+    spotify_url: Optional[str] = None
+    website_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

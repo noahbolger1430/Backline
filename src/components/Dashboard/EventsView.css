@@ -6,7 +6,6 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
   }
   
   .events-view-header {
@@ -15,7 +14,6 @@
     align-items: center;
     margin-bottom: 25px;
     padding-bottom: 15px;
-    border-bottom: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
   }
   
   .events-view-header h2 {
@@ -274,10 +272,22 @@
   /* Expanded Section */
   .event-card-expanded {
     background-color: #1F2833; /* Secondary Background - Charcoal Grey */
-    border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
     border-top: none;
     border-radius: 0 0 8px 8px;
     padding: 20px;
+  }
+
+  .event-applications-section {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #333333;
+  }
+
+  .applications-section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin: 0 0 16px 0;
   }
 
   .event-expanded-header {

@@ -95,6 +95,7 @@ class BandEventResponse(BandEventInDB):
     """
 
     band_name: Optional[str] = None  # Added for display purposes
+    band_image_path: Optional[str] = None  # Added for displaying band images
 
 
 class BandEventWithDetails(BandEventInDB):

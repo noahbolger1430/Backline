@@ -34,11 +34,11 @@ export const eventService = {
     
     formData.append("is_ticketed", eventData.is_ticketed);
     if (eventData.ticket_price !== null && eventData.ticket_price !== undefined) {
-      formData.append("ticket_price", eventData.ticket_price);
+      formData.append("ticket_price", String(parseInt(eventData.ticket_price, 10)));
     }
     formData.append("is_age_restricted", eventData.is_age_restricted);
     if (eventData.age_restriction !== null && eventData.age_restriction !== undefined) {
-      formData.append("age_restriction", eventData.age_restriction);
+      formData.append("age_restriction", String(parseInt(eventData.age_restriction, 10)));
     }
     
     // Add band IDs if provided
@@ -166,62 +166,56 @@ export const eventService = {
   },
 
   async updateEvent(eventId, eventData, imageFile = null, removeImage = false) {
-    // If there's an image file or removal flag, use FormData, otherwise use JSON
-    let body;
+    // Always use FormData to match backend expectations
+    const formData = new FormData();
     let headers = this.getAuthHeader();
 
-    if (imageFile || removeImage) {
-      const formData = new FormData();
-      
-      // Add all event data fields to FormData
-      if (eventData.name !== undefined) {
-        formData.append("name", eventData.name);
-      }
-      if (eventData.description !== undefined) {
-        formData.append("description", eventData.description || "");
-      }
-      if (eventData.event_date !== undefined) {
-        formData.append("event_date", eventData.event_date);
-      }
-      if (eventData.doors_time !== undefined) {
-        formData.append("doors_time", eventData.doors_time || "");
-      }
-      if (eventData.show_time !== undefined) {
-        formData.append("show_time", eventData.show_time);
-      }
-      if (eventData.status !== undefined) {
-        formData.append("status", eventData.status);
-      }
-      if (eventData.is_open_for_applications !== undefined) {
-        formData.append("is_open_for_applications", eventData.is_open_for_applications);
-      }
-      if (eventData.is_ticketed !== undefined) {
-        formData.append("is_ticketed", eventData.is_ticketed);
-      }
-      if (eventData.ticket_price !== undefined && eventData.ticket_price !== null) {
-        formData.append("ticket_price", eventData.ticket_price);
-      }
-      if (eventData.is_age_restricted !== undefined) {
-        formData.append("is_age_restricted", eventData.is_age_restricted);
-      }
-      if (eventData.age_restriction !== undefined && eventData.age_restriction !== null) {
-        formData.append("age_restriction", eventData.age_restriction);
-      }
-      
-      // Add image file or removal flag
-      if (imageFile) {
-        formData.append("image", imageFile);
-      }
-      if (removeImage) {
-        formData.append("remove_image", "true");
-      }
-      
-      body = formData;
-      // Remove Content-Type to let browser set it with boundary
-      delete headers["Content-Type"];
-    } else {
-      body = JSON.stringify(eventData);
+    // Add all event data fields to FormData
+    if (eventData.name !== undefined) {
+      formData.append("name", eventData.name);
     }
+    if (eventData.description !== undefined) {
+      formData.append("description", eventData.description || "");
+    }
+    if (eventData.event_date !== undefined) {
+      formData.append("event_date", eventData.event_date);
+    }
+    if (eventData.doors_time !== undefined) {
+      formData.append("doors_time", eventData.doors_time || "");
+    }
+    if (eventData.show_time !== undefined) {
+      formData.append("show_time", eventData.show_time);
+    }
+    if (eventData.status !== undefined) {
+      formData.append("status", eventData.status);
+    }
+    if (eventData.is_open_for_applications !== undefined) {
+      formData.append("is_open_for_applications", eventData.is_open_for_applications);
+    }
+    if (eventData.is_ticketed !== undefined) {
+      formData.append("is_ticketed", eventData.is_ticketed);
+    }
+    if (eventData.ticket_price !== undefined && eventData.ticket_price !== null) {
+      formData.append("ticket_price", String(parseInt(eventData.ticket_price, 10)));
+    }
+    if (eventData.is_age_restricted !== undefined) {
+      formData.append("is_age_restricted", eventData.is_age_restricted);
+    }
+    if (eventData.age_restriction !== undefined && eventData.age_restriction !== null) {
+      formData.append("age_restriction", String(parseInt(eventData.age_restriction, 10)));
+    }
+    
+    // Add image file or removal flag
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
+    if (removeImage) {
+      formData.append("remove_image", "true");
+    }
+    
+    const body = formData;
+    // Remove Content-Type to let browser set it with boundary
+    delete headers["Content-Type"];
 
     const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
       method: "PATCH",

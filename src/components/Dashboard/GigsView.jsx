@@ -13,6 +13,11 @@ const GigsView = ({ bandId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  
+  // Filter state
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
+  const [filterVenue, setFilterVenue] = useState("");
 
   const fetchData = async () => {
     try {
@@ -88,6 +93,49 @@ const GigsView = ({ bandId }) => {
     fetchData();
   };
 
+  // Filter events based on date range and venue
+  const filteredEvents = events.filter((event) => {
+    // Filter by date range
+    if (filterStartDate) {
+      const eventDate = new Date(event.event_date);
+      const startDate = new Date(filterStartDate);
+      if (eventDate < startDate) {
+        return false;
+      }
+    }
+    
+    if (filterEndDate) {
+      const eventDate = new Date(event.event_date);
+      const endDate = new Date(filterEndDate);
+      // Set end date to end of day for inclusive comparison
+      endDate.setHours(23, 59, 59, 999);
+      if (eventDate > endDate) {
+        return false;
+      }
+    }
+
+    // Filter by venue
+    if (filterVenue.trim()) {
+      const venueFilter = filterVenue.toLowerCase().trim();
+      const venueName = (event.venue_name || "").toLowerCase();
+      if (!venueName.includes(venueFilter)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  const clearFilters = () => {
+    setFilterStartDate("");
+    setFilterEndDate("");
+    setFilterVenue("");
+  };
+
+  const hasActiveFilters = () => {
+    return !!(filterStartDate || filterEndDate || filterVenue.trim());
+  };
+
   const getStatusBadge = (eventId) => {
     if (!appliedEventIds.has(eventId)) {
       return (
@@ -156,6 +204,55 @@ const GigsView = ({ bandId }) => {
         <h2 className="gigs-title">Available Gigs</h2>
         <p className="gigs-subtitle">Events currently accepting band applications</p>
       </div>
+
+      {/* Filter Section */}
+      <div className="gigs-filter-section">
+        <div className="filter-row">
+          <div className="filter-group">
+            <label className="filter-label">Start Date</label>
+            <input
+              type="date"
+              className="filter-input"
+              value={filterStartDate}
+              onChange={(e) => setFilterStartDate(e.target.value)}
+            />
+          </div>
+
+          <div className="filter-group">
+            <label className="filter-label">End Date</label>
+            <input
+              type="date"
+              className="filter-input"
+              value={filterEndDate}
+              onChange={(e) => setFilterEndDate(e.target.value)}
+            />
+          </div>
+
+          <div className="filter-group">
+            <label className="filter-label">Venue</label>
+            <input
+              type="text"
+              className="filter-input"
+              placeholder="Venue name..."
+              value={filterVenue}
+              onChange={(e) => setFilterVenue(e.target.value)}
+            />
+          </div>
+
+          {hasActiveFilters() && (
+            <button className="clear-filters-button" onClick={clearFilters}>
+              Clear Filters
+            </button>
+          )}
+        </div>
+
+        {hasActiveFilters() && (
+          <div className="filter-results-info">
+            Showing {filteredEvents.length} of {events.length} gigs
+          </div>
+        )}
+      </div>
+
       <div className="gigs-grid">
         {events.length === 0 ? (
           <div className="no-gigs">
@@ -163,8 +260,14 @@ const GigsView = ({ bandId }) => {
             <p>No gigs currently accepting applications</p>
             <p className="no-gigs-hint">Check back later for new opportunities!</p>
           </div>
+        ) : filteredEvents.length === 0 ? (
+          <div className="no-gigs">
+            <span className="no-gigs-icon">🎵</span>
+            <p>No gigs match your filter criteria</p>
+            <p className="no-gigs-hint">Try adjusting your filters</p>
+          </div>
         ) : (
-          events.map((event) => {
+          filteredEvents.map((event) => {
             const hasApplied = appliedEventIds.has(event.id);
             return (
               <div

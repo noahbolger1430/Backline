@@ -5,13 +5,13 @@ import EventModal from "./EventModal";
 import LogoutModal from "./LogoutModal";
 import EventsView from "./EventsView";
 import VenueProfile from "./VenueProfile";
+import NotificationBell from "./NotificationBell";
 import { venueService } from "../../services/venueService";
 import { authService } from "../../services/authService";
 import logoImage from "../../logos/Backline logo.jpg";
 import "./Dashboard.css";
 
 const VenueDashboard = ({ venueId, onLogout }) => {
-  const [selectedStaff, setSelectedStaff] = useState(0);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -111,6 +111,23 @@ const VenueDashboard = ({ venueId, onLogout }) => {
     setVenue(updatedVenue);
   };
 
+  // Helper function to get initials from name
+  const getInitials = (name) => {
+    if (!name) return "?";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name[0].toUpperCase();
+  };
+
+  // Sort staff members: current user last (so it appears on top/front)
+  const sortedStaffMembers = [...staffMembers].sort((a, b) => {
+    if (a.isCurrentUser) return 1;
+    if (b.isCurrentUser) return -1;
+    return 0;
+  });
+
   if (loading) {
     return (
       <div className="dashboard-container">
@@ -176,6 +193,20 @@ const VenueDashboard = ({ venueId, onLogout }) => {
           <h2 className="venue-name">{venue.name}</h2>
         </div>
         <div className="header-right">
+          <div className="member-bubbles">
+            {sortedStaffMembers.length > 0 ? (
+              sortedStaffMembers.map((staff, index) => (
+                <div
+                  key={staff.id || index}
+                  className={`member-bubble ${staff.isCurrentUser ? "current-user" : ""}`}
+                  title={staff.name}
+                >
+                  {getInitials(staff.name)}
+                </div>
+              ))
+            ) : null}
+          </div>
+          <NotificationBell />
           <button className="profile-button" onClick={() => setShowProfile(true)}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M8 8C10.2091 8 12 6.20914 12 4C12 1.79086 10.2091 0 8 0C5.79086 0 4 1.79086 4 4C4 6.20914 5.79086 8 8 8Z" fill="#FFFFFF"/>
@@ -188,25 +219,6 @@ const VenueDashboard = ({ venueId, onLogout }) => {
           </button>
         </div>
       </header>
-
-      <div className="members-bar">
-        <div className="members-container">
-          {staffMembers.length > 0 ? (
-            staffMembers.map((staff, index) => (
-              <button
-                key={staff.id || index}
-                className={`member-pill ${staff.isCurrentUser ? "active" : ""}`}
-                onClick={() => setSelectedStaff(index)}
-              >
-                <span className="member-name">{staff.name}</span>
-                <span className="member-instrument">{staff.role}</span>
-              </button>
-            ))
-          ) : (
-            <div className="no-members">No staff members yet</div>
-          )}
-        </div>
-      </div>
 
       {showProfile ? (
         <div className="profile-view-overlay">

@@ -1,0 +1,438 @@
+.event-applications-list {
+  margin-top: 16px;
+}
+
+.applications-loading,
+.applications-error,
+.applications-empty {
+  padding: 16px;
+  text-align: center;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  font-size: 14px;
+}
+
+.applications-error {
+  color: #ff4444;
+  background-color: rgba(255, 68, 68, 0.1);
+  border-radius: 4px;
+  border: 1px solid #ff4444;
+}
+
+.applications-section {
+  margin-bottom: 24px;
+}
+
+.applications-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+}
+
+.application-card {
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+.application-card:hover {
+  border-color: #6F22D2; /* Primary Accent - Electric Violet */
+  box-shadow: 0 2px 8px rgba(111, 34, 210, 0.2);
+}
+
+.application-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.application-band-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.application-band-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+}
+
+.application-status {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.application-status-pending {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+.application-status-accepted {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.application-status-rejected {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.application-status-reviewed {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.application-status-withdrawn {
+  background-color: #f5f5f5;
+  color: #757575;
+}
+
+.application-date {
+  font-size: 12px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+}
+
+.application-message,
+.application-response {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  border-radius: 4px;
+  border-left: 3px solid #6F22D2; /* Primary Accent - Electric Violet */
+}
+
+.application-message strong,
+.application-response strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.application-message p,
+.application-response p {
+  margin: 0;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.application-reviewed-info {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  font-style: italic;
+}
+
+.application-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.btn-review-application {
+  padding: 8px 16px;
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-review-application:hover {
+  background-color: #8B2FE8; /* Lighter purple */
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(111, 34, 210, 0.3);
+}
+
+.application-review-form {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 4px;
+}
+
+.band-details-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #333333;
+}
+
+.band-details-loading {
+  text-align: center;
+  padding: 20px;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  font-size: 14px;
+}
+
+.band-photo-container {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.band-photo {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  border: 2px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  object-fit: contain;
+}
+
+.band-spotify-section {
+  margin-bottom: 16px;
+}
+
+.spotify-embed-container {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.spotify-embed-container iframe {
+  width: 100%;
+  min-height: 352px;
+  border: none;
+}
+
+.band-spotify-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #1DB954; /* Spotify Green */
+  border: 1px solid #1DB954;
+  border-radius: 6px;
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.band-spotify-link:hover {
+  background-color: #1ed760;
+  border-color: #1ed760;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+}
+
+.band-social-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.band-social-link-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border-radius: 6px;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.band-social-link-item:hover {
+  border-color: #6F22D2; /* Primary Accent - Electric Violet */
+  background-color: #2A1F3D;
+  color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(111, 34, 210, 0.3);
+}
+
+.band-social-link-item .social-icon {
+  font-size: 18px;
+  display: inline-block;
+}
+
+.band-info-item {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.band-info-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.band-info-value {
+  display: block;
+  font-size: 14px;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  line-height: 1.5;
+}
+
+.band-description {
+  margin-top: 4px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.review-form-group {
+  margin-bottom: 16px;
+}
+
+.review-form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.review-status-select {
+  width: 100%;
+  padding: 10px 12px;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  border: 2px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.review-status-select:focus {
+  outline: none;
+  border-color: #6F22D2; /* Primary Accent - Electric Violet */
+}
+
+.review-note-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  border: 2px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.review-note-textarea:focus {
+  outline: none;
+  border-color: #6F22D2; /* Primary Accent - Electric Violet */
+}
+
+.review-note-textarea::placeholder {
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+}
+
+.review-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btn-cancel-review {
+  padding: 10px 20px;
+  background-color: transparent;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border: 2px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel-review:hover:not(:disabled) {
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border-color: #FFFFFF;
+  color: #FFFFFF;
+}
+
+.btn-submit-review {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-submit-review.btn-accepted {
+  background-color: #4caf50;
+  color: #FFFFFF;
+}
+
+.btn-submit-review.btn-accepted:hover:not(:disabled) {
+  background-color: #43a047;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.btn-submit-review.btn-rejected {
+  background-color: #f44336;
+  color: #FFFFFF;
+}
+
+.btn-submit-review.btn-rejected:hover:not(:disabled) {
+  background-color: #e53935;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+}
+
+.btn-submit-review.btn-reviewed {
+  background-color: #2196f3;
+  color: #FFFFFF;
+}
+
+.btn-submit-review.btn-reviewed:hover:not(:disabled) {
+  background-color: #1976d2;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.btn-submit-review:disabled,
+.btn-cancel-review:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 768px) {
+  .application-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .review-form-actions {
+    flex-direction: column;
+  }
+
+  .btn-submit-review,
+  .btn-cancel-review {
+    width: 100%;
+  }
+}
+

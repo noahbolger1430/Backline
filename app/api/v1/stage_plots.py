@@ -7,8 +7,9 @@ from sqlalchemy.orm import Session
 from app.api.deps import check_band_permission, get_band_or_404, get_current_active_user
 from app.database import get_db
 from app.models import Band as BandModel
-from app.models import BandRole, User
+from app.models import BandEvent, BandRole, Event, User, Venue, VenueRole, VenueStaff
 from app.models.stage_plot import StagePlot as StagePlotModel
+from app.utils.exceptions import UnauthorizedBandAccessException
 from app.schemas.stage_plot import (
     StagePlot,
     StagePlotCreate,
@@ -71,10 +72,46 @@ def list_band_stage_plots(
 ) -> List[StagePlotSummary]:
     """
     List all stage plots for a band.
-    Requires band membership.
+    Requires band membership OR venue staff/owner status with band on an event at their venue.
     """
     band = get_band_or_404(band_id, db)
-    check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN, BandRole.MEMBER])
+    
+    # Check if user is a band member
+    is_band_member = False
+    try:
+        check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN, BandRole.MEMBER])
+        is_band_member = True
+    except UnauthorizedBandAccessException:
+        # User is not a band member, check if they're venue staff with band on their event
+        pass
+    
+    # If not a band member, check if user is venue staff and band is on an event at their venue
+    if not is_band_member:
+        # Get all venues where user is staff/owner
+        user_venue_staff = db.query(VenueStaff).filter(VenueStaff.user_id == current_user.id).all()
+        venue_ids = [vs.venue_id for vs in user_venue_staff]
+        
+        if venue_ids:
+            # Check if band is on any event at user's venues
+            band_event = (
+                db.query(BandEvent)
+                .join(Event, BandEvent.event_id == Event.id)
+                .filter(BandEvent.band_id == band_id, Event.venue_id.in_(venue_ids))
+                .first()
+            )
+            
+            if not band_event:
+                # User is not a band member and band is not on any event at their venues
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Not authorized to perform this action"
+                )
+        else:
+            # User is not a band member and not venue staff anywhere
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to perform this action"
+            )
 
     stage_plots = (
         db.query(StagePlotModel)
@@ -94,11 +131,47 @@ def get_stage_plot(
 ) -> StagePlot:
     """
     Get a specific stage plot by ID.
-    Requires band membership.
+    Requires band membership OR venue staff/owner status with band on an event at their venue.
     """
     stage_plot = get_stage_plot_or_404(stage_plot_id, db)
     band = get_band_or_404(stage_plot.band_id, db)
-    check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN, BandRole.MEMBER])
+    
+    # Check if user is a band member
+    is_band_member = False
+    try:
+        check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN, BandRole.MEMBER])
+        is_band_member = True
+    except UnauthorizedBandAccessException:
+        # User is not a band member, check if they're venue staff with band on their event
+        pass
+    
+    # If not a band member, check if user is venue staff and band is on an event at their venue
+    if not is_band_member:
+        # Get all venues where user is staff/owner
+        user_venue_staff = db.query(VenueStaff).filter(VenueStaff.user_id == current_user.id).all()
+        venue_ids = [vs.venue_id for vs in user_venue_staff]
+        
+        if venue_ids:
+            # Check if band is on any event at user's venues
+            band_event = (
+                db.query(BandEvent)
+                .join(Event, BandEvent.event_id == Event.id)
+                .filter(BandEvent.band_id == band.id, Event.venue_id.in_(venue_ids))
+                .first()
+            )
+            
+            if not band_event:
+                # User is not a band member and band is not on any event at their venues
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Not authorized to perform this action"
+                )
+        else:
+            # User is not a band member and not venue staff anywhere
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to perform this action"
+            )
 
     return StagePlot.model_validate(stage_plot)
 

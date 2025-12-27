@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { eventService } from "../../services/eventService";
+import EventApplicationsList from "./EventApplicationsList";
 import "./EventModal.css";
 
 const EventModal = ({ event, onClose }) => {
@@ -215,16 +216,29 @@ const EventModal = ({ event, onClose }) => {
               </div>
             </div>
 
-            {/* Application Status */}
+            {/* Band Applications */}
             {fullEvent.status === 'pending' && (
               <div className="modal-section">
-                <h3 className="modal-section-title">Applications</h3>
-                <div className="modal-info-row">
+                <h3 className="modal-section-title">Band Applications</h3>
+                <div className="modal-info-row" style={{ marginBottom: '12px' }}>
                   <span className="modal-info-label">Open for Applications:</span>
                   <span className={`modal-info-value ${fullEvent.is_open_for_applications ? 'text-success' : 'text-muted'}`}>
                     {fullEvent.is_open_for_applications ? 'Yes' : 'No'}
                   </span>
                 </div>
+                <EventApplicationsList 
+                  eventId={fullEvent.id} 
+                  isOpenForApplications={fullEvent.is_open_for_applications}
+                  onApplicationReviewed={async () => {
+                    // Refresh event details after application review
+                    try {
+                      const eventDetails = await eventService.getEvent(event.id);
+                      setFullEvent(eventDetails);
+                    } catch (err) {
+                      console.error("Error refreshing event details:", err);
+                    }
+                  }}
+                />
               </div>
             )}
           </>

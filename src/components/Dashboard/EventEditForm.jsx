@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { eventService } from "../../services/eventService";
+import { stagePlotService } from "../../services/stagePlotService";
+import { bandService } from "../../services/bandService";
 import BandSearchSelect from "./BandSearchSelect";
+import StagePlot from "./StagePlot";
+import EventApplicationsList from "./EventApplicationsList";
 import "./EventEditForm.css";
 
 const EventEditForm = ({ event, onUpdate, onCancel }) => {
@@ -26,6 +30,10 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
   const [applicationActionLoading, setApplicationActionLoading] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [viewingStagePlot, setViewingStagePlot] = useState(null); // { bandId, bandName, stagePlotId, plotName }
+  const [selectedBand, setSelectedBand] = useState(null); // Full band details for modal
+  const [bandModalLoading, setBandModalLoading] = useState(false);
+  const [bandModalError, setBandModalError] = useState(null);
 
   useEffect(() => {
     if (event) {
@@ -51,9 +59,9 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
         status: event.status || "confirmed",
         is_open_for_applications: event.is_open_for_applications || false,
         is_ticketed: event.is_ticketed || false,
-        ticket_price: event.ticket_price ? (event.ticket_price / 100).toString() : "",
+        ticket_price: event.ticket_price ? (event.ticket_price / 100).toFixed(2) : "",
         is_age_restricted: event.is_age_restricted || false,
-        age_restriction: event.age_restriction ? event.age_restriction.toString() : "",
+        age_restriction: event.age_restriction ? String(parseInt(event.age_restriction, 10)) : "",
       });
 
       // Set current image preview if image exists
@@ -126,6 +134,80 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBandCardClick = async (bandId) => {
+    setBandModalLoading(true);
+    setBandModalError(null);
+    setSelectedBand(null);
+    
+    try {
+      const bandDetails = await bandService.getBandDetails(bandId);
+      setSelectedBand(bandDetails);
+    } catch (err) {
+      setBandModalError(err.message || "Failed to load band details");
+      console.error("Error fetching band details:", err);
+    } finally {
+      setBandModalLoading(false);
+    }
+  };
+
+  const handleCloseBandModal = () => {
+    setSelectedBand(null);
+    setBandModalError(null);
+  };
+
+  // Check if Spotify URL is an iframe embed
+  const isSpotifyIframe = (url) => {
+    if (!url) return false;
+    // Check if it contains iframe tag or is an embed URL
+    return url.includes('<iframe') || url.includes('embed.spotify.com') || url.includes('open.spotify.com/embed');
+  };
+
+  // Extract iframe src from embed code or convert URL to embed format
+  const getSpotifyEmbed = (spotifyUrl) => {
+    if (!spotifyUrl) return null;
+    
+    // If it's already an iframe tag, extract the src
+    if (spotifyUrl.includes('<iframe')) {
+      const srcMatch = spotifyUrl.match(/src=["']([^"']+)["']/);
+      if (srcMatch) {
+        return srcMatch[1];
+      }
+      // Try to extract from full iframe code
+      const fullMatch = spotifyUrl.match(/<iframe[^>]+src=["']([^"']+)["']/);
+      if (fullMatch) {
+        return fullMatch[1];
+      }
+    }
+    
+    // If it's already an embed URL, use it directly
+    if (spotifyUrl.includes('embed.spotify.com') || spotifyUrl.includes('open.spotify.com/embed')) {
+      // If it's a full URL, extract just the URL part
+      if (spotifyUrl.startsWith('http')) {
+        return spotifyUrl;
+      }
+      // If it's just the embed path, construct full URL
+      if (spotifyUrl.startsWith('/embed')) {
+        return `https://open.spotify.com${spotifyUrl}`;
+      }
+      return spotifyUrl;
+    }
+    
+    // If it's a regular Spotify URL, convert to embed format
+    // Spotify URLs like: https://open.spotify.com/artist/... or spotify:artist:...
+    if (spotifyUrl.includes('open.spotify.com')) {
+      // Replace /artist/, /album/, /track/, etc. with /embed/artist/, /embed/album/, etc.
+      return spotifyUrl.replace(/open\.spotify\.com\/([^\/]+)/, 'open.spotify.com/embed/$1');
+    }
+    
+    // If it's a spotify: URI, we can't easily convert to embed
+    // Return null so it shows as a link instead
+    if (spotifyUrl.startsWith('spotify:')) {
+      return null;
+    }
+    
+    return null;
   };
 
   const handleOpenApplications = async () => {
@@ -208,6 +290,24 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
 
     try {
       // Clean and format data before sending
+      // Convert ticket price from dollars to cents
+      let ticketPriceInCents = null;
+      if (formData.is_ticketed && formData.ticket_price && formData.ticket_price.trim() !== "") {
+        const priceInDollars = parseFloat(formData.ticket_price);
+        if (!isNaN(priceInDollars) && priceInDollars > 0) {
+          ticketPriceInCents = Math.round(priceInDollars * 100);
+        }
+      }
+      
+      // Convert age restriction to integer
+      let ageRestrictionInt = null;
+      if (formData.is_age_restricted && formData.age_restriction && formData.age_restriction.trim() !== "") {
+        const ageValue = parseInt(formData.age_restriction, 10);
+        if (!isNaN(ageValue) && ageValue > 0) {
+          ageRestrictionInt = ageValue;
+        }
+      }
+      
       const updateData = {
         name: formData.name.trim(),
         description: formData.description?.trim() || null,
@@ -217,14 +317,19 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
         status: formData.status,
         is_open_for_applications: formData.status === "pending" ? formData.is_open_for_applications : false,
         is_ticketed: formData.is_ticketed,
-        ticket_price: formData.is_ticketed && formData.ticket_price 
-          ? Math.round(parseFloat(formData.ticket_price) * 100) // Convert dollars to cents
-          : null,
+        ticket_price: ticketPriceInCents,
         is_age_restricted: formData.is_age_restricted,
-        age_restriction: formData.is_age_restricted && formData.age_restriction 
-          ? parseInt(formData.age_restriction, 10) 
-          : null,
+        age_restriction: ageRestrictionInt,
       };
+      
+      console.log("EventEditForm - Sending update data:", {
+        ticket_price_input: formData.ticket_price,
+        ticket_price_cents: ticketPriceInCents,
+        age_restriction_input: formData.age_restriction,
+        age_restriction_int: ageRestrictionInt,
+        is_ticketed: formData.is_ticketed,
+        is_age_restricted: formData.is_age_restricted
+      });
       
       // Validate required fields
       if (!updateData.name || updateData.name.length === 0) {
@@ -266,74 +371,144 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
   };
 
   if (!isEditing) {
+    const handleRemoveImage = async (e) => {
+      e.stopPropagation();
+      if (window.confirm("Are you sure you want to remove this image?")) {
+        try {
+          setLoading(true);
+          setError(null);
+          // Send remove_image flag to backend
+          await eventService.updateEvent(event.id, {}, null, true);
+          setImagePreview(null);
+          setImageFile(null);
+          if (onUpdate) {
+            onUpdate();
+          }
+        } catch (err) {
+          setError(err.message || "Failed to remove image");
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    // Helper functions to format date and time
+    const formatDate = (dateString) => {
+      if (!dateString) return "N/A";
+      try {
+        const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        const options = { month: "long", day: "numeric", year: "numeric" };
+        return date.toLocaleDateString("en-US", options);
+      } catch (e) {
+        return dateString;
+      }
+    };
+
+    const formatTime = (timeString) => {
+      if (!timeString) return null;
+      try {
+        const [hours, minutes] = timeString.split(":");
+        const date = new Date();
+        date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+        return date.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+      } catch (e) {
+        return timeString;
+      }
+    };
+
+    const formatPrice = (priceInCents) => {
+      if (!priceInCents) return null;
+      return `$${(priceInCents / 100).toFixed(2)}`;
+    };
+
     return (
+      <>
       <div className="event-edit-form-container">
         <div className="event-details-view">
-          <div className="event-detail-row">
-            <span className="detail-label">Status:</span>
-            <span className="detail-value">{event.status || "confirmed"}</span>
-          </div>
-          {event.description && (
-            <div className="event-detail-row">
-              <span className="detail-label">Description:</span>
-              <span className="detail-value">{event.description}</span>
-            </div>
-          )}
-          <div className="event-detail-row">
-            <span className="detail-label">Open for Applications:</span>
-            <span className="detail-value">{formData.is_open_for_applications ? "Yes" : "No"}</span>
-          </div>
-
-          {/* Image Section */}
-          <div className="event-image-section">
-            <div className="event-detail-row">
-              <span className="detail-label">Event Image:</span>
-            </div>
-            {imagePreview ? (
-              <div className="event-image-preview">
-                <img src={imagePreview} alt="Event" />
-                <button
-                  type="button"
-                  className="btn-remove-image"
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    if (window.confirm("Are you sure you want to remove this image?")) {
-                      try {
-                        setLoading(true);
-                        setError(null);
-                        // Send remove_image flag to backend
-                        await eventService.updateEvent(event.id, {}, null, true);
-                        setImagePreview(null);
-                        setImageFile(null);
-                        if (onUpdate) {
-                          onUpdate();
-                        }
-                      } catch (err) {
-                        setError(err.message || "Failed to remove image");
-                      } finally {
-                        setLoading(false);
-                      }
-                    }
-                  }}
-                  disabled={loading}
-                >
-                  {loading ? "Removing..." : "Remove Image"}
-                </button>
+          <div className="event-details-layout">
+            <div className="event-details-left">
+              <div className="event-detail-row">
+                <span className="detail-label">Status:</span>
+                <span className="detail-value">{event.status || "confirmed"}</span>
               </div>
-            ) : (
-              <div className="no-image">No image uploaded</div>
-            )}
-            <div className="image-upload-section">
-              <input
-                type="file"
-                id="event-image-upload"
-                accept="image/*"
-                onChange={handleImageChange}
-                style={{ display: 'none' }}
-              />
-              <label htmlFor="event-image-upload" className="btn-upload-image">
-                {imagePreview ? "Change Image" : "Upload Image"}
-              </label>
+              {event.description && (
+                <div className="event-detail-row">
+                  <span className="detail-label">Description:</span>
+                  <span className="detail-value">{event.description}</span>
+                </div>
+              )}
+              <div className="event-detail-row">
+                <span className="detail-label">Date:</span>
+                <span className="detail-value">{formatDate(event.event_date)}</span>
+              </div>
+              {event.doors_time && (
+                <div className="event-detail-row">
+                  <span className="detail-label">Doors:</span>
+                  <span className="detail-value">{formatTime(event.doors_time)}</span>
+                </div>
+              )}
+              {event.show_time && (
+                <div className="event-detail-row">
+                  <span className="detail-label">Show Time:</span>
+                  <span className="detail-value">{formatTime(event.show_time)}</span>
+                </div>
+              )}
+              {event.is_ticketed && event.ticket_price && (
+                <div className="event-detail-row">
+                  <span className="detail-label">Ticket Price:</span>
+                  <span className="detail-value">{formatPrice(event.ticket_price)}</span>
+                </div>
+              )}
+              {event.is_age_restricted && event.age_restriction && (
+                <div className="event-detail-row">
+                  <span className="detail-label">Age Restriction:</span>
+                  <span className="detail-value">{event.age_restriction}+</span>
+                </div>
+              )}
+              <div className="event-detail-row">
+                <span className="detail-label">Open for Applications:</span>
+                <span className="detail-value">{formData.is_open_for_applications ? "Yes" : "No"}</span>
+              </div>
+            </div>
+
+            {/* Image Section - Right Column */}
+            <div className="event-image-section">
+              {imagePreview ? (
+                <div className="event-image-preview">
+                  <img src={imagePreview} alt="Event" />
+                  <button
+                    type="button"
+                    className="btn-remove-image-icon"
+                    onClick={handleRemoveImage}
+                    disabled={loading}
+                    title="Remove image"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M2 4H14M12.6667 4V13.3333C12.6667 14 12 14.6667 11.3333 14.6667H4.66667C4 14.6667 3.33333 14 3.33333 13.3333V4M5.33333 4V2.66667C5.33333 2 6 1.33333 6.66667 1.33333H9.33333C10 1.33333 10.6667 2 10.6667 2.66667V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M6.66667 7.33333V11.3333M9.33333 7.33333V11.3333" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="no-image">No image uploaded</div>
+              )}
+              <div className="image-upload-section">
+                <input
+                  type="file"
+                  id="event-image-upload"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  style={{ display: 'none' }}
+                />
+                <label htmlFor="event-image-upload" className="btn-upload-image">
+                  {imagePreview ? "Change Image" : "Upload Image"}
+                </label>
+              </div>
             </div>
           </div>
 
@@ -345,25 +520,71 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
             {loadingBands ? (
               <div className="bands-loading">Loading bands...</div>
             ) : eventBands.length > 0 ? (
-              <div className="event-bands-list">
-                {eventBands.map((bandEvent) => (
-                  <div key={bandEvent.band_id || bandEvent.id} className="event-band-item">
-                    <span className="band-name">
-                      {bandEvent.band_name || bandEvent.band?.name || `Band ${bandEvent.band_id}`}
-                    </span>
-                    <button
-                      type="button"
-                      className="btn-remove-band"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveBand(bandEvent.band_id);
-                      }}
-                      disabled={loading}
+              <div className="event-bands-grid">
+                {eventBands.map((bandEvent) => {
+                  const bandName = bandEvent.band_name || bandEvent.band?.name || `Band ${bandEvent.band_id}`;
+                  const bandImagePath = bandEvent.band_image_path || bandEvent.band?.image_path || null;
+                  const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
+                  const imageUrl = bandImagePath ? `${apiBaseUrl}/${bandImagePath}` : null;
+                  
+                  return (
+                    <div 
+                      key={bandEvent.band_id || bandEvent.id} 
+                      className="event-band-card clickable-band-card"
+                      onClick={() => handleBandCardClick(bandEvent.band_id)}
                     >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+                      <div className="band-card-image-container">
+                        {imageUrl ? (
+                          <img src={imageUrl} alt={bandName} className="band-card-image" />
+                        ) : (
+                          <div className="band-card-placeholder">No Image</div>
+                        )}
+                        <button
+                          type="button"
+                          className="btn-remove-band-icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveBand(bandEvent.band_id);
+                          }}
+                          disabled={loading}
+                          title="Remove band"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2 4H14M12.6667 4V13.3333C12.6667 14 12 14.6667 11.3333 14.6667H4.66667C4 14.6667 3.33333 14 3.33333 13.3333V4M5.33333 4V2.66667C5.33333 2 6 1.33333 6.66667 1.33333H9.33333C10 1.33333 10.6667 2 10.6667 2.66667V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M6.66667 7.33333V11.3333M9.33333 7.33333V11.3333" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="band-card-name">{bandName}</div>
+                      <button
+                        type="button"
+                        className="btn-view-stage-plot"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            // Fetch stage plots for this band
+                            const plots = await stagePlotService.getBandStagePlots(bandEvent.band_id);
+                            if (plots && plots.length > 0) {
+                              // Show the first stage plot
+                              setViewingStagePlot({
+                                bandId: bandEvent.band_id,
+                                bandName: bandName,
+                                stagePlotId: plots[0].id
+                              });
+                            } else {
+                              alert(`${bandName} doesn't have any stage plots yet.`);
+                            }
+                          } catch (err) {
+                            console.error("Error fetching stage plots:", err);
+                            alert("Failed to load stage plot. Please try again.");
+                          }
+                        }}
+                      >
+                        View Stage Plot
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="no-bands">No bands added yet</div>
@@ -394,38 +615,40 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
           {/* Application Controls */}
           {event.status === "pending" && (
             <div className="application-controls">
-              <div className="event-detail-row">
-                <span className="detail-label">Application Status:</span>
-                <span className="detail-value">
-                  {formData.is_open_for_applications ? "Open" : "Closed"}
-                </span>
-              </div>
-              <div className="application-buttons">
-                {!formData.is_open_for_applications ? (
-                  <button
-                    type="button"
-                    className="btn-open-applications"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenApplications();
-                    }}
-                    disabled={applicationActionLoading}
-                  >
-                    {applicationActionLoading ? "Opening..." : "Open for Applications"}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn-close-applications"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCloseApplications();
-                    }}
-                    disabled={applicationActionLoading}
-                  >
-                    {applicationActionLoading ? "Closing..." : "Close Applications"}
-                  </button>
-                )}
+              <div className="application-status-row">
+                <div className="event-detail-row">
+                  <span className="detail-label">Application Status:</span>
+                  <span className="detail-value">
+                    {formData.is_open_for_applications ? "Open" : "Closed"}
+                  </span>
+                </div>
+                <div className="application-button-container">
+                  {!formData.is_open_for_applications ? (
+                    <button
+                      type="button"
+                      className="btn-open-applications"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenApplications();
+                      }}
+                      disabled={applicationActionLoading}
+                    >
+                      {applicationActionLoading ? "Opening..." : "Open for Applications"}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn-close-applications"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCloseApplications();
+                      }}
+                      disabled={applicationActionLoading}
+                    >
+                      {applicationActionLoading ? "Closing..." : "Close Applications"}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -453,10 +676,160 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
           </button>
         </div>
       </div>
+
+      {/* Band Info Modal */}
+      {(selectedBand !== null || bandModalLoading || bandModalError) && (
+        <div className="band-info-modal-overlay" onClick={handleCloseBandModal}>
+          <div className="band-info-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="band-info-modal-header">
+              <h2>Band Information</h2>
+              <button 
+                className="band-info-modal-close"
+                onClick={handleCloseBandModal}
+              >
+                ×
+              </button>
+            </div>
+            <div className="band-info-modal-body">
+              {bandModalLoading ? (
+                <div className="band-info-loading">Loading band information...</div>
+              ) : bandModalError ? (
+                <div className="band-info-error">{bandModalError}</div>
+              ) : selectedBand ? (
+                <>
+                  <div className="band-info-main">
+                    <h3 className="band-info-name">{selectedBand.name}</h3>
+                    {selectedBand.description && (
+                      <p className="band-info-description">{selectedBand.description}</p>
+                    )}
+                  </div>
+
+                  {/* Social Media Links */}
+                  <div className="band-info-social">
+                    <h4 className="band-info-section-title">Connect</h4>
+                    <div className="band-info-social-links">
+                      {selectedBand.instagram_url && (
+                        <a 
+                          href={selectedBand.instagram_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="band-social-link-item"
+                        >
+                          <span className="social-icon">📷</span>
+                          <span>Instagram</span>
+                        </a>
+                      )}
+                      {selectedBand.facebook_url && (
+                        <a 
+                          href={selectedBand.facebook_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="band-social-link-item"
+                        >
+                          <span className="social-icon">👥</span>
+                          <span>Facebook</span>
+                        </a>
+                      )}
+                      {selectedBand.website_url && (
+                        <a 
+                          href={selectedBand.website_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="band-social-link-item"
+                        >
+                          <span className="social-icon">🌐</span>
+                          <span>Website</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Spotify Section */}
+                  {selectedBand.spotify_url && (
+                    <div className="band-info-spotify">
+                      <h4 className="band-info-section-title">Spotify</h4>
+                      {isSpotifyIframe(selectedBand.spotify_url) && getSpotifyEmbed(selectedBand.spotify_url) ? (
+                        <div className="spotify-embed-container">
+                          <iframe
+                            src={getSpotifyEmbed(selectedBand.spotify_url)}
+                            width="100%"
+                            height="352"
+                            frameBorder="0"
+                            allowtransparency="true"
+                            allow="encrypted-media"
+                            title="Spotify Embed"
+                            style={{ borderRadius: '12px' }}
+                          />
+                        </div>
+                      ) : (
+                        <a 
+                          href={selectedBand.spotify_url.startsWith('http') ? selectedBand.spotify_url : `https://${selectedBand.spotify_url}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="band-social-link-item spotify-link"
+                        >
+                          <span className="social-icon">🎵</span>
+                          <span>Listen on Spotify</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Additional Info */}
+                  <div className="band-info-additional">
+                    {selectedBand.genre && (
+                      <div className="band-info-item">
+                        <span className="band-info-label">Genre:</span>
+                        <span className="band-info-value">{selectedBand.genre}</span>
+                      </div>
+                    )}
+                    {selectedBand.location && (
+                      <div className="band-info-item">
+                        <span className="band-info-label">Location:</span>
+                        <span className="band-info-value">{selectedBand.location}</span>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stage Plot View Modal */}
+      {viewingStagePlot && (
+        <div className="stage-plot-modal-overlay" onClick={() => setViewingStagePlot(null)}>
+          <div className="stage-plot-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="stage-plot-modal-header">
+              <h2>{viewingStagePlot.bandName} - {viewingStagePlot.plotName || "Stage Plot"}</h2>
+              <button 
+                className="stage-plot-modal-close"
+                onClick={() => setViewingStagePlot(null)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="stage-plot-modal-body">
+              <StagePlot
+                onBack={() => setViewingStagePlot(null)}
+                bandId={viewingStagePlot.bandId}
+                stagePlotId={viewingStagePlot.stagePlotId}
+                viewOnly={true}
+                onPlotNameChange={(plotName) => {
+                  setViewingStagePlot(prev => ({ ...prev, plotName }));
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      </>
     );
   }
 
   return (
+    <>
     <div className="event-edit-form-container" onClick={(e) => e.stopPropagation()}>
       {error && <div className="event-form-error">{error}</div>}
 
@@ -617,6 +990,32 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
           {imagePreview && (
             <div className="image-preview">
               <img src={imagePreview} alt="Preview" />
+              <button
+                type="button"
+                className="btn-remove-image-icon"
+                onClick={() => {
+                  // Check if this is the original image or a new preview
+                  const isOriginalImage = event.image_path && !imageFile;
+                  if (isOriginalImage) {
+                    // If removing original, we need to mark it for removal on submit
+                    // Store a flag that we'll check in handleSubmit
+                    setImageFile("REMOVE"); // Special marker
+                  }
+                  setImagePreview(null);
+                  // Reset file input
+                  const fileInput = document.getElementById('image');
+                  if (fileInput) {
+                    fileInput.value = '';
+                  }
+                }}
+                disabled={loading}
+                title="Remove image"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2 4H14M12.6667 4V13.3333C12.6667 14 12 14.6667 11.3333 14.6667H4.66667C4 14.6667 3.33333 14 3.33333 13.3333V4M5.33333 4V2.66667C5.33333 2 6 1.33333 6.66667 1.33333H9.33333C10 1.33333 10.6667 2 10.6667 2.66667V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M6.66667 7.33333V11.3333M9.33333 7.33333V11.3333" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </button>
             </div>
           )}
           <input
@@ -626,29 +1025,6 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
             accept="image/*"
             onChange={handleImageChange}
           />
-          {imagePreview && (
-            <button
-              type="button"
-              className="btn-remove-image"
-              onClick={() => {
-                // Check if this is the original image or a new preview
-                const isOriginalImage = event.image_path && !imageFile;
-                if (isOriginalImage) {
-                  // If removing original, we need to mark it for removal on submit
-                  // Store a flag that we'll check in handleSubmit
-                  setImageFile("REMOVE"); // Special marker
-                }
-                setImagePreview(null);
-                // Reset file input
-                const fileInput = document.getElementById('image');
-                if (fileInput) {
-                  fileInput.value = '';
-                }
-              }}
-            >
-              Remove Image
-            </button>
-          )}
         </div>
 
         {/* Bands Section in Edit Form */}
@@ -657,25 +1033,45 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
           {loadingBands ? (
             <div className="bands-loading">Loading bands...</div>
           ) : eventBands.length > 0 ? (
-            <div className="event-bands-list">
-              {eventBands.map((bandEvent) => (
-                <div key={bandEvent.band_id || bandEvent.id} className="event-band-item">
-                  <span className="band-name">
-                    {bandEvent.band_name || bandEvent.band?.name || `Band ${bandEvent.band_id}`}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn-remove-band"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveBand(bandEvent.band_id);
-                    }}
-                    disabled={loading}
+            <div className="event-bands-grid">
+              {eventBands.map((bandEvent) => {
+                const bandName = bandEvent.band_name || bandEvent.band?.name || `Band ${bandEvent.band_id}`;
+                const bandImagePath = bandEvent.band_image_path || bandEvent.band?.image_path || null;
+                const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
+                const imageUrl = bandImagePath ? `${apiBaseUrl}/${bandImagePath}` : null;
+                
+                return (
+                  <div 
+                    key={bandEvent.band_id || bandEvent.id} 
+                    className="event-band-card clickable-band-card"
+                    onClick={() => handleBandCardClick(bandEvent.band_id)}
                   >
-                    Remove
-                  </button>
-                </div>
-              ))}
+                    <div className="band-card-image-container">
+                      {imageUrl ? (
+                        <img src={imageUrl} alt={bandName} className="band-card-image" />
+                      ) : (
+                        <div className="band-card-placeholder">No Image</div>
+                      )}
+                      <button
+                        type="button"
+                        className="btn-remove-band-icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveBand(bandEvent.band_id);
+                        }}
+                        disabled={loading}
+                        title="Remove band"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M2 4H14M12.6667 4V13.3333C12.6667 14 12 14.6667 11.3333 14.6667H4.66667C4 14.6667 3.33333 14 3.33333 13.3333V4M5.33333 4V2.66667C5.33333 2 6 1.33333 6.66667 1.33333H9.33333C10 1.33333 10.6667 2 10.6667 2.66667V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M6.66667 7.33333V11.3333M9.33333 7.33333V11.3333" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="band-card-name">{bandName}</div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="no-bands">No bands added yet</div>
@@ -707,39 +1103,61 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
         {formData.status === "pending" && (
           <div className="form-section application-controls-section">
             <h3 className="form-section-title">Applications</h3>
-            <div className="event-detail-row">
-              <span className="detail-label">Current Status:</span>
-              <span className="detail-value">
-                {formData.is_open_for_applications ? "Open" : "Closed"}
-              </span>
+            <div className="application-status-row">
+              <div className="event-detail-row">
+                <span className="detail-label">Application Status:</span>
+                <span className="detail-value">
+                  {formData.is_open_for_applications ? "Open" : "Closed"}
+                </span>
+              </div>
+              <div className="application-button-container">
+                {formData.is_open_for_applications ? (
+                  <button
+                    type="button"
+                    className="btn-close-applications"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCloseApplications();
+                    }}
+                    disabled={applicationActionLoading}
+                  >
+                    {applicationActionLoading ? "Closing..." : "Close Applications"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-open-applications"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenApplications();
+                    }}
+                    disabled={applicationActionLoading}
+                  >
+                    {applicationActionLoading ? "Opening..." : "Open for Applications"}
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="application-buttons">
-              {!formData.is_open_for_applications ? (
-                <button
-                  type="button"
-                  className="btn-open-applications"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenApplications();
-                  }}
-                  disabled={applicationActionLoading}
-                >
-                  {applicationActionLoading ? "Opening..." : "Open for Applications"}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="btn-close-applications"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCloseApplications();
-                  }}
-                  disabled={applicationActionLoading}
-                >
-                  {applicationActionLoading ? "Closing..." : "Close Applications"}
-                </button>
-              )}
-            </div>
+            {/* Applications List */}
+            {event?.id && (
+              <EventApplicationsList 
+                eventId={event.id} 
+                isOpenForApplications={formData.is_open_for_applications}
+                onApplicationReviewed={async () => {
+                  // Refresh event bands after application review (accepting adds band to event)
+                  await fetchEventBands();
+                  // Optionally refresh full event data
+                  if (onUpdate) {
+                    try {
+                      const updatedEvent = await eventService.getEvent(event.id);
+                      onUpdate(updatedEvent);
+                    } catch (err) {
+                      console.error("Error refreshing event:", err);
+                    }
+                  }
+                }}
+              />
+            )}
           </div>
         )}
 
@@ -766,6 +1184,155 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
         </div>
       </form>
     </div>
+
+    {/* Band Info Modal */}
+    {(selectedBand !== null || bandModalLoading || bandModalError) && (
+      <div className="band-info-modal-overlay" onClick={handleCloseBandModal}>
+        <div className="band-info-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="band-info-modal-header">
+            <h2>Band Information</h2>
+            <button 
+              className="band-info-modal-close"
+              onClick={handleCloseBandModal}
+            >
+              ×
+            </button>
+          </div>
+          <div className="band-info-modal-body">
+            {bandModalLoading ? (
+              <div className="band-info-loading">Loading band information...</div>
+            ) : bandModalError ? (
+              <div className="band-info-error">{bandModalError}</div>
+            ) : selectedBand ? (
+              <>
+                <div className="band-info-main">
+                  <h3 className="band-info-name">{selectedBand.name}</h3>
+                  {selectedBand.description && (
+                    <p className="band-info-description">{selectedBand.description}</p>
+                  )}
+                </div>
+
+                {/* Social Media Links */}
+                <div className="band-info-social">
+                  <h4 className="band-info-section-title">Connect</h4>
+                  <div className="band-info-social-links">
+                    {selectedBand.instagram_url && (
+                      <a 
+                        href={selectedBand.instagram_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="band-social-link-item"
+                      >
+                        <span className="social-icon">📷</span>
+                        <span>Instagram</span>
+                      </a>
+                    )}
+                    {selectedBand.facebook_url && (
+                      <a 
+                        href={selectedBand.facebook_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="band-social-link-item"
+                      >
+                        <span className="social-icon">👥</span>
+                        <span>Facebook</span>
+                      </a>
+                    )}
+                    {selectedBand.website_url && (
+                      <a 
+                        href={selectedBand.website_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="band-social-link-item"
+                      >
+                        <span className="social-icon">🌐</span>
+                        <span>Website</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {/* Spotify Section */}
+                {selectedBand.spotify_url && (
+                  <div className="band-info-spotify">
+                    <h4 className="band-info-section-title">Spotify</h4>
+                    {isSpotifyIframe(selectedBand.spotify_url) ? (
+                      <div className="spotify-embed-container">
+                        <iframe
+                          src={getSpotifyEmbed(selectedBand.spotify_url)}
+                          width="100%"
+                          height="352"
+                          frameBorder="0"
+                          allowtransparency="true"
+                          allow="encrypted-media"
+                          title="Spotify Embed"
+                          style={{ borderRadius: '12px' }}
+                        />
+                      </div>
+                    ) : (
+                      <a 
+                        href={selectedBand.spotify_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="band-social-link-item spotify-link"
+                      >
+                        <span className="social-icon">🎵</span>
+                        <span>Listen on Spotify</span>
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {/* Additional Info */}
+                <div className="band-info-additional">
+                  {selectedBand.genre && (
+                    <div className="band-info-item">
+                      <span className="band-info-label">Genre:</span>
+                      <span className="band-info-value">{selectedBand.genre}</span>
+                    </div>
+                  )}
+                  {selectedBand.location && (
+                    <div className="band-info-item">
+                      <span className="band-info-label">Location:</span>
+                      <span className="band-info-value">{selectedBand.location}</span>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Stage Plot View Modal */}
+    {viewingStagePlot && (
+      <div className="stage-plot-modal-overlay" onClick={() => setViewingStagePlot(null)}>
+        <div className="stage-plot-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="stage-plot-modal-header">
+            <h2>{viewingStagePlot.bandName} - {viewingStagePlot.plotName || "Stage Plot"}</h2>
+            <button 
+              className="stage-plot-modal-close"
+              onClick={() => setViewingStagePlot(null)}
+            >
+              ×
+            </button>
+          </div>
+          <div className="stage-plot-modal-body">
+            <StagePlot
+              onBack={() => setViewingStagePlot(null)}
+              bandId={viewingStagePlot.bandId}
+              stagePlotId={viewingStagePlot.stagePlotId}
+              viewOnly={true}
+              onPlotNameChange={(plotName) => {
+                setViewingStagePlot(prev => ({ ...prev, plotName }));
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

@@ -109,13 +109,12 @@ const VenueCreation = ({ onSuccess, onBack }) => {
   return (
     <div className="onboarding-container">
       <div className="onboarding-card venue-creation">
-        <h1 className="app-title">BackLine</h1>
         <h2 className="onboarding-heading">Create Your Venue</h2>
 
         <form onSubmit={handleSubmit} className="onboarding-form">
           {error && <div className="error-message">{error}</div>}
 
-          <div className="form-section">
+          <div className="venue-form-section">
             <h3>Basic Information</h3>
 
             <div className="form-group">
@@ -163,7 +162,7 @@ const VenueCreation = ({ onSuccess, onBack }) => {
             </div>
           </div>
 
-          <div className="form-section">
+          <div className="venue-form-section">
             <h3>Location</h3>
 
             <div className="form-group">
@@ -227,7 +226,7 @@ const VenueCreation = ({ onSuccess, onBack }) => {
             </div>
           </div>
 
-          <div className="form-section">
+          <div className="venue-form-section">
             <h3>Venue Details</h3>
 
             <div className="form-row">

@@ -80,7 +80,7 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
         is_open_for_applications: formData.is_pending ? formData.is_open_for_applications : false,
         is_ticketed: formData.is_ticketed,
         ticket_price: formData.is_ticketed && formData.ticket_price 
-          ? parseInt(formData.ticket_price, 10) 
+          ? Math.round(parseFloat(formData.ticket_price) * 100 + 0.0001) // Add small epsilon to avoid floating point errors
           : null,
         is_age_restricted: formData.is_age_restricted,
         age_restriction: formData.is_age_restricted && formData.age_restriction 
@@ -270,7 +270,7 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
 
         {formData.is_ticketed && (
           <div className="form-group">
-            <label htmlFor="ticket_price">Ticket Price (in cents) *</label>
+            <label htmlFor="ticket_price">Ticket Price *</label>
             <input
               type="number"
               id="ticket_price"
@@ -278,8 +278,9 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
               value={formData.ticket_price}
               onChange={handleChange}
               min={0}
+              step="0.01"
               required={formData.is_ticketed}
-              placeholder="e.g., 1500 for $15.00"
+              placeholder="e.g., 15.00"
             />
           </div>
         )}

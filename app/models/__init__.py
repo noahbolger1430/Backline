@@ -4,6 +4,7 @@ from app.models.band_event import BandEvent
 from app.models.band_member import BandMember, BandRole
 from app.models.event import Event
 from app.models.event_application import ApplicationStatus, EventApplication
+from app.models.notification import Notification, NotificationType
 from app.models.user import User
 from app.models.venue import Venue
 from app.models.venue_availability import VenueAvailability, VenueAvailabilityStatus
@@ -30,6 +31,8 @@ __all__ = [
     "Event",
     "EventApplication",
     "ApplicationStatus",
+    "Notification",
+    "NotificationType",
     "StagePlot",
 ]
 

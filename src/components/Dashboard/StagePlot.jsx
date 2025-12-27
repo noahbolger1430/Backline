@@ -831,16 +831,33 @@ const getEquipmentYOffset = (equipmentId) => {
 };
 
 // Draggable Equipment Component
-const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef }) => {
+const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = false }) => {
   const groupRef = useRef();
   const meshRef = useRef();
   const [hovered, setHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragPlane = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
   const { raycaster, camera, gl } = useThree();
+  const lastClickTimeRef = useRef(0);
 
   const handlePointerDown = (e) => {
+    if (viewOnly) return;
     e.stopPropagation();
+    
+    // Check for double click before starting drag
+    const currentTime = Date.now();
+    const timeSinceLastClick = currentTime - lastClickTimeRef.current;
+    
+    if (timeSinceLastClick < 300 && timeSinceLastClick > 0) {
+      // Double click detected - remove item
+      onRemove();
+      lastClickTimeRef.current = 0;
+      return; // Don't start dragging
+    }
+    
+    // Store click time for potential double click
+    lastClickTimeRef.current = currentTime;
+    
     setIsDragging(true);
     gl.domElement.style.cursor = 'grabbing';
     // Disable orbit controls while dragging
@@ -850,6 +867,7 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef }) => {
   };
 
   const lastUpdateRef = useRef({ x: null, z: null });
+  const hasMovedRef = useRef(false);
   
   useFrame((state) => {
     if (isDragging && groupRef.current) {
@@ -878,6 +896,7 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef }) => {
         ) {
           lastUpdateRef.current.x = newX;
           lastUpdateRef.current.z = newZ;
+          hasMovedRef.current = true; // Mark that item has been moved
           onUpdate(newX, newZ);
         }
       }
@@ -885,22 +904,23 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef }) => {
       // Reset when not dragging
       lastUpdateRef.current.x = null;
       lastUpdateRef.current.z = null;
+      hasMovedRef.current = false;
     }
   });
 
   useEffect(() => {
     const handlePointerUp = (e) => {
       if (isDragging) {
+        // If item was moved during drag, reset click time to prevent accidental double-click
+        if (hasMovedRef.current) {
+          lastClickTimeRef.current = 0;
+        }
+        
         setIsDragging(false);
         gl.domElement.style.cursor = 'default';
         // Re-enable orbit controls
         if (controlsRef?.current) {
           controlsRef.current.enabled = true;
-        }
-        
-        // Check for double click to remove
-        if (e.detail === 2) {
-          onRemove();
         }
       }
     };
@@ -914,7 +934,7 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef }) => {
       gl.domElement.removeEventListener('pointerup', handlePointerUp);
       gl.domElement.removeEventListener('pointerleave', handlePointerUp);
     };
-  }, [isDragging, gl, onRemove, controlsRef]);
+  }, [isDragging, gl, controlsRef]);
 
   const color = hovered || isDragging ? "#6F22D2" : getEquipmentColor(item.id);
   const isAmplifier = item.id === "guitar-amp" || item.id === "bass-amp" || item.id === "keyboard-amp";
@@ -1168,7 +1188,7 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef }) => {
         </mesh>
       )}
       
-      {/* Label above equipment (skip for power connections) */}
+      {/* Label above equipment - hide for power connections */}
       {!isPowerConnection && (
         <Text
           position={[0, 1, 0]}
@@ -1187,7 +1207,7 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef }) => {
 };
 
 // 3D Stage Component
-const Stage3D = ({ stageItems, onItemUpdate, onItemRemove, draggedItem, onDrop, controlsRef }) => {
+const Stage3D = ({ stageItems, onItemUpdate, onItemRemove, draggedItem, onDrop, controlsRef, viewOnly = false }) => {
   const stageRef = useRef();
   const stageFloorRef = useRef();
   const [hovered, setHovered] = useState(false);
@@ -1266,6 +1286,7 @@ const Stage3D = ({ stageItems, onItemUpdate, onItemRemove, draggedItem, onDrop, 
           onUpdate={(newX, newZ) => onItemUpdate(item.instanceId, newX, newZ)}
           onRemove={() => onItemRemove(item.instanceId)}
           controlsRef={controlsRef}
+          viewOnly={viewOnly}
         />
       ))}
     </group>
@@ -1273,7 +1294,7 @@ const Stage3D = ({ stageItems, onItemUpdate, onItemRemove, draggedItem, onDrop, 
 };
 
 // Main Stage Plot Component
-const StagePlot = ({ onBack, bandId, stagePlotId = null }) => {
+const StagePlot = ({ onBack, bandId, stagePlotId = null, viewOnly = false, onPlotNameChange = null }) => {
   const [stageItems, setStageItems] = useState([]);
   const [draggedItem, setDraggedItem] = useState(null);
   const [nextId, setNextId] = useState(1);
@@ -1311,6 +1332,9 @@ const StagePlot = ({ onBack, bandId, stagePlotId = null }) => {
     try {
       const data = await stagePlotService.getStagePlot(stagePlotId);
       setPlotName(data.name);
+      if (onPlotNameChange) {
+        onPlotNameChange(data.name);
+      }
       setPlotDescription(data.description || "");
       setCurrentPlotId(data.id);
       
@@ -1492,7 +1516,7 @@ const StagePlot = ({ onBack, bandId, stagePlotId = null }) => {
   };
 
   const handleBack = () => {
-    if (hasUnsavedChanges) {
+    if (!viewOnly && hasUnsavedChanges) {
       const confirmLeave = window.confirm(
         "You have unsaved changes. Are you sure you want to leave?"
       );
@@ -1513,40 +1537,42 @@ const StagePlot = ({ onBack, bandId, stagePlotId = null }) => {
 
   return (
     <div className="stage-plot-container">
-      <div className="stage-plot-header">
-        <button className="back-button" onClick={handleBack}>
-          <span className="back-arrow">←</span>
-          Back to Tools
-        </button>
-        <div className="stage-plot-title-container">
-          <h2 className="stage-plot-title">{plotName}</h2>
-          {hasUnsavedChanges && (
-            <span className="unsaved-indicator">• Unsaved changes</span>
-          )}
-        </div>
-        <div className="stage-plot-actions">
-          {saveStatus && (
-            <span className={`save-status save-status-${saveStatus.type}`}>
-              {saveStatus.message}
-            </span>
-          )}
-          <button 
-            className="action-button save-button" 
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? "Saving..." : "Save"}
+      {!viewOnly && (
+        <div className="stage-plot-header">
+          <button className="back-button" onClick={handleBack}>
+            <span className="back-arrow">←</span>
+            Back to Stage Plots
           </button>
+          <div className="stage-plot-title-container">
+            <h2 className="stage-plot-title">{plotName}</h2>
+            {hasUnsavedChanges && (
+              <span className="unsaved-indicator">• Unsaved changes</span>
+            )}
+          </div>
+          <div className="stage-plot-actions">
+            {saveStatus && (
+              <span className={`save-status save-status-${saveStatus.type}`}>
+                {saveStatus.message}
+              </span>
+            )}
+            <button 
+              className="action-button save-button" 
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? "Saving..." : "Save"}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
       
       <div className="stage-plot-editor">
         <div 
           ref={canvasContainerRef}
           className={`editor-canvas-3d ${isDraggingOverCanvas ? 'dragging-over' : ''}`}
-          onDragOver={handleCanvasDragOver}
-          onDragLeave={handleCanvasDragLeave}
-          onDrop={handleCanvasDrop}
+          onDragOver={viewOnly ? undefined : handleCanvasDragOver}
+          onDragLeave={viewOnly ? undefined : handleCanvasDragLeave}
+          onDrop={viewOnly ? undefined : handleCanvasDrop}
         >
           <Canvas
             shadows
@@ -1592,6 +1618,7 @@ const StagePlot = ({ onBack, bandId, stagePlotId = null }) => {
               draggedItem={draggedItem}
               onDrop={handleDrop}
               controlsRef={controlsRef}
+              viewOnly={viewOnly}
             />
 
             {/* Grid helper */}
@@ -1603,33 +1630,39 @@ const StagePlot = ({ onBack, bandId, stagePlotId = null }) => {
             <p>🖱️ Left click + drag: Rotate view</p>
             <p>🖱️ Right click + drag: Pan</p>
             <p>🖱️ Scroll: Zoom</p>
-            <p>🖱️ Click + drag equipment: Move</p>
-            <p>🖱️ Double click equipment: Remove</p>
+            {!viewOnly && (
+              <>
+                <p>🖱️ Click + drag equipment: Move</p>
+                <p>🖱️ Double click equipment: Remove</p>
+              </>
+            )}
             {draggedItem && (
               <p className="drop-hint">📍 Click on stage to place {draggedItem.name}</p>
             )}
           </div>
         </div>
         
-        <div className="editor-sidebar">
-          <h3 className="sidebar-title">Equipment</h3>
-          <p className="sidebar-hint">Drag items onto the stage</p>
-          <div className="equipment-list">
-            {equipmentList.map((equipment) => (
-              <div
-                key={equipment.id}
-                className="equipment-item"
-                draggable="true"
-                onDragStart={(e) => handleDragStart(e, equipment)}
-              >
-                <div className="equipment-icon-box">
-                  <span className="equipment-icon">{equipment.icon}</span>
+        {!viewOnly && (
+          <div className="editor-sidebar">
+            <h3 className="sidebar-title">Equipment</h3>
+            <p className="sidebar-hint">Drag items onto the stage</p>
+            <div className="equipment-list">
+              {equipmentList.map((equipment) => (
+                <div
+                  key={equipment.id}
+                  className="equipment-item"
+                  draggable="true"
+                  onDragStart={(e) => handleDragStart(e, equipment)}
+                >
+                  <div className="equipment-icon-box">
+                    <span className="equipment-icon">{equipment.icon}</span>
+                  </div>
+                  <span className="equipment-name">{equipment.name}</span>
                 </div>
-                <span className="equipment-name">{equipment.name}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Name Modal */}

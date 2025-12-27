@@ -11,6 +11,10 @@ const BandProfile = ({ band, onBandUpdate }) => {
     description: band?.description || "",
     genre: band?.genre || "",
     location: band?.location || "",
+    instagram_url: band?.instagram_url || "",
+    facebook_url: band?.facebook_url || "",
+    spotify_url: band?.spotify_url || "",
+    website_url: band?.website_url || "",
   });
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -50,6 +54,10 @@ const BandProfile = ({ band, onBandUpdate }) => {
       description: band?.description || "",
       genre: band?.genre || "",
       location: band?.location || "",
+      instagram_url: band?.instagram_url || "",
+      facebook_url: band?.facebook_url || "",
+      spotify_url: band?.spotify_url || "",
+      website_url: band?.website_url || "",
     });
     setSelectedImage(null);
     setImagePreview(null);
@@ -73,6 +81,18 @@ const BandProfile = ({ band, onBandUpdate }) => {
       if (formData.location !== (band.location || "")) {
         updateData.location = formData.location || null;
       }
+      if (formData.instagram_url !== (band.instagram_url || "")) {
+        updateData.instagram_url = formData.instagram_url || null;
+      }
+      if (formData.facebook_url !== (band.facebook_url || "")) {
+        updateData.facebook_url = formData.facebook_url || null;
+      }
+      if (formData.spotify_url !== (band.spotify_url || "")) {
+        updateData.spotify_url = formData.spotify_url || null;
+      }
+      if (formData.website_url !== (band.website_url || "")) {
+        updateData.website_url = formData.website_url || null;
+      }
 
       // Always send all current form data when submitting (FormData requires all fields)
       // Only make API call if there are changes or an image was selected
@@ -83,6 +103,10 @@ const BandProfile = ({ band, onBandUpdate }) => {
           description: formData.description,
           genre: formData.genre,
           location: formData.location,
+          instagram_url: formData.instagram_url,
+          facebook_url: formData.facebook_url,
+          spotify_url: formData.spotify_url,
+          website_url: formData.website_url,
         };
         const updatedBand = await bandService.updateBand(band.id, allFormData, selectedImage);
         if (onBandUpdate) {
@@ -227,6 +251,114 @@ const BandProfile = ({ band, onBandUpdate }) => {
             />
           ) : (
             <div className="band-profile-value">{band.location || "Not set"}</div>
+          )}
+        </div>
+
+        <div className="band-profile-field">
+          <label htmlFor="band-instagram">Instagram</label>
+          {isEditing ? (
+            <input
+              type="url"
+              id="band-instagram"
+              name="instagram_url"
+              value={formData.instagram_url}
+              onChange={handleInputChange}
+              className="band-profile-input"
+              disabled={loading}
+              placeholder="https://instagram.com/yourband"
+            />
+          ) : (
+            <div className="band-profile-value">
+              {band.instagram_url ? (
+                <a href={band.instagram_url} target="_blank" rel="noopener noreferrer" className="band-social-link">
+                  <span className="social-icon">📷</span>
+                  {band.instagram_url}
+                </a>
+              ) : (
+                "Not set"
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="band-profile-field">
+          <label htmlFor="band-facebook">Facebook</label>
+          {isEditing ? (
+            <input
+              type="url"
+              id="band-facebook"
+              name="facebook_url"
+              value={formData.facebook_url}
+              onChange={handleInputChange}
+              className="band-profile-input"
+              disabled={loading}
+              placeholder="https://facebook.com/yourband"
+            />
+          ) : (
+            <div className="band-profile-value">
+              {band.facebook_url ? (
+                <a href={band.facebook_url} target="_blank" rel="noopener noreferrer" className="band-social-link">
+                  <span className="social-icon">👥</span>
+                  {band.facebook_url}
+                </a>
+              ) : (
+                "Not set"
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="band-profile-field">
+          <label htmlFor="band-spotify">Spotify</label>
+          {isEditing ? (
+            <input
+              type="url"
+              id="band-spotify"
+              name="spotify_url"
+              value={formData.spotify_url}
+              onChange={handleInputChange}
+              className="band-profile-input"
+              disabled={loading}
+              placeholder="https://open.spotify.com/artist/..."
+            />
+          ) : (
+            <div className="band-profile-value">
+              {band.spotify_url ? (
+                <a href={band.spotify_url} target="_blank" rel="noopener noreferrer" className="band-social-link">
+                  <span className="social-icon">🎵</span>
+                  {band.spotify_url}
+                </a>
+              ) : (
+                "Not set"
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="band-profile-field">
+          <label htmlFor="band-website">Website</label>
+          {isEditing ? (
+            <input
+              type="url"
+              id="band-website"
+              name="website_url"
+              value={formData.website_url}
+              onChange={handleInputChange}
+              className="band-profile-input"
+              disabled={loading}
+              placeholder="https://yourband.com"
+            />
+          ) : (
+            <div className="band-profile-value">
+              {band.website_url ? (
+                <a href={band.website_url} target="_blank" rel="noopener noreferrer" className="band-social-link">
+                  <span className="social-icon">🌐</span>
+                  {band.website_url}
+                </a>
+              ) : (
+                "Not set"
+              )}
+            </div>
           )}
         </div>
 
