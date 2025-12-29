@@ -1,0 +1,215 @@
+.rehearsal-edit-modal {
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.rehearsal-edit-modal h2 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.rehearsal-edit-modal .recurring-note {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  border-left: 3px solid #1976d2;
+}
+
+.rehearsal-edit-modal .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.rehearsal-edit-modal label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #555;
+}
+
+.rehearsal-edit-modal .required {
+  color: #e74c3c;
+}
+
+.rehearsal-edit-modal input[type="text"],
+.rehearsal-edit-modal input[type="date"],
+.rehearsal-edit-modal input[type="time"],
+.rehearsal-edit-modal input[type="number"],
+.rehearsal-edit-modal textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.rehearsal-edit-modal .modal-error {
+  background-color: #fee;
+  color: #c33;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.rehearsal-edit-modal .modal-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.rehearsal-edit-modal .modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.rehearsal-edit-modal .modal-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.rehearsal-edit-modal .modal-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rehearsal-edit-modal .cancel-button {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.rehearsal-edit-modal .cancel-button:hover:not(:disabled) {
+  background-color: #7f8c8d;
+}
+
+.rehearsal-edit-modal .confirm-button {
+  background-color: #3498db;
+  color: white;
+}
+
+.rehearsal-edit-modal .confirm-button:hover:not(:disabled) {
+  background-color: #2980b9;
+}
+
+.rehearsal-edit-modal input[type="file"] {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.rehearsal-edit-modal .form-hint {
+  display: block;
+  margin-top: 0.25rem;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.rehearsal-edit-modal .attachments-sub-label {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+  font-weight: normal;
+}
+
+.rehearsal-edit-modal .existing-attachments {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rehearsal-edit-modal .existing-attachments .attachments-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0;
+  background-color: transparent;
+}
+
+.rehearsal-edit-modal .attachments-list {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rehearsal-edit-modal .attachment-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem 0.5rem 1rem;
+  background-color: #1F2833;
+  border: 1px solid #C5C6C7;
+  border-radius: 20px;
+  color: white;
+  font-size: 0.875rem;
+  max-width: 100%;
+}
+
+.rehearsal-edit-modal .attachment-item.existing {
+  background-color: #1F2833;
+}
+
+.rehearsal-edit-modal .attachment-item.new {
+  background-color: #1F2833;
+}
+
+.rehearsal-edit-modal .attachment-link {
+  color: white;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.rehearsal-edit-modal .attachment-link:hover {
+  text-decoration: underline;
+}
+
+.rehearsal-edit-modal .attachment-item span {
+  color: white;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.rehearsal-edit-modal .remove-attachment {
+  background: transparent;
+  color: #e74c3c;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+  font-weight: bold;
+}
+
+.rehearsal-edit-modal .remove-attachment:hover {
+  transform: scale(1.2);
+  color: #c0392b;
+}
+

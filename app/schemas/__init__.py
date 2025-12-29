@@ -90,6 +90,17 @@ from app.schemas.stage_plot import (
     StagePlotUpdate,
     StageItem,
 )
+from app.schemas.rehearsal import (
+    Rehearsal,
+    RehearsalCreate,
+    RehearsalUpdate,
+    RehearsalAttachment,
+    RehearsalAttachmentCreate,
+    RehearsalInstance,
+    RehearsalInstanceUpdate,
+    RehearsalWithInstances,
+    RehearsalCalendarItem,
+)
 
 __all__ = [
     "User",
@@ -174,5 +185,14 @@ __all__ = [
     "NotificationResponse",
     "NotificationListResponse",
     "NotificationUpdate",
+    "Rehearsal",
+    "RehearsalCreate",
+    "RehearsalUpdate",
+    "RehearsalAttachment",
+    "RehearsalAttachmentCreate",
+    "RehearsalInstance",
+    "RehearsalInstanceUpdate",
+    "RehearsalWithInstances",
+    "RehearsalCalendarItem",
 ]
 

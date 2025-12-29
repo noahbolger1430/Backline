@@ -99,6 +99,12 @@ if not os.path.exists(images_dir):
     os.makedirs(images_dir)
 app.mount("/images", StaticFiles(directory=images_dir), name="images")
 
+# Mount static files for rehearsal attachments
+rehearsal_attachments_dir = "rehearsal_attachments"
+if not os.path.exists(rehearsal_attachments_dir):
+    os.makedirs(rehearsal_attachments_dir)
+app.mount("/rehearsal_attachments", StaticFiles(directory=rehearsal_attachments_dir), name="rehearsal_attachments")
+
 
 @app.get("/")
 def root() -> dict[str, str]:

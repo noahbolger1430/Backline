@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import AvailabilityModal from "./AvailabilityModal";
 import EventModal from "./EventModal";
+import RehearsalModal from "./RehearsalModal";
+import RehearsalEditModal from "./RehearsalEditModal";
 import { availabilityService } from "../../services/availabilityService";
 import { bandService } from "../../services/bandService";
+import { rehearsalService } from "../../services/rehearsalService";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
@@ -15,6 +18,11 @@ const Calendar = ({ bandId }) => {
   const [events, setEvents] = useState([]); // Array of events for the current month
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventModal, setShowEventModal] = useState(false);
+  const [rehearsals, setRehearsals] = useState([]); // Array of rehearsal instances for the current month
+  const [showRehearsalModal, setShowRehearsalModal] = useState(false);
+  const [showRehearsalEditModal, setShowRehearsalEditModal] = useState(false);
+  const [selectedRehearsalInstance, setSelectedRehearsalInstance] = useState(null);
+  const [rehearsalDate, setRehearsalDate] = useState(null);
 
   const monthNames = [
     "January",
@@ -78,10 +86,11 @@ const Calendar = ({ bandId }) => {
         const startDateStr = formatDateString(firstDay);
         const endDateStr = formatDateString(lastDay);
 
-        // Fetch both availability and events in parallel
-        const [bandAvailability, eventsData] = await Promise.all([
+        // Fetch availability, events, and rehearsals in parallel
+        const [bandAvailability, eventsData, rehearsalsData] = await Promise.all([
           availabilityService.getBandAvailability(bandId, startDateStr, endDateStr),
           bandService.getBandEvents(bandId),
+          rehearsalService.getRehearsalsForCalendar(bandId, startDateStr, endDateStr),
         ]);
 
         // Create a Map of date -> availability info
@@ -112,6 +121,9 @@ const Calendar = ({ bandId }) => {
           );
         });
         setEvents(monthEvents);
+        
+        // Set rehearsals (already filtered by API)
+        setRehearsals(rehearsalsData);
       } catch (error) {
         console.error("Error fetching data:", error);
         // Don't show error to user, just log it
@@ -158,6 +170,15 @@ const Calendar = ({ bandId }) => {
       const hasEvent = dayEvents.length > 0;
       const firstEvent = hasEvent ? dayEvents[0] : null;
       
+      // Check if there's a rehearsal on this date
+      const dayRehearsals = rehearsals.filter((rehearsal) => {
+        const rehearsalDate = new Date(rehearsal.instance_date);
+        const rehearsalDateStr = formatDateString(rehearsalDate);
+        return rehearsalDateStr === dateStr;
+      });
+      const hasRehearsal = dayRehearsals.length > 0;
+      const firstRehearsal = hasRehearsal ? dayRehearsals[0] : null;
+      
       // Determine text to display
       let availabilityText = "";
       let eventText = "";
@@ -175,19 +196,23 @@ const Calendar = ({ bandId }) => {
       days.push(
         <div
           key={day}
-          className={`calendar-day ${isToday ? "today" : ""} ${isSelected ? "selected" : ""} ${isAllUnavailable ? "unavailable" : ""} ${isSomeUnavailable ? "partially-unavailable" : ""} ${hasEvent ? "has-event" : ""}`}
+          className={`calendar-day ${isToday ? "today" : ""} ${isSelected ? "selected" : ""} ${isAllUnavailable ? "unavailable" : ""} ${isSomeUnavailable ? "partially-unavailable" : ""} ${hasEvent ? "has-event" : ""} ${hasRehearsal ? "has-rehearsal" : ""}`}
           onClick={() => {
             setSelectedDate(dateObj);
             setClickedDate(dateObj);
-            // If there's an event, show event modal; otherwise show availability modal
+            // Priority: event > rehearsal > availability
             if (hasEvent && firstEvent) {
               setSelectedEvent(firstEvent);
               setShowEventModal(true);
+            } else if (hasRehearsal && firstRehearsal) {
+              // Open edit modal for the clicked rehearsal instance
+              setSelectedRehearsalInstance(firstRehearsal);
+              setShowRehearsalEditModal(true);
             } else {
               setShowAvailabilityModal(true);
             }
           }}
-          title={eventText || availabilityText}
+          title={eventText || (hasRehearsal ? "Rehearsal" : "") || availabilityText}
         >
           <div className="day-number">{day}</div>
           {hasEvent && firstEvent && (
@@ -209,7 +234,15 @@ const Calendar = ({ bandId }) => {
               )}
             </div>
           )}
-          {availabilityText && !hasEvent && (
+          {hasRehearsal && !hasEvent && (
+            <div className="rehearsal-content">
+              <div className="rehearsal-icon">🎵</div>
+              {firstRehearsal.location && (
+                <div className="rehearsal-location-text">{firstRehearsal.location}</div>
+              )}
+            </div>
+          )}
+          {availabilityText && !hasEvent && !hasRehearsal && (
             <div className="availability-text">{availabilityText}</div>
           )}
         </div>,
@@ -224,7 +257,19 @@ const Calendar = ({ bandId }) => {
 
   return (
     <div className="calendar-container">
-      <h2 className="calendar-title">Availability</h2>
+      <div className="calendar-header-section">
+        <h2 className="calendar-title">Availability</h2>
+        <button
+          className="schedule-rehearsal-btn"
+          onClick={() => {
+            setRehearsalDate(null);
+            setShowRehearsalModal(true);
+          }}
+          title="Schedule a rehearsal"
+        >
+          + Schedule Rehearsal
+        </button>
+      </div>
 
       <div className="calendar-controls">
         <button className="calendar-nav-btn" onClick={handlePreviousMonth} aria-label="Previous month">
@@ -279,7 +324,51 @@ const Calendar = ({ bandId }) => {
         />
       )}
 
-      {showAvailabilityModal && clickedDate && !showEventModal && (() => {
+      {showRehearsalModal && (
+        <RehearsalModal
+          bandId={bandId}
+          date={rehearsalDate}
+          onClose={() => {
+            setShowRehearsalModal(false);
+            setRehearsalDate(null);
+          }}
+          onSuccess={() => {
+            // Refetch rehearsals after creating one
+            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            const startDateStr = formatDateString(firstDay);
+            const endDateStr = formatDateString(lastDay);
+            
+            rehearsalService.getRehearsalsForCalendar(bandId, startDateStr, endDateStr)
+              .then(setRehearsals)
+              .catch(console.error);
+          }}
+        />
+      )}
+
+      {showRehearsalEditModal && selectedRehearsalInstance && (
+        <RehearsalEditModal
+          bandId={bandId}
+          instanceId={selectedRehearsalInstance.id}
+          onClose={() => {
+            setShowRehearsalEditModal(false);
+            setSelectedRehearsalInstance(null);
+          }}
+          onSuccess={() => {
+            // Refetch rehearsals after updating one
+            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            const startDateStr = formatDateString(firstDay);
+            const endDateStr = formatDateString(lastDay);
+            
+            rehearsalService.getRehearsalsForCalendar(bandId, startDateStr, endDateStr)
+              .then(setRehearsals)
+              .catch(console.error);
+          }}
+        />
+      )}
+
+      {showAvailabilityModal && clickedDate && !showEventModal && !showRehearsalModal && !showRehearsalEditModal && (() => {
         const clickedDateStr = formatDateString(clickedDate);
         const availabilityInfo = dateAvailability.get(clickedDateStr);
         // Check if current user is unavailable (we'll need to fetch this separately or pass it)

@@ -5,6 +5,7 @@ from app.models.band_member import BandMember, BandRole
 from app.models.event import Event
 from app.models.event_application import ApplicationStatus, EventApplication
 from app.models.notification import Notification, NotificationType
+from app.models.rehearsal import Rehearsal, RehearsalAttachment, RehearsalInstance, RecurrenceFrequency
 from app.models.user import User
 from app.models.venue import Venue
 from app.models.venue_availability import VenueAvailability, VenueAvailabilityStatus
@@ -34,5 +35,9 @@ __all__ = [
     "Notification",
     "NotificationType",
     "StagePlot",
+    "Rehearsal",
+    "RehearsalAttachment",
+    "RehearsalInstance",
+    "RecurrenceFrequency",
 ]
 

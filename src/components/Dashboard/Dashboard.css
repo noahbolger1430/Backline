@@ -203,17 +203,40 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   width: 100%;
   box-sizing: border-box;
-  height: 100%;
+  min-height: calc(100vh - 75px - 60px); /* Match events-carousel min-height: viewport - header (75px) - main-content padding (60px) */
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* Remove scrollbar from calendar container */
+}
+
+.calendar-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
 }
 
 .calendar-title {
   font-size: 24px;
   font-weight: bold;
   color: #FFFFFF; /* High Contrast Text - Pure White */
-  margin-bottom: 25px;
-  text-align: center;
+  margin: 0;
+}
+
+.schedule-rehearsal-btn {
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.schedule-rehearsal-btn:hover {
+  background-color: #8B2FE8; /* Lighter purple */
 }
 
 .calendar-controls {
@@ -270,7 +293,11 @@
   padding: 15px;
   width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Allow flex child to shrink */
+  overflow: visible; /* Allow calendar days to be visible without scrollbar */
 }
 
 .calendar-header {
@@ -481,6 +508,51 @@
   border-color: #f57c00;
 }
 
+.calendar-day .rehearsal-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  justify-content: flex-end;
+  margin-top: auto;
+}
+
+.calendar-day .rehearsal-icon {
+  font-size: 20px;
+  margin-bottom: 2px;
+}
+
+.calendar-day .rehearsal-location-text {
+  font-size: 8px;
+  line-height: 1.1;
+  text-align: center;
+  padding: 0 2px;
+  word-wrap: break-word;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.calendar-day.has-rehearsal {
+  border-color: #45B7D1; /* Different color for rehearsals */
+  background-color: rgba(69, 183, 209, 0.15); /* Light blue background */
+}
+
+.calendar-day.has-rehearsal:hover:not(.empty) {
+  background-color: rgba(69, 183, 209, 0.25);
+  border-color: #5FC8E8; /* Lighter blue */
+}
+
+.calendar-day.today.has-rehearsal {
+  background-color: #45B7D1; /* Blue for today's rehearsal */
+  border-color: #45B7D1;
+}
+
 .events-sidebar {
   width: 25%;
   min-width: 250px;
@@ -499,7 +571,7 @@
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  height: 100%;
+  height: calc(100vh - 75px - 60px); /* Match calendar-container height: viewport - header (75px) - events-sidebar padding (60px) */
   display: flex;
   flex-direction: column;
   gap: 16px;

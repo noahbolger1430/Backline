@@ -255,10 +255,9 @@ const EventsView = ({ venueId, onEventCreated }) => {
               event={event}
               onDelete={async (eventId) => {
                 try {
-                  // For recurring event instances, extract the original event ID
-                  // (instances have IDs like eventId * 1000000 + date)
-                  const originalEventId = Math.floor(eventId / 1000000);
-                  await eventService.deleteEvent(originalEventId);
+                  // Backend handles extraction of original event ID from synthetic IDs
+                  // Just pass the event ID as-is
+                  await eventService.deleteEvent(eventId);
                   fetchEvents(); // Refresh the events list
                 } catch (error) {
                   throw error; // Re-throw to be handled by EventCard
