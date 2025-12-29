@@ -1,5 +1,5 @@
 /* Modal Overlay */
-.modal-overlay {
+.event-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -14,7 +14,7 @@
   }
   
   /* Modal Content */
-  .modal-content {
+  .event-modal-content {
     background: #1F2833; /* Secondary Background - Charcoal Grey */
     border-radius: 12px;
     max-width: 700px;
@@ -282,7 +282,7 @@
   
   /* Responsive Design */
   @media (max-width: 768px) {
-    .modal-content {
+    .event-modal-content {
       max-width: 100%;
       max-height: 100vh;
       border-radius: 0;
@@ -314,21 +314,77 @@
   }
   
   /* Scrollbar Styling */
-  .modal-content::-webkit-scrollbar {
+  .event-modal-content::-webkit-scrollbar {
     width: 8px;
   }
   
-  .modal-content::-webkit-scrollbar-track {
+  .event-modal-content::-webkit-scrollbar-track {
     background: #0B0C10; /* Primary Background - Obsidian Black */
     border-radius: 0 12px 12px 0;
   }
   
-  .modal-content::-webkit-scrollbar-thumb {
+  .event-modal-content::-webkit-scrollbar-thumb {
     background: #C5C6C7; /* Secondary Accent - Sterling Silver */
     border-radius: 4px;
   }
   
-  .modal-content::-webkit-scrollbar-thumb:hover {
+  .event-modal-content::-webkit-scrollbar-thumb:hover {
     background: #8E8E93; /* Subtle Text - Slate Silver */
   }
+
+/* Event Schedule */
+.modal-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-schedule-item {
+  padding: 12px;
+  background-color: #0B0C10;
+  border-radius: 6px;
+  border: 1px solid #333333;
+}
+
+.modal-schedule-item .schedule-band-name {
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 8px;
+}
+
+.modal-schedule-item .schedule-times {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-schedule-item .schedule-time {
+  display: flex;
+  gap: 10px;
+}
+
+.modal-schedule-item .schedule-time-label {
+  font-size: 14px;
+  color: #C5C6C7;
+  min-width: 100px;
+}
+
+.modal-schedule-item .schedule-time-value {
+  font-size: 14px;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.modal-schedule-item.your-schedule {
+  background-color: #1F2833;
+  border: 2px solid #66FCF1;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.modal-schedule-item.your-schedule .schedule-band-name {
+  color: #66FCF1;
+  font-weight: 700;
+  font-size: 16px;
+}
   

@@ -107,6 +107,9 @@ def check_venue_permission(venue: Venue, user: User, required_roles: list[VenueR
 def get_event_or_404(event_id: int, db: Session) -> Event:
     """
     Get an event by ID or raise 404.
+    
+    Note: This function does NOT handle synthetic IDs from recurring events.
+    Use extract_original_event_id() before calling this function if you need to handle synthetic IDs.
     """
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:

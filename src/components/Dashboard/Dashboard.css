@@ -588,6 +588,18 @@
   gap: 8px;
 }
 
+.event-count-badge {
+  display: inline-block;
+  background-color: #6F22D2;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 10px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
 .event-name {
   font-size: 18px;
   font-weight: bold;
@@ -1490,11 +1502,57 @@
   min-height: 100px;
 }
 
+.gig-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
 .gig-name {
   font-size: 20px;
   font-weight: 600;
   color: #FFFFFF; /* High Contrast Text - Pure White */
-  margin: 0 0 8px 0;
+  margin: 0;
+  flex: 1;
+}
+
+.recurring-event-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.gig-recurring-info {
+  margin: 8px 0 auto 0;
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  text-align: right;
+  z-index: 2;
+}
+
+.gig-recurring-schedule {
+  font-size: 13px;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  margin-bottom: 4px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.gig-date-range {
+  font-size: 12px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  white-space: nowrap;
 }
 
 .gig-venue {
@@ -1559,6 +1617,24 @@
     font-size: 11px;
     bottom: 15px;
     right: 15px;
+  }
+
+  .gig-recurring-info {
+    bottom: 15px;
+    right: 15px;
+  }
+
+  .gig-recurring-schedule {
+    font-size: 12px;
+  }
+
+  .gig-date-range {
+    font-size: 11px;
+  }
+
+  .recurring-event-badge {
+    font-size: 10px;
+    padding: 3px 6px;
   }
 }
 

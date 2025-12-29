@@ -15,6 +15,7 @@ class NotificationType(str, PyEnum):
     APPLICATION_STATUS = "application_status"
     BAND_APPLICATION = "band_application"
     GIG_AVAILABLE = "gig_available"
+    EVENT_SCHEDULE = "event_schedule"
 
 
 class Notification(Base):
@@ -64,6 +65,9 @@ class Notification(Base):
         elif self.type == NotificationType.GIG_AVAILABLE.value:
             # Format: "[Event Name] at [Venue] is open for applications. Apply now!"
             return f"{self.gig_name} at {self.venue_name} is open for applications. Apply now!"
+        elif self.type == NotificationType.EVENT_SCHEDULE.value:
+            # Format: "Event Schedule sent by [Venue Name] for [Event Name]."
+            return f"Event Schedule sent by {self.venue_name} for {self.gig_name}."
         else:
             # Application status notification
             status_text = self.value.capitalize()

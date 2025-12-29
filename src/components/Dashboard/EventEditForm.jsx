@@ -4,7 +4,6 @@ import { stagePlotService } from "../../services/stagePlotService";
 import { bandService } from "../../services/bandService";
 import BandSearchSelect from "./BandSearchSelect";
 import StagePlot from "./StagePlot";
-import EventApplicationsList from "./EventApplicationsList";
 import "./EventEditForm.css";
 
 const EventEditForm = ({ event, onUpdate, onCancel }) => {
@@ -34,6 +33,7 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
   const [selectedBand, setSelectedBand] = useState(null); // Full band details for modal
   const [bandModalLoading, setBandModalLoading] = useState(false);
   const [bandModalError, setBandModalError] = useState(null);
+  const [scheduleTimes, setScheduleTimes] = useState({}); // { bandEventId: { load_in_time, sound_check_time } }
 
   useEffect(() => {
     if (event) {
@@ -50,18 +50,29 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
         return timeString;
       };
 
-      setFormData({
-        name: event.name || "",
-        description: event.description || "",
-        event_date: eventDate,
-        doors_time: formatTimeForInput(event.doors_time),
-        show_time: formatTimeForInput(event.show_time),
-        status: event.status || "confirmed",
-        is_open_for_applications: event.is_open_for_applications || false,
-        is_ticketed: event.is_ticketed || false,
-        ticket_price: event.ticket_price ? (event.ticket_price / 100).toFixed(2) : "",
-        is_age_restricted: event.is_age_restricted || false,
-        age_restriction: event.age_restriction ? String(parseInt(event.age_restriction, 10)) : "",
+      setFormData((prev) => {
+        // Only update if event actually changed (by ID) to avoid resetting user input
+        // If formData already has values and event ID is the same, preserve user changes
+        const shouldReset = !prev.name || event.id !== prev._eventId;
+        
+        if (shouldReset) {
+          return {
+            name: event.name || "",
+            description: event.description || "",
+            event_date: eventDate,
+            doors_time: formatTimeForInput(event.doors_time),
+            show_time: formatTimeForInput(event.show_time),
+            status: event.status || "confirmed",
+            is_open_for_applications: event.is_open_for_applications || false,
+            is_ticketed: event.is_ticketed || false,
+            ticket_price: event.ticket_price ? (event.ticket_price / 100).toFixed(2) : "",
+            is_age_restricted: event.is_age_restricted || false,
+            age_restriction: event.age_restriction ? String(event.age_restriction) : "",
+            _eventId: event.id, // Track which event this form is for
+          };
+        }
+        // Preserve existing form data if event hasn't changed
+        return prev;
       });
 
       // Set current image preview if image exists
@@ -254,8 +265,50 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
     }
   };
 
+  const handleScheduleTimeChange = (bandEventId, field, value) => {
+    setScheduleTimes((prev) => ({
+      ...prev,
+      [bandEventId]: {
+        ...prev[bandEventId],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSaveSchedule = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Update each band event with schedule times
+      const updates = Object.entries(scheduleTimes).map(([bandEventId, times]) => ({
+        bandEventId: parseInt(bandEventId),
+        ...times,
+      }));
+      
+      await eventService.updateEventSchedule(event.id, updates);
+      
+      // Refresh event bands to get updated times
+      await fetchEventBands();
+      
+      // Clear schedule times state
+      setScheduleTimes({});
+      
+      if (onUpdate) {
+        onUpdate();
+      }
+    } catch (err) {
+      setError(err.message || "Failed to save event schedule");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    // Note: age_restriction now uses type="text" with custom onChange handler
+    // so it doesn't need special handling here
     
     setFormData((prev) => ({
       ...prev,
@@ -302,10 +355,27 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
       // Convert age restriction to integer
       let ageRestrictionInt = null;
       if (formData.is_age_restricted && formData.age_restriction && formData.age_restriction.trim() !== "") {
-        const ageValue = parseInt(formData.age_restriction, 10);
-        if (!isNaN(ageValue) && ageValue > 0) {
+        const trimmedValue = formData.age_restriction.trim();
+        const ageValue = parseInt(trimmedValue, 10);
+        console.log("EventEditForm - Parsing age_restriction:", {
+          raw_input: formData.age_restriction,
+          trimmed: trimmedValue,
+          parsed: ageValue,
+          isNaN: isNaN(ageValue),
+          isPositive: ageValue >= 0,
+          will_use: !isNaN(ageValue) && ageValue >= 0
+        });
+        if (!isNaN(ageValue) && ageValue >= 0) {
           ageRestrictionInt = ageValue;
+          console.log("EventEditForm - Using age_restriction value:", ageRestrictionInt);
+        } else {
+          console.warn("EventEditForm - Invalid age_restriction value:", formData.age_restriction);
         }
+      } else {
+        console.log("EventEditForm - age_restriction not provided or empty:", {
+          is_age_restricted: formData.is_age_restricted,
+          age_restriction: formData.age_restriction
+        });
       }
       
       const updateData = {
@@ -971,15 +1041,50 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
           <div className="form-group">
             <label htmlFor="age_restriction">Minimum Age *</label>
             <input
-              type="number"
+              type="text"
               id="age_restriction"
               name="age_restriction"
               value={formData.age_restriction}
-              onChange={handleChange}
-              min={0}
-              max={100}
+              onChange={(e) => {
+                // Allow only digits - free form integer input
+                const value = e.target.value;
+                // Allow empty string or digits only
+                if (value === "" || /^\d+$/.test(value)) {
+                  setFormData((prev) => ({
+                    ...prev,
+                    age_restriction: value,
+                  }));
+                  console.log("EventEditForm - age_restriction changed:", value);
+                }
+              }}
+              onBlur={(e) => {
+                // Validate on blur - ensure it's a valid positive integer
+                const value = e.target.value.trim();
+                if (value === "") {
+                  // If empty and required, keep it but don't change state
+                  return;
+                }
+                const numValue = parseInt(value, 10);
+                if (isNaN(numValue) || numValue < 0) {
+                  // Invalid value - reset to empty or show error
+                  setFormData((prev) => ({
+                    ...prev,
+                    age_restriction: "",
+                  }));
+                  console.warn("EventEditForm - Invalid age_restriction value:", value);
+                } else {
+                  // Valid integer - ensure it's stored as string representation
+                  setFormData((prev) => ({
+                    ...prev,
+                    age_restriction: String(numValue),
+                  }));
+                  console.log("EventEditForm - age_restriction validated on blur:", numValue);
+                }
+              }}
+              pattern="[0-9]+"
               required={formData.is_age_restricted}
               placeholder="e.g., 21"
+              inputMode="numeric"
             />
           </div>
         )}
@@ -1138,26 +1243,97 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
                 )}
               </div>
             </div>
-            {/* Applications List */}
-            {event?.id && (
-              <EventApplicationsList 
-                eventId={event.id} 
-                isOpenForApplications={formData.is_open_for_applications}
-                onApplicationReviewed={async () => {
-                  // Refresh event bands after application review (accepting adds band to event)
-                  await fetchEventBands();
-                  // Optionally refresh full event data
-                  if (onUpdate) {
-                    try {
-                      const updatedEvent = await eventService.getEvent(event.id);
-                      onUpdate(updatedEvent);
-                    } catch (err) {
-                      console.error("Error refreshing event:", err);
+          </div>
+        )}
+
+        {/* Event Schedule Section - Only for confirmed events */}
+        {formData.status === "confirmed" && eventBands.length > 0 && (
+          <div className="form-section event-schedule-section">
+            <h3 className="form-section-title">Event Schedule</h3>
+            <div className="event-schedule-list">
+              {eventBands.map((bandEvent, index) => {
+                const bandName = bandEvent.band_name || bandEvent.band?.name || `Band ${bandEvent.band_id}`;
+                
+                // Calculate default times: load in is 2hr before doors, sound check is 1:30 before doors
+                // Add 15 minutes per band (index-based)
+                const getDefaultLoadInTime = () => {
+                  if (!event.doors_time) return "";
+                  const [hours, minutes] = event.doors_time.split(":").map(Number);
+                  const totalMinutes = hours * 60 + minutes - (120 + index * 15); // 2 hours = 120 minutes
+                  const defaultHours = Math.floor(totalMinutes / 60);
+                  const defaultMins = totalMinutes % 60;
+                  return `${String(defaultHours).padStart(2, '0')}:${String(defaultMins).padStart(2, '0')}`;
+                };
+                
+                const getDefaultSoundCheckTime = () => {
+                  if (!event.doors_time) return "";
+                  const [hours, minutes] = event.doors_time.split(":").map(Number);
+                  const totalMinutes = hours * 60 + minutes - (90 + index * 15); // 1:30 = 90 minutes
+                  const defaultHours = Math.floor(totalMinutes / 60);
+                  const defaultMins = totalMinutes % 60;
+                  return `${String(defaultHours).padStart(2, '0')}:${String(defaultMins).padStart(2, '0')}`;
+                };
+                
+                const getLoadInTime = () => {
+                  if (bandEvent.load_in_time) {
+                    if (typeof bandEvent.load_in_time === 'string') {
+                      return bandEvent.load_in_time.substring(0, 5);
+                    } else if (bandEvent.load_in_time.hour !== undefined) {
+                      return `${String(bandEvent.load_in_time.hour).padStart(2, '0')}:${String(bandEvent.load_in_time.minute).padStart(2, '0')}`;
                     }
                   }
-                }}
-              />
-            )}
+                  return getDefaultLoadInTime();
+                };
+                
+                const getSoundCheckTime = () => {
+                  if (bandEvent.sound_check_time) {
+                    if (typeof bandEvent.sound_check_time === 'string') {
+                      return bandEvent.sound_check_time.substring(0, 5);
+                    } else if (bandEvent.sound_check_time.hour !== undefined) {
+                      return `${String(bandEvent.sound_check_time.hour).padStart(2, '0')}:${String(bandEvent.sound_check_time.minute).padStart(2, '0')}`;
+                    }
+                  }
+                  return getDefaultSoundCheckTime();
+                };
+                
+                const loadInTime = scheduleTimes[bandEvent.id || bandEvent.band_id]?.load_in_time || getLoadInTime();
+                const soundCheckTime = scheduleTimes[bandEvent.id || bandEvent.band_id]?.sound_check_time || getSoundCheckTime();
+                
+                return (
+                  <div key={bandEvent.id || bandEvent.band_id} className="event-schedule-item">
+                    <div className="schedule-band-name">{bandName}</div>
+                    <div className="schedule-time-inputs">
+                      <div className="schedule-time-input-group">
+                        <label htmlFor={`load_in_${bandEvent.id || bandEvent.band_id}`}>Load In:</label>
+                        <input
+                          type="time"
+                          id={`load_in_${bandEvent.id || bandEvent.band_id}`}
+                          value={loadInTime}
+                          onChange={(e) => handleScheduleTimeChange(bandEvent.id || bandEvent.band_id, 'load_in_time', e.target.value)}
+                        />
+                      </div>
+                      <div className="schedule-time-input-group">
+                        <label htmlFor={`sound_check_${bandEvent.id || bandEvent.band_id}`}>Sound Check:</label>
+                        <input
+                          type="time"
+                          id={`sound_check_${bandEvent.id || bandEvent.band_id}`}
+                          value={soundCheckTime}
+                          onChange={(e) => handleScheduleTimeChange(bandEvent.id || bandEvent.band_id, 'sound_check_time', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              className="btn-save-schedule"
+              onClick={handleSaveSchedule}
+              disabled={loading}
+            >
+              {loading ? "Saving..." : "Save Schedule"}
+            </button>
           </div>
         )}
 

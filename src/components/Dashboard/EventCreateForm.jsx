@@ -16,12 +16,37 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
     ticket_price: "",
     is_age_restricted: false,
     age_restriction: "",
+    is_recurring: false,
+    recurring_day_of_week: "",
+    recurring_frequency: "",
+    recurring_start_date: "",
+    recurring_end_date: "",
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedBands, setSelectedBands] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Helper function to get day name from weekday number
+  const getDayName = (weekday) => {
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    return days[parseInt(weekday, 10)] || "";
+  };
+
+  // Helper function to get weekday from a date string
+  // Parses YYYY-MM-DD format and returns weekday (0=Monday, 6=Sunday)
+  const getWeekdayFromDate = (dateString) => {
+    if (!dateString) return null;
+    // Parse the date string manually to avoid timezone issues
+    const [year, month, day] = dateString.split('-').map(Number);
+    // Create date in local timezone (month is 0-indexed in JS Date)
+    const date = new Date(year, month - 1, day);
+    // getDay() returns 0=Sunday, 1=Monday, ..., 6=Saturday
+    // Convert to our system: 0=Monday, 1=Tuesday, ..., 6=Sunday
+    const jsDay = date.getDay();
+    return jsDay === 0 ? 6 : jsDay - 1;
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -37,10 +62,24 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
       return;
     }
     
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      };
+
+      // Validate recurring dates when day of week or dates change
+      if (newData.is_recurring) {
+        if (name === "recurring_day_of_week" || name === "recurring_start_date" || name === "recurring_end_date") {
+          // Clear error when user is changing the fields
+          if (error && error.includes("day of week")) {
+            // Error will be re-validated on submit
+          }
+        }
+      }
+
+      return newData;
+    });
   };
 
   const handleImageChange = (e) => {
@@ -73,7 +112,7 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
         venue_id: venueId,
         name: formData.name.trim(),
         description: formData.description?.trim() || null,
-        event_date: formData.event_date,
+        event_date: formData.is_recurring ? formData.recurring_start_date : formData.event_date,
         doors_time: formData.doors_time && formData.doors_time.trim() ? formData.doors_time.trim() : null,
         show_time: formData.show_time && formData.show_time.trim() ? formData.show_time.trim() : null,
         status: formData.is_pending ? "pending" : "confirmed",
@@ -86,6 +125,19 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
         age_restriction: formData.is_age_restricted && formData.age_restriction 
           ? parseInt(formData.age_restriction, 10) 
           : null,
+        is_recurring: formData.is_recurring,
+        recurring_day_of_week: formData.is_recurring && formData.recurring_day_of_week 
+          ? parseInt(formData.recurring_day_of_week, 10) 
+          : null,
+        recurring_frequency: formData.is_recurring && formData.recurring_frequency 
+          ? formData.recurring_frequency 
+          : null,
+        recurring_start_date: formData.is_recurring && formData.recurring_start_date 
+          ? formData.recurring_start_date 
+          : null,
+        recurring_end_date: formData.is_recurring && formData.recurring_end_date 
+          ? formData.recurring_end_date 
+          : null,
       };
       
       // Validate required fields
@@ -96,6 +148,54 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
       if (!eventData.show_time) {
         setError("Show time is required");
         return;
+      }
+      
+      // Validate recurring event fields
+      if (formData.is_recurring) {
+        if (!formData.recurring_day_of_week) {
+          setError("Day of week is required for recurring events");
+          setLoading(false);
+          return;
+        }
+        if (!formData.recurring_frequency) {
+          setError("Frequency is required for recurring events");
+          setLoading(false);
+          return;
+        }
+        if (!formData.recurring_start_date) {
+          setError("Start date is required for recurring events");
+          setLoading(false);
+          return;
+        }
+        if (!formData.recurring_end_date) {
+          setError("End date is required for recurring events");
+          setLoading(false);
+          return;
+        }
+        if (new Date(formData.recurring_end_date) < new Date(formData.recurring_start_date)) {
+          setError("End date must be after start date");
+          setLoading(false);
+          return;
+        }
+
+        // Validate that start date matches the selected day of week
+        const startDateWeekday = getWeekdayFromDate(formData.recurring_start_date);
+        const selectedWeekday = parseInt(formData.recurring_day_of_week, 10);
+        if (startDateWeekday !== selectedWeekday) {
+          const dayName = getDayName(formData.recurring_day_of_week);
+          setError(`Start date must be a ${dayName}. Please select a ${dayName} as the start date.`);
+          setLoading(false);
+          return;
+        }
+
+        // Validate that end date matches the selected day of week
+        const endDateWeekday = getWeekdayFromDate(formData.recurring_end_date);
+        if (endDateWeekday !== selectedWeekday) {
+          const dayName = getDayName(formData.recurring_day_of_week);
+          setError(`End date must be a ${dayName}. Please select a ${dayName} as the end date.`);
+          setLoading(false);
+          return;
+        }
       }
 
       // Extract band IDs from selected bands
@@ -228,8 +328,14 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
               name="event_date"
               value={formData.event_date}
               onChange={handleChange}
-              required
+              required={!formData.is_recurring}
+              disabled={formData.is_recurring}
             />
+            {formData.is_recurring && (
+              <p className="form-help-text">
+                For recurring events, use the Start Date field below.
+              </p>
+            )}
           </div>
 
           <div className="form-group">
@@ -313,6 +419,120 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
             />
           </div>
         )}
+
+        <div className="form-section">
+          <h3 className="form-section-title">Recurring Event</h3>
+          
+          <div className="form-group checkbox-group">
+            <label>
+              <input
+                type="checkbox"
+                name="is_recurring"
+                checked={formData.is_recurring}
+                onChange={handleChange}
+              />
+              <span>This is a recurring event</span>
+            </label>
+            <p className="form-help-text">
+              Create an event that repeats on a schedule (e.g., every second Friday).
+            </p>
+          </div>
+
+          {formData.is_recurring && (
+            <>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="recurring_day_of_week">Day of Week *</label>
+                  <select
+                    id="recurring_day_of_week"
+                    name="recurring_day_of_week"
+                    value={formData.recurring_day_of_week}
+                    onChange={handleChange}
+                    required={formData.is_recurring}
+                  >
+                    <option value="">Select day</option>
+                    <option value="0">Monday</option>
+                    <option value="1">Tuesday</option>
+                    <option value="2">Wednesday</option>
+                    <option value="3">Thursday</option>
+                    <option value="4">Friday</option>
+                    <option value="5">Saturday</option>
+                    <option value="6">Sunday</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="recurring_frequency">Frequency *</label>
+                  <select
+                    id="recurring_frequency"
+                    name="recurring_frequency"
+                    value={formData.recurring_frequency}
+                    onChange={handleChange}
+                    required={formData.is_recurring}
+                  >
+                    <option value="">Select frequency</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="bi_weekly">Bi-Weekly (Every 2 weeks)</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="recurring_start_date">
+                    Start Date * 
+                    {formData.recurring_day_of_week && (
+                      <span className="form-help-text-inline">
+                        (Must be a {getDayName(formData.recurring_day_of_week)})
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="date"
+                    id="recurring_start_date"
+                    name="recurring_start_date"
+                    value={formData.recurring_start_date}
+                    onChange={handleChange}
+                    required={formData.is_recurring}
+                  />
+                  {formData.recurring_start_date && formData.recurring_day_of_week && 
+                   getWeekdayFromDate(formData.recurring_start_date) !== parseInt(formData.recurring_day_of_week, 10) && (
+                    <p className="form-error-text">
+                      Start date must be a {getDayName(formData.recurring_day_of_week)}
+                    </p>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="recurring_end_date">
+                    End Date * 
+                    {formData.recurring_day_of_week && (
+                      <span className="form-help-text-inline">
+                        (Must be a {getDayName(formData.recurring_day_of_week)})
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="date"
+                    id="recurring_end_date"
+                    name="recurring_end_date"
+                    value={formData.recurring_end_date}
+                    onChange={handleChange}
+                    required={formData.is_recurring}
+                    min={formData.recurring_start_date || undefined}
+                  />
+                  {formData.recurring_end_date && formData.recurring_day_of_week && 
+                   getWeekdayFromDate(formData.recurring_end_date) !== parseInt(formData.recurring_day_of_week, 10) && (
+                    <p className="form-error-text">
+                      End date must be a {getDayName(formData.recurring_day_of_week)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
 
         <div className="form-actions">
           <button

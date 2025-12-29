@@ -3,7 +3,7 @@ import { eventService } from "../../services/eventService";
 import EventApplicationsList from "./EventApplicationsList";
 import "./EventModal.css";
 
-const EventModal = ({ event, onClose }) => {
+const EventModal = ({ event, onClose, bandId = null }) => {
   const [fullEvent, setFullEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -75,8 +75,8 @@ const EventModal = ({ event, onClose }) => {
   if (!event) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="event-modal-overlay" onClick={onClose}>
+      <div className="event-modal-content" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>
           ×
         </button>
@@ -183,6 +183,126 @@ const EventModal = ({ event, onClose }) => {
                 )}
               </div>
             </div>
+
+            {/* Event Schedule - Only for confirmed events */}
+            {fullEvent.status === 'confirmed' && fullEvent.bands && fullEvent.bands.length > 0 && (() => {
+              // If bandId is provided, find this band's schedule
+              const viewingBandEvent = bandId 
+                ? fullEvent.bands.find(be => be.band_id === parseInt(bandId))
+                : null;
+              
+              // Show all bands' schedules, but highlight the viewing band's if provided
+              const scheduleBands = fullEvent.bands
+                .sort((a, b) => {
+                  // Sort by performance_order if available
+                  if (a.performance_order && b.performance_order) {
+                    return a.performance_order - b.performance_order;
+                  }
+                  return 0;
+                })
+                .filter(bandEvent => {
+                  const loadInTime = bandEvent.load_in_time ? formatTime(bandEvent.load_in_time) : null;
+                  const soundCheckTime = bandEvent.sound_check_time ? formatTime(bandEvent.sound_check_time) : null;
+                  return loadInTime || soundCheckTime;
+                });
+              
+              // If viewing as a band and this band has a schedule, show it prominently
+              if (viewingBandEvent && (viewingBandEvent.load_in_time || viewingBandEvent.sound_check_time)) {
+                const loadInTime = viewingBandEvent.load_in_time ? formatTime(viewingBandEvent.load_in_time) : null;
+                const soundCheckTime = viewingBandEvent.sound_check_time ? formatTime(viewingBandEvent.sound_check_time) : null;
+                
+                return (
+                  <div className="modal-section">
+                    <h3 className="modal-section-title">Your Schedule</h3>
+                    <div className="modal-schedule-list">
+                      <div className="modal-schedule-item your-schedule">
+                        <div className="schedule-band-name">{viewingBandEvent.band_name}</div>
+                        <div className="schedule-times">
+                          {loadInTime && (
+                            <div className="schedule-time">
+                              <span className="schedule-time-label">Load In:</span>
+                              <span className="schedule-time-value">{loadInTime}</span>
+                            </div>
+                          )}
+                          {soundCheckTime && (
+                            <div className="schedule-time">
+                              <span className="schedule-time-label">Sound Check:</span>
+                              <span className="schedule-time-value">{soundCheckTime}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {scheduleBands.length > 1 && (
+                      <>
+                        <h3 className="modal-section-title" style={{ marginTop: '20px' }}>Full Event Schedule</h3>
+                        <div className="modal-schedule-list">
+                          {scheduleBands.map((bandEvent, index) => {
+                            const loadInTime = bandEvent.load_in_time ? formatTime(bandEvent.load_in_time) : null;
+                            const soundCheckTime = bandEvent.sound_check_time ? formatTime(bandEvent.sound_check_time) : null;
+                            
+                            return (
+                              <div key={bandEvent.id || index} className="modal-schedule-item">
+                                <div className="schedule-band-name">{bandEvent.band_name}</div>
+                                <div className="schedule-times">
+                                  {loadInTime && (
+                                    <div className="schedule-time">
+                                      <span className="schedule-time-label">Load In:</span>
+                                      <span className="schedule-time-value">{loadInTime}</span>
+                                    </div>
+                                  )}
+                                  {soundCheckTime && (
+                                    <div className="schedule-time">
+                                      <span className="schedule-time-label">Sound Check:</span>
+                                      <span className="schedule-time-value">{soundCheckTime}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              }
+              
+              // Otherwise show all schedules (venue view or band without schedule)
+              if (scheduleBands.length === 0) return null;
+              
+              return (
+                <div className="modal-section">
+                  <h3 className="modal-section-title">Event Schedule</h3>
+                  <div className="modal-schedule-list">
+                    {scheduleBands.map((bandEvent, index) => {
+                      const loadInTime = bandEvent.load_in_time ? formatTime(bandEvent.load_in_time) : null;
+                      const soundCheckTime = bandEvent.sound_check_time ? formatTime(bandEvent.sound_check_time) : null;
+                      
+                      return (
+                        <div key={bandEvent.id || index} className="modal-schedule-item">
+                          <div className="schedule-band-name">{bandEvent.band_name}</div>
+                          <div className="schedule-times">
+                            {loadInTime && (
+                              <div className="schedule-time">
+                                <span className="schedule-time-label">Load In:</span>
+                                <span className="schedule-time-value">{loadInTime}</span>
+                              </div>
+                            )}
+                            {soundCheckTime && (
+                              <div className="schedule-time">
+                                <span className="schedule-time-label">Sound Check:</span>
+                                <span className="schedule-time-value">{soundCheckTime}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Ticket Information */}
             {fullEvent.is_ticketed && (

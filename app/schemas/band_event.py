@@ -28,6 +28,8 @@ class BandEventBase(BaseModel):
     set_time: Optional[time] = None
     set_length_minutes: Optional[int] = None
     performance_order: Optional[int] = None
+    load_in_time: Optional[time] = None
+    sound_check_time: Optional[time] = None
 
     @field_validator("set_length_minutes")
     @classmethod
@@ -61,6 +63,8 @@ class BandEventCreate(BaseModel):
     set_time: Optional[time] = None
     set_length_minutes: Optional[int] = None
     performance_order: Optional[int] = None
+    load_in_time: Optional[time] = None
+    sound_check_time: Optional[time] = None
 
 
 class BandEventUpdate(BaseModel):
@@ -73,6 +77,8 @@ class BandEventUpdate(BaseModel):
     set_time: Optional[time] = None
     set_length_minutes: Optional[int] = None
     performance_order: Optional[int] = None
+    load_in_time: Optional[time] = None
+    sound_check_time: Optional[time] = None
 
 
 class BandEventInDB(BandEventBase):

@@ -24,9 +24,11 @@ const GigsView = ({ bandId }) => {
       setLoading(true);
       
       // Fetch pending events that are open for applications
+      // Expand recurring events to show individual instances with specific dates
       const eventsResponse = await eventService.listEvents({
         status: "pending",
         is_open_for_applications: true,
+        expand_recurring: true,
       });
       setEvents(eventsResponse.events || []);
 
@@ -38,6 +40,7 @@ const GigsView = ({ bandId }) => {
           const statuses = {};
           
           (applicationsResponse.applications || []).forEach(app => {
+            // Applications are stored with the original event ID
             appliedIds.add(app.event_id);
             statuses[app.event_id] = app.status;
           });
@@ -76,6 +79,33 @@ const GigsView = ({ bandId }) => {
     }
   };
 
+  const formatRecurringDateRange = (event) => {
+    if (!event.is_recurring || !event.recurring_start_date || !event.recurring_end_date) {
+      return null;
+    }
+    const start = formatDate(event.recurring_start_date);
+    const end = formatDate(event.recurring_end_date);
+    return `${start} - ${end}`;
+  };
+
+  const getRecurringFrequencyText = (frequency) => {
+    switch (frequency) {
+      case "weekly":
+        return "Weekly";
+      case "bi_weekly":
+        return "Bi-Weekly";
+      case "monthly":
+        return "Monthly";
+      default:
+        return "Recurring";
+    }
+  };
+
+  const getDayName = (weekday) => {
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    return days[weekday] || "";
+  };
+
   const handleGigClick = (event) => {
     // Only open modal if band hasn't already applied
     if (!appliedEventIds.has(event.id)) {
@@ -93,24 +123,53 @@ const GigsView = ({ bandId }) => {
     fetchData();
   };
 
-  // Filter events based on date range and venue
-  const filteredEvents = events.filter((event) => {
-    // Filter by date range
-    if (filterStartDate) {
-      const eventDate = new Date(event.event_date);
-      const startDate = new Date(filterStartDate);
-      if (eventDate < startDate) {
-        return false;
+  // Helper function to extract original event ID from synthetic ID
+  const getOriginalEventId = (eventId) => {
+    // Synthetic IDs are: original_id * 1000000 + date_as_int
+    // If the ID is large enough, it might be synthetic
+    if (eventId > 1000000) {
+      const potentialOriginalId = Math.floor(eventId / 1000000);
+      const datePart = eventId % 1000000;
+      const datePartStr = String(datePart);
+      
+      // Check if date part looks like a valid date (6-8 digits)
+      if (datePartStr.length >= 6 && datePartStr.length <= 8) {
+        return potentialOriginalId;
       }
     }
+    return eventId;
+  };
+
+  // Filter events based on date range and venue
+  const filteredEvents = events.filter((event) => {
+    // Only show pending events (backend should filter this, but add safety check)
+    if (event.status !== "pending") {
+      return false;
+    }
     
-    if (filterEndDate) {
+    // Only show events that are open for applications
+    if (!event.is_open_for_applications) {
+      return false;
+    }
+    
+    // Filter by date range - now all events have a specific event_date (expanded instances)
+    if (filterStartDate || filterEndDate) {
       const eventDate = new Date(event.event_date);
-      const endDate = new Date(filterEndDate);
-      // Set end date to end of day for inclusive comparison
-      endDate.setHours(23, 59, 59, 999);
-      if (eventDate > endDate) {
-        return false;
+      
+      if (filterStartDate) {
+        const startDate = new Date(filterStartDate);
+        if (eventDate < startDate) {
+          return false;
+        }
+      }
+      
+      if (filterEndDate) {
+        const endDate = new Date(filterEndDate);
+        // Set end date to end of day for inclusive comparison
+        endDate.setHours(23, 59, 59, 999);
+        if (eventDate > endDate) {
+          return false;
+        }
       }
     }
 
@@ -137,7 +196,11 @@ const GigsView = ({ bandId }) => {
   };
 
   const getStatusBadge = (eventId) => {
-    if (!appliedEventIds.has(eventId)) {
+    // For expanded recurring events with synthetic IDs, check the original event ID
+    const originalEventId = getOriginalEventId(eventId);
+    const hasApplied = appliedEventIds.has(originalEventId);
+    
+    if (!hasApplied) {
       return (
         <div className="gig-status-badge accepting">
           <span className="status-dot"></span>
@@ -146,7 +209,7 @@ const GigsView = ({ bandId }) => {
       );
     }
 
-    const status = applicationStatuses[eventId];
+    const status = applicationStatuses[originalEventId];
     let badgeClass = "applied";
     let badgeText = "Applied";
 
@@ -268,7 +331,13 @@ const GigsView = ({ bandId }) => {
           </div>
         ) : (
           filteredEvents.map((event) => {
-            const hasApplied = appliedEventIds.has(event.id);
+            // For expanded recurring events, check if band has applied using original event ID
+            const originalEventId = getOriginalEventId(event.id);
+            const hasApplied = appliedEventIds.has(originalEventId);
+            
+            // Check if this is an expanded recurring event instance (has synthetic ID)
+            const isExpandedRecurring = event.id > 1000000 && originalEventId !== event.id;
+            
             return (
               <div
                 key={event.id}
@@ -301,8 +370,16 @@ const GigsView = ({ bandId }) => {
                   </span>
                 </div>
                 <div className="gig-card-content">
-                  <h3 className="gig-name">{event.name}</h3>
+                  <div className="gig-header-row">
+                    <h3 className="gig-name">{event.name}</h3>
+                    {isExpandedRecurring && (
+                      <span className="recurring-event-badge" title="Recurring Event">
+                        🔁 Recurring
+                      </span>
+                    )}
+                  </div>
                   <p className="gig-venue">{event.venue_name || "Venue TBD"}</p>
+                  {/* Always show the specific event date for expanded instances */}
                   <div className="gig-date">{formatDate(event.event_date)}</div>
                   {getStatusBadge(event.id)}
                 </div>

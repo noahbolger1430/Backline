@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_band_or_404, get_current_user, get_event_or_404
+from app.api.v1.events import extract_original_event_id, check_deleted_recurring_event
 from app.database import get_db
 from app.models import Band, Event, EventApplication, User
 from app.models.event import EventStatus
@@ -36,7 +37,18 @@ def submit_application(
     Submit an application for a band to perform at an event.
     User must be a member of the band to submit an application.
     Event must be open for applications.
+    
+    If the event_id is a synthetic ID from an expanded recurring event instance,
+    extract the original event ID and use that instead.
     """
+    # Check if this is a synthetic ID and extract the original event ID
+    original_requested_id = event_id
+    event_id = extract_original_event_id(event_id, db)
+    
+    # If extraction didn't happen, check if it's a synthetic ID from a deleted recurring event
+    if original_requested_id == event_id and original_requested_id > 1000000:
+        check_deleted_recurring_event(original_requested_id, db)
+    
     event = get_event_or_404(event_id, db)
     band = get_band_or_404(band_id, db)
 
@@ -60,9 +72,10 @@ def submit_application(
             detail="You must be a band member to submit applications",
         )
 
+    # Use the extracted event_id for the application
     existing_application = (
         db.query(EventApplication)
-        .filter(EventApplication.event_id == event_id, EventApplication.band_id == band_id)
+        .filter(EventApplication.event_id == event.id, EventApplication.band_id == band_id)
         .first()
     )
 
@@ -89,7 +102,18 @@ def list_event_applications(
     List all applications for an event.
     Venue staff can see all applications.
     Bands can only see their own applications.
+    
+    If the event_id is a synthetic ID from an expanded recurring event instance,
+    extract the original event ID and use that instead.
     """
+    # Check if this is a synthetic ID and extract the original event ID
+    original_requested_id = event_id
+    event_id = extract_original_event_id(event_id, db)
+    
+    # If extraction didn't happen, check if it's a synthetic ID from a deleted recurring event
+    if original_requested_id == event_id and original_requested_id > 1000000:
+        check_deleted_recurring_event(original_requested_id, db)
+    
     event = get_event_or_404(event_id, db)
 
     is_venue_staff = EventApplicationService.user_can_manage_venue(db, current_user, event.venue)

@@ -249,13 +249,16 @@ const EventsView = ({ venueId, onEventCreated }) => {
 
       {!loading && !error && events.length > 0 && (
         <div className="events-list">
-          {events.map((event) => (
+          {events.map((event, index) => (
             <EventCardWrapper
-              key={event.id}
+              key={`${event.id}-${event.event_date}-${index}`}
               event={event}
               onDelete={async (eventId) => {
                 try {
-                  await eventService.deleteEvent(eventId);
+                  // For recurring event instances, extract the original event ID
+                  // (instances have IDs like eventId * 1000000 + date)
+                  const originalEventId = Math.floor(eventId / 1000000);
+                  await eventService.deleteEvent(originalEventId);
                   fetchEvents(); // Refresh the events list
                 } catch (error) {
                   throw error; // Re-throw to be handled by EventCard

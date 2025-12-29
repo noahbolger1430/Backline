@@ -27,6 +27,11 @@ class EventBase(BaseModel):
     ticket_price: Optional[int] = Field(None, ge=0)
     is_age_restricted: bool = False
     age_restriction: Optional[int] = Field(None, ge=0, le=100)
+    is_recurring: bool = False
+    recurring_day_of_week: Optional[int] = Field(None, ge=0, le=6)  # 0=Monday, 6=Sunday
+    recurring_frequency: Optional[str] = Field(None, pattern="^(weekly|bi_weekly|monthly)$")
+    recurring_start_date: Optional[date] = None
+    recurring_end_date: Optional[date] = None
 
     @field_validator("name")
     @classmethod
@@ -55,8 +60,40 @@ class EventBase(BaseModel):
         Validate that only pending events can be open for applications.
         """
         status = info.data.get("status")
-        if v and status and status != EventStatus.PENDING:
-            raise ValueError("Only pending events can be open for applications")
+        if v and status:
+            # Normalize status to string for comparison
+            if isinstance(status, EventStatus):
+                status_str = status.value
+            else:
+                status_str = str(status)
+            
+            # Only allow opening for applications if status is pending
+            if status_str != EventStatus.PENDING.value:
+                raise ValueError("Only pending events can be open for applications")
+        return v
+
+    @field_validator("recurring_end_date")
+    @classmethod
+    def validate_recurring_dates(cls, v: Optional[date], info) -> Optional[date]:
+        """
+        Validate recurring event dates and fields.
+        """
+        is_recurring = info.data.get("is_recurring", False)
+        if is_recurring:
+            recurring_start_date = info.data.get("recurring_start_date")
+            recurring_day_of_week = info.data.get("recurring_day_of_week")
+            recurring_frequency = info.data.get("recurring_frequency")
+            
+            if recurring_start_date is None:
+                raise ValueError("recurring_start_date is required for recurring events")
+            if v is None:
+                raise ValueError("recurring_end_date is required for recurring events")
+            if recurring_day_of_week is None:
+                raise ValueError("recurring_day_of_week is required for recurring events")
+            if recurring_frequency is None:
+                raise ValueError("recurring_frequency is required for recurring events")
+            if v < recurring_start_date:
+                raise ValueError("recurring_end_date must be after recurring_start_date")
         return v
 
 
@@ -86,6 +123,11 @@ class EventUpdate(BaseModel):
     is_age_restricted: Optional[bool] = None
     age_restriction: Optional[int] = Field(None, ge=0, le=100)
     image_path: Optional[str] = None
+    is_recurring: Optional[bool] = None
+    recurring_day_of_week: Optional[int] = Field(None, ge=0, le=6)
+    recurring_frequency: Optional[str] = Field(None, pattern="^(weekly|bi_weekly|monthly)$")
+    recurring_start_date: Optional[date] = None
+    recurring_end_date: Optional[date] = None
 
     @field_validator("name")
     @classmethod
@@ -125,6 +167,11 @@ class EventResponse(EventBase):
     created_at: datetime
     updated_at: datetime
     band_count: int = 0
+    is_recurring: bool = False
+    recurring_day_of_week: Optional[int] = None
+    recurring_frequency: Optional[str] = None
+    recurring_start_date: Optional[date] = None
+    recurring_end_date: Optional[date] = None
 
 
 class EventListResponse(BaseModel):

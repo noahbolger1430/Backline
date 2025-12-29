@@ -22,6 +22,8 @@ class BandEvent(Base):
     set_time = Column(Time, nullable=True)
     set_length_minutes = Column(Integer, nullable=True)
     performance_order = Column(Integer, nullable=True)
+    load_in_time = Column(Time, nullable=True)
+    sound_check_time = Column(Time, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),

@@ -29,6 +29,23 @@ export const eventService = {
       formData.append("status", eventData.status);
     }
     
+    // Add recurring event fields
+    if (eventData.is_recurring !== undefined) {
+      formData.append("is_recurring", eventData.is_recurring);
+    }
+    if (eventData.recurring_day_of_week !== undefined && eventData.recurring_day_of_week !== null) {
+      formData.append("recurring_day_of_week", eventData.recurring_day_of_week);
+    }
+    if (eventData.recurring_frequency) {
+      formData.append("recurring_frequency", eventData.recurring_frequency);
+    }
+    if (eventData.recurring_start_date) {
+      formData.append("recurring_start_date", eventData.recurring_start_date);
+    }
+    if (eventData.recurring_end_date) {
+      formData.append("recurring_end_date", eventData.recurring_end_date);
+    }
+    
     // Add is_open_for_applications field
     formData.append("is_open_for_applications", eventData.is_open_for_applications || false);
     
@@ -390,5 +407,30 @@ export const eventService = {
     }
 
     return true;
+  },
+
+  async updateEventSchedule(eventId, scheduleUpdates) {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/schedule`, {
+      method: "PATCH",
+      headers: this.getAuthHeader(),
+      body: JSON.stringify({ schedule: scheduleUpdates }),
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Failed to update event schedule";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === 'string' 
+          ? error.detail 
+          : (error.detail?.message || JSON.stringify(error.detail) || errorMessage);
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return await response.json();
   },
 };

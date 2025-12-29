@@ -42,6 +42,14 @@ class Event(Base):
     is_age_restricted = Column(Boolean, default=False, nullable=False)
     age_restriction = Column(Integer, nullable=True)
     image_path = Column(String, nullable=True)
+    
+    # Recurring event fields
+    is_recurring = Column(Boolean, default=False, nullable=False)
+    recurring_day_of_week = Column(Integer, nullable=True)  # 0=Monday, 6=Sunday
+    recurring_frequency = Column(String, nullable=True)  # 'weekly', 'bi_weekly', 'monthly'
+    recurring_start_date = Column(Date, nullable=True)
+    recurring_end_date = Column(Date, nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False

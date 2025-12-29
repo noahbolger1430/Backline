@@ -70,11 +70,15 @@ const VenueCalendar = ({ venueId, onEventClick }) => {
           end_date: endDateStr,
         });
 
-        // Create a Map of date -> event
+        // Create a Map of date -> array of events (to support multiple events per date)
         const eventsMap = new Map();
         if (response.events) {
           response.events.forEach((event) => {
-            eventsMap.set(event.event_date, event);
+            const dateKey = event.event_date;
+            if (!eventsMap.has(dateKey)) {
+              eventsMap.set(dateKey, []);
+            }
+            eventsMap.get(dateKey).push(event);
           });
         }
         setEventsByDate(eventsMap);
@@ -123,26 +127,33 @@ const VenueCalendar = ({ venueId, onEventClick }) => {
 
       const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       const dateStr = formatDateString(dateObj);
-      const event = eventsByDate.get(dateStr);
+      const eventsForDate = eventsByDate.get(dateStr) || [];
+      const hasEvents = eventsForDate.length > 0;
+      // For display, show the first event if multiple exist
+      const displayEvent = eventsForDate.length > 0 ? eventsForDate[0] : null;
+      const eventCount = eventsForDate.length;
 
       days.push(
         <div
           key={day}
           className={`calendar-day venue-calendar-day ${isToday ? "today" : ""} ${
             isSelected ? "selected" : ""
-          } ${event ? "has-event" : ""}`}
+          } ${hasEvents ? "has-event" : ""}`}
           onClick={() => {
             setSelectedDate(dateObj);
-            if (event && onEventClick) {
-              onEventClick(event);
+            if (displayEvent && onEventClick) {
+              onEventClick(displayEvent);
             }
           }}
         >
           <div className="day-number">{day}</div>
-          {event && (
+          {hasEvents && (
             <div className="day-event-info">
-              <div className="event-name">{event.name}</div>
-              <div className="event-time">{formatTime(event.show_time)}</div>
+              <div className="event-name">
+                {displayEvent.name}
+                {eventCount > 1 && <span className="event-count-badge">+{eventCount - 1}</span>}
+              </div>
+              <div className="event-time">{formatTime(displayEvent.show_time)}</div>
             </div>
           )}
         </div>

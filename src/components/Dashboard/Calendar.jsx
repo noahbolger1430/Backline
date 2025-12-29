@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AvailabilityModal from "./AvailabilityModal";
+import EventModal from "./EventModal";
 import { availabilityService } from "../../services/availabilityService";
 import { bandService } from "../../services/bandService";
 
@@ -12,6 +13,8 @@ const Calendar = ({ bandId }) => {
   const [clickedDate, setClickedDate] = useState(null);
   const [dateAvailability, setDateAvailability] = useState(new Map()); // Map<dateStr, {unavailableCount, unavailableMembers}>
   const [events, setEvents] = useState([]); // Array of events for the current month
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showEventModal, setShowEventModal] = useState(false);
 
   const monthNames = [
     "January",
@@ -176,7 +179,13 @@ const Calendar = ({ bandId }) => {
           onClick={() => {
             setSelectedDate(dateObj);
             setClickedDate(dateObj);
-            setShowAvailabilityModal(true);
+            // If there's an event, show event modal; otherwise show availability modal
+            if (hasEvent && firstEvent) {
+              setSelectedEvent(firstEvent);
+              setShowEventModal(true);
+            } else {
+              setShowAvailabilityModal(true);
+            }
           }}
           title={eventText || availabilityText}
         >
@@ -258,7 +267,19 @@ const Calendar = ({ bandId }) => {
         <div className="calendar-days">{renderCalendarDays()}</div>
       </div>
 
-      {showAvailabilityModal && clickedDate && (() => {
+      {showEventModal && selectedEvent && (
+        <EventModal
+          event={selectedEvent}
+          bandId={bandId}
+          onClose={() => {
+            setShowEventModal(false);
+            setSelectedEvent(null);
+            setClickedDate(null);
+          }}
+        />
+      )}
+
+      {showAvailabilityModal && clickedDate && !showEventModal && (() => {
         const clickedDateStr = formatDateString(clickedDate);
         const availabilityInfo = dateAvailability.get(clickedDateStr);
         // Check if current user is unavailable (we'll need to fetch this separately or pass it)
