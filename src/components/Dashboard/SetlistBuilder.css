@@ -1,0 +1,317 @@
+.setlist-builder-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: #0B0C10;
+    overflow: hidden;
+  }
+  
+  .setlist-builder-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 30px;
+    background-color: #1F2833;
+    border-bottom: 1px solid #C5C6C7;
+    flex-shrink: 0;
+  }
+  
+  .setlist-builder-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #FFFFFF;
+    margin: 0;
+  }
+  
+  .setlist-builder-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px;
+  }
+  
+  .setlist-builder-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #FFFFFF;
+    font-size: 18px;
+  }
+  
+  .setlist-error-message {
+    padding: 16px;
+    background-color: rgba(255, 68, 68, 0.1);
+    border: 1px solid #FF4444;
+    border-radius: 8px;
+    color: #FF4444;
+    margin-bottom: 24px;
+  }
+  
+  .setlist-form {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .setlist-form-group {
+    margin-bottom: 24px;
+  }
+  
+  .setlist-form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin-bottom: 8px;
+  }
+  
+  .setlist-form-group input {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    background-color: #1F2833;
+    border: 2px solid #C5C6C7;
+    border-radius: 4px;
+    color: #FFFFFF;
+    box-sizing: border-box;
+  }
+  
+  .setlist-form-group input:focus {
+    outline: none;
+    border-color: #6F22D2;
+  }
+  
+  .setlist-form-group input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .songs-section {
+    margin-bottom: 32px;
+  }
+  
+  .songs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  
+  .songs-header label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #FFFFFF;
+  }
+  
+  .add-song-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    background-color: #6F22D2;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .add-song-button:hover:not(:disabled) {
+    background-color: #8B2FE8;
+  }
+  
+  .add-song-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .plus-icon {
+    font-size: 16px;
+  }
+  
+  .songs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .song-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background-color: #1F2833;
+    border: 2px solid #C5C6C7;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  
+  .song-item:focus-within {
+    border-color: #6F22D2;
+  }
+  
+  .song-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background-color: #6F22D2;
+    color: #FFFFFF;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  
+  .song-input {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 14px;
+    background-color: #0B0C10;
+    border: 1px solid #C5C6C7;
+    border-radius: 4px;
+    color: #FFFFFF;
+  }
+  
+  .song-input:focus {
+    outline: none;
+    border-color: #6F22D2;
+  }
+  
+  .song-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .song-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  
+  .song-action-button {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border: 1px solid #C5C6C7;
+    border-radius: 4px;
+    color: #FFFFFF;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .song-action-button:hover:not(:disabled) {
+    background-color: #1F2833;
+    border-color: #6F22D2;
+  }
+  
+  .song-action-button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  
+  .song-action-button.delete {
+    color: #FF4444;
+    border-color: #FF4444;
+  }
+  
+  .song-action-button.delete:hover:not(:disabled) {
+    background-color: rgba(255, 68, 68, 0.1);
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 24px;
+    border-top: 1px solid #C5C6C7;
+  }
+  
+  .setlist-cancel-button {
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    background-color: transparent;
+    color: #FFFFFF;
+    border: 2px solid #C5C6C7;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .setlist-cancel-button:hover:not(:disabled) {
+    background-color: #1F2833;
+    border-color: #6F22D2;
+  }
+  
+  .setlist-cancel-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .setlist-save-button {
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    background-color: #6F22D2;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .setlist-save-button:hover:not(:disabled) {
+    background-color: #8B2FE8;
+  }
+  
+  .setlist-save-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .setlist-back-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    background-color: transparent;
+    color: #FFFFFF;
+    border: 1px solid #C5C6C7;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .setlist-back-button:hover {
+    background-color: #1F2833;
+    border-color: #6F22D2;
+  }
+  
+  .setlist-back-arrow {
+    font-size: 18px;
+  }
+  
+  @media (max-width: 768px) {
+    .setlist-builder-content {
+      padding: 20px;
+    }
+  
+    .song-item {
+      flex-wrap: wrap;
+    }
+  
+    .song-actions {
+      width: 100%;
+      justify-content: flex-end;
+    }
+  }
+

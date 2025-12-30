@@ -10,6 +10,9 @@ import LogoutModal from "./LogoutModal";
 import ToolsView from "./ToolsView";
 import StagePlot from "./StagePlot";
 import StagePlotList from "./StagePlotList";
+import SetlistBuilder from "./SetlistBuilder";
+import SetlistList from "./SetlistList";
+import PracticeCompanion from "./PracticeCompanion";
 import NotificationBell from "./NotificationBell";
 import { bandService } from "../../services/bandService";
 import { stagePlotService } from "../../services/stagePlotService";
@@ -28,6 +31,8 @@ const BandDashboard = ({ bandId, onLogout }) => {
   const [selectedTool, setSelectedTool] = useState(null);
   const [selectedStagePlotId, setSelectedStagePlotId] = useState(null);
   const [showStagePlotList, setShowStagePlotList] = useState(false);
+  const [selectedSetlistId, setSelectedSetlistId] = useState(null);
+  const [showSetlistList, setShowSetlistList] = useState(false);
 
   useEffect(() => {
     const fetchBandData = async () => {
@@ -77,6 +82,12 @@ const BandDashboard = ({ bandId, onLogout }) => {
     if (toolId === "stage-plot") {
       // Show stage plot list first to let user choose
       setShowStagePlotList(true);
+    } else if (toolId === "setlist-builder") {
+      // Show setlist list first to let user choose
+      setShowSetlistList(true);
+    } else if (toolId === "practice-companion") {
+      // Practice companion opens directly
+      setSelectedTool(toolId);
     }
     setSelectedTool(toolId);
   };
@@ -85,6 +96,8 @@ const BandDashboard = ({ bandId, onLogout }) => {
     setSelectedTool(null);
     setSelectedStagePlotId(null);
     setShowStagePlotList(false);
+    setSelectedSetlistId(null);
+    setShowSetlistList(false);
   };
 
   const handleBackToStagePlotList = () => {
@@ -100,6 +113,27 @@ const BandDashboard = ({ bandId, onLogout }) => {
   const handleCreateNewStagePlot = () => {
     setSelectedStagePlotId(null);
     setShowStagePlotList(false);
+  };
+
+  const handleBackToSetlistList = () => {
+    setSelectedSetlistId(null);
+    setShowSetlistList(true);
+  };
+
+  const handleSetlistSelect = (setlistId) => {
+    setSelectedSetlistId(setlistId);
+    setShowSetlistList(false);
+  };
+
+  const handleCreateNewSetlist = () => {
+    setSelectedSetlistId(null);
+    setShowSetlistList(false);
+  };
+
+  const handleSetlistSave = () => {
+    // After saving, go back to list
+    setSelectedSetlistId(null);
+    setShowSetlistList(true);
   };
 
   const handleLogoutConfirm = () => {
@@ -260,6 +294,27 @@ const BandDashboard = ({ bandId, onLogout }) => {
                     stagePlotId={selectedStagePlotId}
                   />
                 )
+              ) : selectedTool === "setlist-builder" ? (
+                showSetlistList ? (
+                  <SetlistList
+                    bandId={bandId}
+                    onBack={handleBackToTools}
+                    onSelect={handleSetlistSelect}
+                    onCreateNew={handleCreateNewSetlist}
+                  />
+                ) : (
+                  <SetlistBuilder
+                    bandId={bandId}
+                    setlistId={selectedSetlistId}
+                    onBack={handleBackToSetlistList}
+                    onSave={handleSetlistSave}
+                  />
+                )
+              ) : selectedTool === "practice-companion" ? (
+                <PracticeCompanion
+                  bandId={bandId}
+                  onBack={handleBackToTools}
+                />
               ) : (
                 <ToolsView onToolSelect={handleToolSelect} />
               )

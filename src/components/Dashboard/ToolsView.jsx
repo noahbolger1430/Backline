@@ -15,8 +15,7 @@ const ToolsView = ({ onToolSelect }) => {
       name: "Setlist Builder",
       description: "Build and manage your setlists",
       icon: "📋",
-      available: false,
-      comingSoon: true
+      available: true
     },
     {
       id: "contract-generator",
@@ -33,6 +32,13 @@ const ToolsView = ({ onToolSelect }) => {
       icon: "👕",
       available: false,
       comingSoon: true
+    },
+    {
+      id: "practice-companion",
+      name: "Practice Companion",
+      description: "Import setlists, find tabs, and listen to songs you need to learn",
+      icon: "🎸",
+      available: true
     }
   ];
 

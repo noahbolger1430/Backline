@@ -1,0 +1,268 @@
+.practice-companion-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: #0B0C10;
+    overflow: hidden;
+  }
+  
+  .practice-companion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 30px;
+    background-color: #1F2833;
+    border-bottom: 1px solid #C5C6C7;
+    flex-shrink: 0;
+  }
+  
+  .practice-companion-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #FFFFFF;
+    margin: 0;
+  }
+  
+  .practice-companion-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px;
+  }
+  
+  .practice-companion-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #FFFFFF;
+    font-size: 18px;
+  }
+  
+  .practice-companion-error-message {
+    padding: 16px;
+    background-color: rgba(255, 68, 68, 0.1);
+    border: 1px solid #FF4444;
+    border-radius: 8px;
+    color: #FF4444;
+    margin-bottom: 24px;
+  }
+  
+  .practice-companion-back-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    background-color: transparent;
+    color: #FFFFFF;
+    border: 1px solid #C5C6C7;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .practice-companion-back-button:hover {
+    background-color: #1F2833;
+    border-color: #6F22D2;
+  }
+  
+  .practice-companion-back-arrow {
+    font-size: 18px;
+  }
+  
+  .setlist-selector-section {
+    margin-bottom: 32px;
+  }
+  
+  .setlist-selector-label {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin-bottom: 12px;
+  }
+  
+  .setlist-selector {
+    width: 100%;
+    max-width: 500px;
+    padding: 12px 16px;
+    font-size: 14px;
+    background-color: #1F2833;
+    border: 2px solid #C5C6C7;
+    border-radius: 4px;
+    color: #FFFFFF;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .setlist-selector:focus {
+    outline: none;
+    border-color: #6F22D2;
+  }
+  
+  .setlist-selector option {
+    background-color: #1F2833;
+    color: #FFFFFF;
+  }
+  
+  .songs-list-section {
+    margin-top: 32px;
+  }
+  
+  .songs-list-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin: 0 0 20px 0;
+  }
+  
+  .songs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .song-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background-color: #1F2833;
+    border: 2px solid #C5C6C7;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  
+  .song-item:hover {
+    border-color: #6F22D2;
+    transform: translateX(4px);
+  }
+  
+  .song-item.practiced {
+    opacity: 0.6;
+    background-color: #1a1f28;
+  }
+  
+  .song-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: #6F22D2;
+    color: #FFFFFF;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  
+  .song-item.practiced .song-number {
+    background-color: #4a5568;
+  }
+  
+  .song-name {
+    font-size: 16px;
+    color: #FFFFFF;
+    flex: 1;
+  }
+  
+  .song-name.practiced-name {
+    text-decoration: line-through;
+    color: #8E8E93;
+  }
+  
+  .practice-toggle-button {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border: 2px solid #C5C6C7;
+    border-radius: 4px;
+    color: #C5C6C7;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    padding: 0;
+  }
+  
+  .practice-toggle-button:hover {
+    border-color: #6F22D2;
+    color: #6F22D2;
+    background-color: rgba(111, 34, 210, 0.1);
+  }
+  
+  .practice-toggle-button.practiced {
+    border-color: #4ade80;
+    color: #4ade80;
+    background-color: rgba(74, 222, 128, 0.1);
+  }
+  
+  .practice-toggle-button.practiced:hover {
+    border-color: #22c55e;
+    color: #22c55e;
+    background-color: rgba(34, 197, 94, 0.15);
+  }
+  
+  .no-songs-message {
+    padding: 24px;
+    text-align: center;
+    color: #8E8E93;
+    font-size: 14px;
+  }
+  
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    text-align: center;
+    padding: 40px;
+  }
+  
+  .empty-state-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+  }
+  
+  .empty-state-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin: 0 0 12px 0;
+  }
+  
+  .empty-state-description {
+    font-size: 16px;
+    color: #8E8E93;
+    margin: 0;
+    max-width: 400px;
+  }
+  
+  @media (max-width: 768px) {
+    .practice-companion-content {
+      padding: 20px;
+    }
+  
+    .practice-companion-header {
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+  
+    .practice-companion-title {
+      width: 100%;
+      text-align: center;
+      order: -1;
+    }
+  
+    .setlist-selector {
+      max-width: 100%;
+    }
+  }
+

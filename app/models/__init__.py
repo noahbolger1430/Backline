@@ -12,6 +12,7 @@ from app.models.venue_availability import VenueAvailability, VenueAvailabilitySt
 from app.models.venue_operating_hours import DayOfWeek, VenueOperatingHours
 from app.models.venue_staff import VenueRole, VenueStaff
 from app.models.stage_plot import StagePlot
+from app.models.setlist import Setlist
 
 __all__ = [
     "User",
@@ -35,6 +36,7 @@ __all__ = [
     "Notification",
     "NotificationType",
     "StagePlot",
+    "Setlist",
     "Rehearsal",
     "RehearsalAttachment",
     "RehearsalInstance",
