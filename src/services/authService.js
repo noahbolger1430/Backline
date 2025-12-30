@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api/v1";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api/v1";
 
 export const authService = {
   async login(email, password) {
@@ -7,22 +7,39 @@ export const authService = {
     formData.append("username", email); // OAuth2 uses "username" field for email
     formData.append("password", password);
 
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: formData,
-    });
+    try {
+      // Add timeout to fetch
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || "Login failed");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Login failed");
+      }
+
+      const data = await response.json();
+      localStorage.setItem("access_token", data.access_token);
+      return data;
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        throw new Error("Request timed out. Please check if the backend server is running.");
+      } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+        throw new Error("Cannot connect to server. Please ensure the backend is running on http://127.0.0.1:8000");
+      }
+      
+      throw err;
     }
-
-    const data = await response.json();
-    localStorage.setItem("access_token", data.access_token);
-    return data;
   },
 
   async signup(email, fullName, password) {

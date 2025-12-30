@@ -27,6 +27,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -42,7 +44,7 @@ class EnsureCORSHeadersMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
             # Ensure CORS headers are present
             origin = request.headers.get("origin")
-            if origin in ["http://localhost:3000", "http://127.0.0.1:3000"]:
+            if origin in ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000", "http://127.0.0.1:8000"]:
                 response.headers["Access-Control-Allow-Origin"] = origin
                 response.headers["Access-Control-Allow-Credentials"] = "true"
                 response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"

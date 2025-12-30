@@ -49,8 +49,6 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)) -> User:
 def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
     """
     OAuth2 compatible token login, get an access token for future requests.
-    
-    DEV MODE: If DEV_MODE=True in .env, password verification is bypassed.
     """
     user = db.query(UserModel).filter(UserModel.email == form_data.username).first()
 
@@ -61,11 +59,16 @@ def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = 
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # DEV MODE: Bypass password verification if enabled
-    if True:
-        # Skip password check in dev mode
-        pass
-    elif not verify_password(form_data.password, user.hashed_password):
+    # Verify password
+    try:
+        password_valid = verify_password(form_data.password, user.hashed_password)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error verifying password",
+        )
+    
+    if not password_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
