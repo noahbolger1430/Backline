@@ -13,6 +13,7 @@ from app.models.venue_operating_hours import DayOfWeek, VenueOperatingHours
 from app.models.venue_staff import VenueRole, VenueStaff
 from app.models.stage_plot import StagePlot
 from app.models.setlist import Setlist
+from app.models.youtube_cache import YouTubeCache
 
 __all__ = [
     "User",
@@ -41,5 +42,6 @@ __all__ = [
     "RehearsalAttachment",
     "RehearsalInstance",
     "RecurrenceFrequency",
+    "YouTubeCache",
 ]
 

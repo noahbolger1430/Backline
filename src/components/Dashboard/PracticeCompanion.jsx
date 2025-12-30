@@ -64,6 +64,25 @@ const PracticeCompanion = ({ bandId, bandName, onBack }) => {
     }
   }, [playerReady, youtubeVideos]);
 
+  // Normalize song to object format
+  const normalizeSong = (song) => {
+    if (typeof song === 'string') {
+      return { title: song, artist: "" };
+    } else if (song && typeof song === 'object') {
+      return {
+        title: song.title || song.name || "",
+        artist: song.artist || ""
+      };
+    }
+    return { title: "", artist: "" };
+  };
+
+  // Get song key for practiced songs tracking
+  const getSongKey = (song) => {
+    const normalized = normalizeSong(song);
+    return `${selectedSetlistId}_${normalized.title}_${normalized.artist}`;
+  };
+
   const initializePlayer = useCallback(() => {
     const foundVideos = youtubeVideos.filter(v => v.found && v.video_id);
     if (foundVideos.length === 0) return;
@@ -193,9 +212,22 @@ const PracticeCompanion = ({ bandId, bandName, onBack }) => {
         setSelectedSetlist(setlist);
         setError(null);
         
-        // Automatically search for YouTube videos
-        if (youtubeApiConfigured) {
-          searchYoutubeVideos(setlistId);
+        // Load practiced songs for this setlist
+        const key = `practiced_songs_${bandId}`;
+        const saved = localStorage.getItem(key);
+        let practiced = new Set();
+        if (saved) {
+          try {
+            practiced = new Set(JSON.parse(saved));
+          } catch (err) {
+            console.error("Failed to load practiced songs:", err);
+          }
+        }
+        setPracticedSongs(practiced);
+        
+        // Now search YouTube videos with the loaded data
+        if (youtubeApiConfigured !== false) {
+          searchYoutubeVideos(setlistId, setlist, practiced);
         }
       } catch (err) {
         console.error("Failed to fetch setlist:", err);
@@ -207,12 +239,33 @@ const PracticeCompanion = ({ bandId, bandName, onBack }) => {
     }
   };
 
-  const searchYoutubeVideos = async (setlistId) => {
+  const searchYoutubeVideos = useCallback(async (setlistId, setlist, practiced) => {
     try {
       setYoutubeLoading(true);
       setYoutubeError(null);
       
-      const response = await youtubeService.searchSetlistSongs(setlistId, bandName);
+      // Filter out practiced songs before searching
+      if (!setlist || !setlist.songs) {
+        setYoutubeVideos([]);
+        return;
+      }
+      
+      const unpracticedSongs = setlist.songs.filter(song => {
+        const normalized = normalizeSong(song);
+        const songKey = `${setlistId}_${normalized.title}_${normalized.artist}`;
+        return !practiced.has(songKey);
+      });
+      
+      // Only search if there are unpracticed songs
+      if (unpracticedSongs.length === 0) {
+        setYoutubeVideos([]);
+        return;
+      }
+      
+      // Normalize songs for API call
+      const songsToSearch = unpracticedSongs.map(song => normalizeSong(song));
+      
+      const response = await youtubeService.searchSetlistSongs(setlistId, bandName, songsToSearch);
       setYoutubeVideos(response.results);
       setYoutubeApiConfigured(response.api_configured);
     } catch (err) {
@@ -221,20 +274,7 @@ const PracticeCompanion = ({ bandId, bandName, onBack }) => {
     } finally {
       setYoutubeLoading(false);
     }
-  };
-
-  // Normalize song to object format
-  const normalizeSong = (song) => {
-    if (typeof song === 'string') {
-      return { title: song, artist: "" };
-    } else if (song && typeof song === 'object') {
-      return {
-        title: song.title || song.name || "",
-        artist: song.artist || ""
-      };
-    }
-    return { title: "", artist: "" };
-  };
+  }, [bandName]);
 
   // Get song display name
   const getSongDisplayName = (song) => {
@@ -245,17 +285,12 @@ const PracticeCompanion = ({ bandId, bandName, onBack }) => {
     return normalized.title;
   };
 
-  // Get song key for practiced songs tracking
-  const getSongKey = (song) => {
-    const normalized = normalizeSong(song);
-    return `${selectedSetlistId}_${normalized.title}_${normalized.artist}`;
-  };
-
   const handleTogglePracticed = (song) => {
     const newPracticedSongs = new Set(practicedSongs);
     const songKey = getSongKey(song);
+    const wasPracticed = newPracticedSongs.has(songKey);
     
-    if (newPracticedSongs.has(songKey)) {
+    if (wasPracticed) {
       newPracticedSongs.delete(songKey);
     } else {
       newPracticedSongs.add(songKey);
@@ -263,6 +298,29 @@ const PracticeCompanion = ({ bandId, bandName, onBack }) => {
     
     setPracticedSongs(newPracticedSongs);
     savePracticedSongs(newPracticedSongs);
+    
+    // Update YouTube videos list - remove if marked as practiced, or refresh if unmarked
+    if (wasPracticed) {
+      // Song was unmarked, refresh YouTube search with the new practiced songs
+      if (selectedSetlistId && selectedSetlist && youtubeApiConfigured) {
+        searchYoutubeVideos(selectedSetlistId, selectedSetlist, newPracticedSongs);
+      }
+    } else {
+      // Song was marked as practiced, remove from YouTube videos
+      const normalized = normalizeSong(song);
+      setYoutubeVideos(prevVideos => 
+        prevVideos.filter(v => 
+          !((v.song_title === normalized.title && v.song_artist === normalized.artist) ||
+            v.song_name === getSongDisplayName(song))
+        )
+      );
+      
+      // Reset video index if current video was removed
+      const foundVideos = youtubeVideos.filter(v => v.found && v.video_id);
+      if (currentVideoIndex >= foundVideos.length - 1) {
+        setCurrentVideoIndex(0);
+      }
+    }
   };
 
   // Get the currently playing song

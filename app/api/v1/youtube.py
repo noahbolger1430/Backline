@@ -1,9 +1,9 @@
 """
 YouTube API endpoints for searching songs and creating practice playlists.
 """
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -11,6 +11,7 @@ from app.api.deps import get_current_active_user, get_band_or_404, check_band_pe
 from app.database import get_db
 from app.models import User, BandRole
 from app.services.youtube_service import youtube_service
+from app.services.youtube_cache_service import YouTubeCacheService
 
 router = APIRouter()
 
@@ -44,6 +45,11 @@ class YouTubeStatusResponse(BaseModel):
     """Response model for YouTube API status check."""
     configured: bool
     message: str
+
+
+class SetlistSearchRequest(BaseModel):
+    """Request model for searching specific songs in a setlist."""
+    songs_to_search: Optional[List[Dict[str, str]]] = None  # List of {title, artist} objects
 
 
 @router.get("/status", response_model=YouTubeStatusResponse)
@@ -108,11 +114,13 @@ async def search_songs(
 async def search_setlist_songs(
     setlist_id: int,
     band_name: Optional[str] = None,
+    request: Optional[SetlistSearchRequest] = Body(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> YouTubeSearchResponse:
     """
-    Search for all songs in a setlist on YouTube.
+    Search for songs in a setlist on YouTube.
+    If songs_to_search is provided, only search those songs. Otherwise, search all songs.
     Returns video IDs for each song that can be used to create a playlist.
     """
     import json
@@ -134,52 +142,170 @@ async def search_setlist_songs(
     if not band_name:
         band_name = band.name
     
-    # Parse songs
-    songs = json.loads(setlist.songs_json) if setlist.songs_json else []
+    # Parse all songs from setlist
+    all_songs = json.loads(setlist.songs_json) if setlist.songs_json else []
     
-    if not youtube_service.is_configured:
-        # Handle both old (string) and new (object) song formats
-        results = []
-        for song in songs:
-            if isinstance(song, dict):
-                song_title = song.get("title", song.get("name", ""))
-                song_artist = song.get("artist", "")
-                song_display_name = song_title
-                if song_artist:
-                    song_display_name = f"{song_artist} - {song_title}"
-                results.append(YouTubeVideoResult(
-                    song_name=song_display_name,
-                    song_title=song_title,
-                    song_artist=song_artist,
-                    found=False,
-                    error="YouTube API not configured"
-                ))
-            else:
-                results.append(YouTubeVideoResult(
-                    song_name=str(song),
-                    song_title=str(song),
-                    song_artist="",
-                    found=False,
-                    error="YouTube API not configured"
-                ))
-        return YouTubeSearchResponse(
-            results=results,
-            api_configured=False
-        )
-    
-    try:
-        results = await youtube_service.search_multiple_songs(
-            songs=songs,
-            band_name=band_name
-        )
+    # If songs_to_search is provided, filter to only those songs
+    if request and request.songs_to_search:
+        # Filter all_songs to only include songs in songs_to_search
+        songs_to_search_set = set()
+        for song_filter in request.songs_to_search:
+            title = song_filter.get("title", "").strip()
+            artist = song_filter.get("artist", "").strip()
+            songs_to_search_set.add((title, artist))
         
-        return YouTubeSearchResponse(
-            results=[YouTubeVideoResult(**r) for r in results],
-            api_configured=True
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to search YouTube: {str(e)}"
-        )
+        songs = []
+        for song in all_songs:
+            if isinstance(song, dict):
+                title = song.get("title", song.get("name", "")).strip()
+                artist = song.get("artist", "").strip()
+            else:
+                title = str(song).strip()
+                artist = ""
+            
+            if (title, artist) in songs_to_search_set:
+                songs.append(song)
+    else:
+        # Search all songs
+        songs = all_songs
+    
+    # Check cache first
+    cache_service = YouTubeCacheService()
+    cached_results = cache_service.get_cached_results(db, setlist_id, songs)
+    
+    # Prepare results list
+    results = []
+    songs_to_search = []
+    
+    # Process each song
+    for song in songs:
+        # Extract song info
+        if isinstance(song, dict):
+            song_title = song.get("title", song.get("name", "")).strip()
+            song_artist = song.get("artist", "").strip()
+        else:
+            song_title = str(song).strip()
+            song_artist = ""
+        
+        cache_key = (song_title, song_artist)
+        
+        # Check if cached
+        if cache_key in cached_results:
+            cached = cached_results[cache_key]
+            song_display_name = song_title
+            if song_artist:
+                song_display_name = f"{song_artist} - {song_title}"
+            
+            results.append(YouTubeVideoResult(
+                song_name=song_display_name,
+                song_title=cached["song_title"],
+                song_artist=cached["song_artist"],
+                video_id=cached["video_id"],
+                title=cached["video_title"],
+                channel_title=cached["channel_title"],
+                thumbnail_url=cached["thumbnail_url"],
+                found=cached["found"],
+                error=cached.get("error")
+            ))
+        else:
+            # Need to search for this song
+            songs_to_search.append(song)
+    
+    # Search for songs not in cache
+    if songs_to_search:
+        if not youtube_service.is_configured:
+            # No API configured, return error for uncached songs
+            for song in songs_to_search:
+                if isinstance(song, dict):
+                    song_title = song.get("title", song.get("name", "")).strip()
+                    song_artist = song.get("artist", "").strip()
+                    song_display_name = song_title
+                    if song_artist:
+                        song_display_name = f"{song_artist} - {song_title}"
+                    results.append(YouTubeVideoResult(
+                        song_name=song_display_name,
+                        song_title=song_title,
+                        song_artist=song_artist,
+                        found=False,
+                        error="YouTube API not configured"
+                    ))
+                else:
+                    results.append(YouTubeVideoResult(
+                        song_name=str(song),
+                        song_title=str(song),
+                        song_artist="",
+                        found=False,
+                        error="YouTube API not configured"
+                    ))
+        else:
+            try:
+                # Search YouTube for uncached songs
+                search_results = await youtube_service.search_multiple_songs(
+                    songs=songs_to_search,
+                    band_name=band_name
+                )
+                
+                # Process search results and cache them
+                for result in search_results:
+                    song_title = result.get("song_title", "")
+                    song_artist = result.get("song_artist", "")
+                    
+                    # Cache the result
+                    cache_service.save_cache_result(
+                        db=db,
+                        setlist_id=setlist_id,
+                        song_title=song_title,
+                        song_artist=song_artist,
+                        video_id=result.get("video_id"),
+                        video_title=result.get("title"),
+                        channel_title=result.get("channel_title"),
+                        thumbnail_url=result.get("thumbnail_url"),
+                        found=result.get("found", False),
+                        error_message=result.get("error")
+                    )
+                    
+                    # Add to results
+                    results.append(YouTubeVideoResult(**result))
+            except Exception as e:
+                # If search fails, still return cached results and errors for uncached
+                for song in songs_to_search:
+                    if isinstance(song, dict):
+                        song_title = song.get("title", song.get("name", "")).strip()
+                        song_artist = song.get("artist", "").strip()
+                        song_display_name = song_title
+                        if song_artist:
+                            song_display_name = f"{song_artist} - {song_title}"
+                        results.append(YouTubeVideoResult(
+                            song_name=song_display_name,
+                            song_title=song_title,
+                            song_artist=song_artist,
+                            found=False,
+                            error=f"Search failed: {str(e)}"
+                        ))
+                    else:
+                        results.append(YouTubeVideoResult(
+                            song_name=str(song),
+                            song_title=str(song),
+                            song_artist="",
+                            found=False,
+                            error=f"Search failed: {str(e)}"
+                        ))
+    
+    # Sort results to match original song order
+    song_order = {}
+    for idx, song in enumerate(songs):
+        if isinstance(song, dict):
+            title = song.get("title", song.get("name", "")).strip()
+            artist = song.get("artist", "").strip()
+        else:
+            title = str(song).strip()
+            artist = ""
+        song_order[(title, artist)] = idx
+    
+    results.sort(key=lambda r: song_order.get((r.song_title or "", r.song_artist or ""), 999))
+    
+    return YouTubeSearchResponse(
+        results=results,
+        api_configured=youtube_service.is_configured
+    )
 

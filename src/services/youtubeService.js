@@ -54,19 +54,29 @@ export const youtubeService = {
   },
 
   /**
-   * Search for all songs in a setlist on YouTube
+   * Search for songs in a setlist on YouTube
    * @param {number} setlistId - The setlist ID
    * @param {string} bandName - Optional band name to include in search
+   * @param {Array} songsToSearch - Optional array of songs to search (objects with title and artist)
    */
-  async searchSetlistSongs(setlistId, bandName = null) {
+  async searchSetlistSongs(setlistId, bandName = null, songsToSearch = null) {
     const url = new URL(`${API_BASE_URL}/youtube/search/setlist/${setlistId}`);
     if (bandName) {
       url.searchParams.append("band_name", bandName);
     }
 
+    const body = {};
+    if (songsToSearch && songsToSearch.length > 0) {
+      body.songs_to_search = songsToSearch.map(song => ({
+        title: song.title || song.name || "",
+        artist: song.artist || ""
+      }));
+    }
+
     const response = await fetch(url.toString(), {
       method: "POST",
       headers: this.getAuthHeader(),
+      body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
     });
 
     if (!response.ok) {
