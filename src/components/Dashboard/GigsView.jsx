@@ -18,6 +18,7 @@ const GigsView = ({ bandId }) => {
   const [filterStartDate, setFilterStartDate] = useState("");
   const [filterEndDate, setFilterEndDate] = useState("");
   const [filterVenue, setFilterVenue] = useState("");
+  const [filterApplicationStatus, setFilterApplicationStatus] = useState("all");
 
   const fetchData = async () => {
     try {
@@ -182,6 +183,28 @@ const GigsView = ({ bandId }) => {
       }
     }
 
+    // Filter by application status
+    if (filterApplicationStatus !== "all") {
+      const originalEventId = getOriginalEventId(event.id);
+      const hasApplied = appliedEventIds.has(originalEventId);
+      
+      if (filterApplicationStatus === "none") {
+        // Show only events without applications
+        if (hasApplied) {
+          return false;
+        }
+      } else {
+        // Show only events with the selected application status
+        if (!hasApplied) {
+          return false;
+        }
+        const status = applicationStatuses[originalEventId];
+        if (status !== filterApplicationStatus) {
+          return false;
+        }
+      }
+    }
+
     return true;
   });
 
@@ -189,10 +212,11 @@ const GigsView = ({ bandId }) => {
     setFilterStartDate("");
     setFilterEndDate("");
     setFilterVenue("");
+    setFilterApplicationStatus("all");
   };
 
   const hasActiveFilters = () => {
-    return !!(filterStartDate || filterEndDate || filterVenue.trim());
+    return !!(filterStartDate || filterEndDate || filterVenue.trim() || filterApplicationStatus !== "all");
   };
 
   const getStatusBadge = (eventId) => {
@@ -300,6 +324,23 @@ const GigsView = ({ bandId }) => {
               value={filterVenue}
               onChange={(e) => setFilterVenue(e.target.value)}
             />
+          </div>
+
+          <div className="filter-group">
+            <label className="filter-label">Application Status</label>
+            <select
+              className="filter-select"
+              value={filterApplicationStatus}
+              onChange={(e) => setFilterApplicationStatus(e.target.value)}
+            >
+              <option value="all">All Gigs</option>
+              <option value="none">Accepting Applications</option>
+              <option value="pending">Application Pending</option>
+              <option value="reviewed">Under Review</option>
+              <option value="accepted">Accepted!</option>
+              <option value="rejected">Not Selected</option>
+              <option value="withdrawn">Withdrawn</option>
+            </select>
           </div>
 
           {hasActiveFilters() && (

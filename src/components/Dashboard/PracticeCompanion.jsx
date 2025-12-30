@@ -3,7 +3,7 @@ import { setlistService } from "../../services/setlistService";
 import { youtubeService } from "../../services/youtubeService";
 import "./PracticeCompanion.css";
 
-const PracticeCompanion = ({ bandId, bandName, onBack }) => {
+const PracticeCompanion = ({ bandId, bandName, userId, onBack }) => {
   const [setlists, setSetlists] = useState([]);
   const [selectedSetlistId, setSelectedSetlistId] = useState("");
   const [selectedSetlist, setSelectedSetlist] = useState(null);
@@ -77,10 +77,11 @@ const PracticeCompanion = ({ bandId, bandName, onBack }) => {
     return { title: "", artist: "" };
   };
 
-  // Get song key for practiced songs tracking
+  // Get song key for practiced songs tracking (band-wide, not per-setlist)
   const getSongKey = (song) => {
     const normalized = normalizeSong(song);
-    return `${selectedSetlistId}_${normalized.title}_${normalized.artist}`;
+    // Use title and artist only - practiced songs persist across all setlists
+    return `${normalized.title.toLowerCase()}_${normalized.artist.toLowerCase()}`;
   };
 
   const initializePlayer = useCallback(() => {
@@ -162,9 +163,16 @@ const PracticeCompanion = ({ bandId, bandName, onBack }) => {
     }
   };
 
+  // Get localStorage key for practiced songs (per-user, per-band)
+  const getPracticedSongsKey = () => {
+    // Use a hash of the userId to keep the key shorter but unique
+    const userHash = userId ? btoa(userId).slice(0, 10) : 'anonymous';
+    return `practiced_songs_${bandId}_${userHash}`;
+  };
+
   // Load practiced songs from localStorage
   const loadPracticedSongs = () => {
-    const key = `practiced_songs_${bandId}`;
+    const key = getPracticedSongsKey();
     const saved = localStorage.getItem(key);
     if (saved) {
       try {
@@ -178,7 +186,7 @@ const PracticeCompanion = ({ bandId, bandName, onBack }) => {
 
   // Save practiced songs to localStorage
   const savePracticedSongs = (songSet) => {
-    const key = `practiced_songs_${bandId}`;
+    const key = getPracticedSongsKey();
     try {
       localStorage.setItem(key, JSON.stringify(Array.from(songSet)));
     } catch (err) {
@@ -212,8 +220,8 @@ const PracticeCompanion = ({ bandId, bandName, onBack }) => {
         setSelectedSetlist(setlist);
         setError(null);
         
-        // Load practiced songs for this setlist
-        const key = `practiced_songs_${bandId}`;
+        // Load practiced songs for this user
+        const key = getPracticedSongsKey();
         const saved = localStorage.getItem(key);
         let practiced = new Set();
         if (saved) {
@@ -225,10 +233,8 @@ const PracticeCompanion = ({ bandId, bandName, onBack }) => {
         }
         setPracticedSongs(practiced);
         
-        // Now search YouTube videos with the loaded data
-        if (youtubeApiConfigured !== false) {
-          searchYoutubeVideos(setlistId, setlist, practiced);
-        }
+        // Always search YouTube videos - backend will return cached results or search
+        searchYoutubeVideos(setlistId, setlist, practiced);
       } catch (err) {
         console.error("Failed to fetch setlist:", err);
         setError(err.message);
@@ -244,15 +250,16 @@ const PracticeCompanion = ({ bandId, bandName, onBack }) => {
       setYoutubeLoading(true);
       setYoutubeError(null);
       
-      // Filter out practiced songs before searching
-      if (!setlist || !setlist.songs) {
+      if (!setlist || !setlist.songs || setlist.songs.length === 0) {
         setYoutubeVideos([]);
         return;
       }
       
+      // Filter out practiced songs before searching
       const unpracticedSongs = setlist.songs.filter(song => {
         const normalized = normalizeSong(song);
-        const songKey = `${setlistId}_${normalized.title}_${normalized.artist}`;
+        // Use the same key format as getSongKey (band-wide, not per-setlist)
+        const songKey = `${normalized.title.toLowerCase()}_${normalized.artist.toLowerCase()}`;
         return !practiced.has(songKey);
       });
       
@@ -262,9 +269,27 @@ const PracticeCompanion = ({ bandId, bandName, onBack }) => {
         return;
       }
       
-      // Normalize songs for API call
-      const songsToSearch = unpracticedSongs.map(song => normalizeSong(song));
+      // Normalize songs for API call, replacing "Original" artist with band name
+      // but keep track of original artist for cache matching
+      const songsToSearch = unpracticedSongs.map(song => {
+        const normalized = normalizeSong(song);
+        // If artist is "Original", use band name for YouTube search
+        // but mark it as original so backend knows to search with band name
+        if (normalized.artist === "Original" && bandName) {
+          return {
+            title: normalized.title,
+            artist: bandName,
+            original_artist: "Original"
+          };
+        }
+        return {
+          title: normalized.title,
+          artist: normalized.artist,
+          original_artist: normalized.artist
+        };
+      });
       
+      // Always try to search - the backend will return cached results or search YouTube
       const response = await youtubeService.searchSetlistSongs(setlistId, bandName, songsToSearch);
       setYoutubeVideos(response.results);
       setYoutubeApiConfigured(response.api_configured);

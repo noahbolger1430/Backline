@@ -110,19 +110,26 @@ class YouTubeService:
             # Extract song title and artist
             if isinstance(song, dict):
                 song_title = song.get("title", song.get("name", ""))
-                song_artist = song.get("artist", "")
+                song_artist = song.get("artist", "")  # Artist to use for search
+                original_artist = song.get("original_artist", song_artist)  # Original artist value
                 song_display_name = song_title
-                if song_artist:
-                    song_display_name = f"{song_artist} - {song_title}"
+                display_artist = original_artist if original_artist else song_artist
+                if display_artist:
+                    song_display_name = f"{display_artist} - {song_title}"
             else:
                 # Legacy format: just a string
                 song_title = str(song)
                 song_artist = ""
+                original_artist = ""
                 song_display_name = song_title
             
             try:
                 # Use artist from song object if available, otherwise fall back to band_name
-                artist_to_use = song_artist if song_artist else band_name
+                # If artist is "Original", use band_name for the search
+                if song_artist and song_artist.strip().lower() == "original":
+                    artist_to_use = band_name
+                else:
+                    artist_to_use = song_artist if song_artist else band_name
                 videos = await self.search_song(song_title, artist_to_use, max_results=1)
                 if videos:
                     video = videos[0]

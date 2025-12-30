@@ -11,8 +11,6 @@
     align-items: center;
     justify-content: space-between;
     padding: 20px 30px;
-    background-color: #1F2833;
-    border-bottom: 1px solid #C5C6C7;
     flex-shrink: 0;
   }
   
@@ -185,8 +183,39 @@
     flex: 2;
   }
 
-  .song-artist-input {
+  .song-artist-input-wrapper {
     flex: 1.5;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .song-artist-input {
+    flex: 1;
+  }
+
+  .original-artist-button {
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    background-color: #6F22D2;
+    color: #FFFFFF;
+    border: 1px solid #6F22D2;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .original-artist-button:hover:not(:disabled) {
+    background-color: #8B2FE8;
+    border-color: #8B2FE8;
+  }
+
+  .original-artist-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .song-input:focus {

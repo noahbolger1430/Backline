@@ -314,6 +314,7 @@ const BandDashboard = ({ bandId, onLogout }) => {
                 <PracticeCompanion
                   bandId={bandId}
                   bandName={band?.name}
+                  userId={currentUserEmail}
                   onBack={handleBackToTools}
                 />
               ) : (

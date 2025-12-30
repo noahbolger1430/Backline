@@ -216,14 +216,25 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
                       disabled={saving}
                       className="song-input song-title-input"
                     />
-                    <input
-                      type="text"
-                      value={song.artist}
-                      onChange={(e) => handleSongArtistChange(index, e.target.value)}
-                      placeholder={`Artist (optional)`}
-                      disabled={saving}
-                      className="song-input song-artist-input"
-                    />
+                    <div className="song-artist-input-wrapper">
+                      <input
+                        type="text"
+                        value={song.artist}
+                        onChange={(e) => handleSongArtistChange(index, e.target.value)}
+                        placeholder={`Artist (optional)`}
+                        disabled={saving}
+                        className="song-input song-artist-input"
+                      />
+                      <button
+                        type="button"
+                        className="original-artist-button"
+                        onClick={() => handleSongArtistChange(index, "Original")}
+                        disabled={saving}
+                        title="Mark as original song"
+                      >
+                        Original
+                      </button>
+                    </div>
                   </div>
                   <div className="song-actions">
                     <button
