@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { userService } from "../../services/userService";
 import { bandService } from "../../services/bandService";
+import MemberEquipment from "./MemberEquipment";
 import "./Dashboard.css";
 
 const UserProfile = ({ onUserUpdate }) => {
@@ -333,6 +334,13 @@ const UserProfile = ({ onUserUpdate }) => {
                       </div>
                     )}
                   </div>
+                  
+                  {/* Equipment Section for Gear Share */}
+                  <MemberEquipment
+                    bandId={band.id}
+                    bandName={band.name}
+                    isEditing={isEditing}
+                  />
                 </div>
               );
             })}

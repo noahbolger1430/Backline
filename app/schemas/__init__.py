@@ -101,6 +101,17 @@ from app.schemas.rehearsal import (
     RehearsalWithInstances,
     RehearsalCalendarItem,
 )
+from app.schemas.equipment import (
+    Equipment,
+    EquipmentCreate,
+    EquipmentUpdate,
+    EquipmentInDB,
+    EquipmentList,
+    EquipmentBulkCreate,
+    EquipmentCategories,
+    EquipmentCategoryInfo,
+    get_all_categories,
+)
 
 __all__ = [
     "User",
@@ -194,5 +205,14 @@ __all__ = [
     "RehearsalInstanceUpdate",
     "RehearsalWithInstances",
     "RehearsalCalendarItem",
+    "Equipment",
+    "EquipmentCreate",
+    "EquipmentUpdate",
+    "EquipmentInDB",
+    "EquipmentList",
+    "EquipmentBulkCreate",
+    "EquipmentCategories",
+    "EquipmentCategoryInfo",
+    "get_all_categories",
 ]
 

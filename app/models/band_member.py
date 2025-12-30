@@ -38,4 +38,7 @@ class BandMember(Base):
     availabilities = relationship(
         "BandMemberAvailability", back_populates="band_member", cascade="all, delete-orphan"
     )
+    equipment = relationship(
+        "MemberEquipment", back_populates="band_member", cascade="all, delete-orphan"
+    )
 

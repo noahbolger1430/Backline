@@ -1,0 +1,550 @@
+/* Member Equipment Styles - Gear Share Feature */
+
+.member-equipment-section {
+  margin-top: 32px;
+  padding: 24px;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border-radius: 8px;
+}
+
+.member-equipment-header {
+  margin-bottom: 20px;
+}
+
+.member-equipment-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  margin: 0 0 8px 0;
+}
+
+.member-equipment-subtitle {
+  font-size: 14px;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  margin: 0;
+}
+
+.member-equipment-loading {
+  text-align: center;
+  padding: 24px;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  font-size: 14px;
+}
+
+.member-equipment-error {
+  background-color: rgba(139, 0, 0, 0.3);
+  color: #FF6B6B;
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  border: 1px solid #FF4444;
+  font-size: 14px;
+}
+
+.member-equipment-empty {
+  text-align: center;
+  padding: 32px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+}
+
+.member-equipment-empty p {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+/* Equipment List */
+.member-equipment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.equipment-group {
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.equipment-group-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6F22D2; /* Primary Accent - Electric Violet */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #1F2833;
+}
+
+.equipment-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.equipment-item {
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border-radius: 6px;
+  padding: 14px;
+  border-left: 3px solid #6F22D2; /* Primary Accent - Electric Violet */
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.equipment-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(111, 34, 210, 0.2);
+}
+
+.equipment-item-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.equipment-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.equipment-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.equipment-item-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+}
+
+.equipment-item-category {
+  font-size: 12px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+}
+
+.equipment-share-badge {
+  font-size: 18px;
+  cursor: help;
+}
+
+.equipment-item-brand {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.equipment-item-specs {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  font-style: italic;
+}
+
+.equipment-item-notes {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  padding: 8px;
+  background-color: rgba(111, 34, 210, 0.1);
+  border-radius: 4px;
+}
+
+.equipment-item-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(197, 198, 199, 0.2);
+}
+
+.equipment-action-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.equipment-action-btn.edit-btn {
+  background-color: transparent;
+  color: #6F22D2; /* Primary Accent - Electric Violet */
+  border: 1px solid #6F22D2;
+}
+
+.equipment-action-btn.edit-btn:hover {
+  background-color: #6F22D2;
+  color: #FFFFFF;
+}
+
+.equipment-action-btn.delete-btn {
+  background-color: transparent;
+  color: #FF4444;
+  border: 1px solid #FF4444;
+}
+
+.equipment-action-btn.delete-btn:hover {
+  background-color: #FF4444;
+  color: #FFFFFF;
+}
+
+.equipment-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Action Buttons */
+.member-equipment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.equipment-add-btn {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.equipment-add-btn:hover {
+  background-color: #8B2FE8; /* Lighter purple */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(111, 34, 210, 0.4);
+}
+
+.equipment-add-btn.bulk-btn {
+  background-color: transparent;
+  color: #6F22D2;
+  border: 1px solid #6F22D2;
+}
+
+.equipment-add-btn.bulk-btn:hover {
+  background-color: #6F22D2;
+  color: #FFFFFF;
+}
+
+/* Equipment Form */
+.equipment-form {
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 16px;
+  border: 2px solid #6F22D2; /* Primary Accent - Electric Violet */
+}
+
+.equipment-form-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  margin: 0 0 20px 0;
+}
+
+.equipment-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.equipment-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.equipment-form-field:last-child {
+  margin-bottom: 0;
+}
+
+.equipment-form-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.equipment-form-field input[type="text"],
+.equipment-form-field textarea,
+.equipment-form-field select {
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border-radius: 4px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.equipment-form-field input[type="text"]:focus,
+.equipment-form-field textarea:focus,
+.equipment-form-field select:focus {
+  outline: none;
+  border-color: #6F22D2; /* Primary Accent - Electric Violet */
+  box-shadow: 0 0 0 3px rgba(111, 34, 210, 0.2);
+}
+
+.equipment-form-field input[type="text"]::placeholder,
+.equipment-form-field textarea::placeholder {
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+}
+
+.equipment-form-field input:disabled,
+.equipment-form-field textarea:disabled,
+.equipment-form-field select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.equipment-form-field textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.equipment-form-field select {
+  cursor: pointer;
+}
+
+.equipment-form-field select optgroup {
+  color: #8E8E93;
+  font-weight: bold;
+}
+
+.equipment-form-field select option {
+  color: #FFFFFF;
+  background-color: #1F2833;
+}
+
+/* Checkbox Field */
+.checkbox-field {
+  flex-direction: row;
+  align-items: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #6F22D2; /* Primary Accent - Electric Violet */
+}
+
+/* Form Actions */
+.equipment-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #1F2833;
+}
+
+.equipment-cancel-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  background-color: transparent;
+  color: #C5C6C7;
+  border: 1px solid #C5C6C7;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.equipment-cancel-btn:hover {
+  background-color: #1F2833;
+  color: #FFFFFF;
+}
+
+.equipment-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.equipment-submit-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.equipment-submit-btn:hover {
+  background-color: #8B2FE8; /* Lighter purple */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(111, 34, 210, 0.4);
+}
+
+.equipment-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Bulk Add Form */
+.bulk-form-hint {
+  font-size: 13px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  margin: -12px 0 16px 0;
+}
+
+.bulk-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.bulk-item {
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.bulk-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.bulk-item-number {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6F22D2; /* Primary Accent - Electric Violet */
+}
+
+.bulk-remove-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-size: 18px;
+  font-weight: bold;
+  background-color: transparent;
+  color: #FF4444;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bulk-remove-btn:hover {
+  background-color: #FF4444;
+  color: #FFFFFF;
+}
+
+.bulk-item-fields {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 8px;
+}
+
+.bulk-input {
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border-radius: 4px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.bulk-input:focus {
+  outline: none;
+  border-color: #6F22D2; /* Primary Accent - Electric Violet */
+}
+
+.bulk-input::placeholder {
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+}
+
+.bulk-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bulk-add-more-btn {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  background-color: transparent;
+  color: #6F22D2; /* Primary Accent - Electric Violet */
+  border: 1px dashed #6F22D2;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+}
+
+.bulk-add-more-btn:hover {
+  background-color: rgba(111, 34, 210, 0.1);
+}
+
+.bulk-add-more-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .member-equipment-section {
+    padding: 16px;
+  }
+
+  .equipment-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .bulk-item-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .member-equipment-actions {
+    flex-direction: column;
+  }
+
+  .equipment-add-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .equipment-form-actions {
+    flex-direction: column;
+  }
+
+  .equipment-cancel-btn,
+  .equipment-submit-btn {
+    width: 100%;
+  }
+}
+
