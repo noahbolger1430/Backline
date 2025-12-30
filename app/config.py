@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     dev_mode: bool = True  # Set to True to bypass password verification in development
+    youtube_api_key: str = ""  # YouTube Data API v3 key for searching songs
 
     class Config:
         env_file = ".env"

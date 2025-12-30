@@ -5,13 +5,21 @@ from typing import Any, List, Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
+class Song(BaseModel):
+    """
+    Schema for a song with title and optional artist.
+    """
+    title: str = Field(..., min_length=1)
+    artist: str = Field(default="", max_length=255)
+
+
 class SetlistBase(BaseModel):
     """
     Base setlist schema with common attributes.
     """
 
     name: str = Field(..., min_length=1, max_length=255)
-    songs: List[str] = Field(..., min_items=1, max_items=50)
+    songs: List[Song] = Field(..., min_items=1, max_items=50)
 
     @field_validator("name")
     @classmethod
@@ -23,13 +31,32 @@ class SetlistBase(BaseModel):
 
     @field_validator("songs")
     @classmethod
-    def validate_songs(cls, v: List[str]) -> List[str]:
+    def validate_songs(cls, v: List[Any]) -> List[Song]:
         if not v:
             raise ValueError("Setlist must contain at least 1 song")
         if len(v) > 50:
             raise ValueError("Setlist cannot contain more than 50 songs")
-        # Filter out empty strings and trim whitespace
-        cleaned = [song.strip() for song in v if song.strip()]
+        
+        # Convert to Song objects, handling both old (string) and new (object) formats
+        cleaned = []
+        for song in v:
+            if isinstance(song, str):
+                # Legacy format: just a string
+                if song.strip():
+                    cleaned.append(Song(title=song.strip(), artist=""))
+            elif isinstance(song, dict):
+                # New format: object with title and artist
+                title = song.get("title", song.get("name", "")).strip()
+                if title:
+                    cleaned.append(Song(
+                        title=title,
+                        artist=song.get("artist", "").strip()
+                    ))
+            elif isinstance(song, Song):
+                # Already a Song object
+                if song.title.strip():
+                    cleaned.append(song)
+        
         if not cleaned:
             raise ValueError("Setlist must contain at least 1 non-empty song")
         return cleaned
@@ -50,7 +77,7 @@ class SetlistUpdate(BaseModel):
     """
 
     name: Optional[str] = Field(None, min_length=1, max_length=255)
-    songs: Optional[List[str]] = Field(None, min_items=1, max_items=50)
+    songs: Optional[List[Song]] = Field(None, min_items=1, max_items=50)
 
     @field_validator("name")
     @classmethod
@@ -64,14 +91,33 @@ class SetlistUpdate(BaseModel):
 
     @field_validator("songs")
     @classmethod
-    def validate_songs(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_songs(cls, v: Optional[List[Any]]) -> Optional[List[Song]]:
         if v is not None:
             if not v:
                 raise ValueError("Setlist must contain at least 1 song")
             if len(v) > 50:
                 raise ValueError("Setlist cannot contain more than 50 songs")
-            # Filter out empty strings and trim whitespace
-            cleaned = [song.strip() for song in v if song.strip()]
+            
+            # Convert to Song objects, handling both old (string) and new (object) formats
+            cleaned = []
+            for song in v:
+                if isinstance(song, str):
+                    # Legacy format: just a string
+                    if song.strip():
+                        cleaned.append(Song(title=song.strip(), artist=""))
+                elif isinstance(song, dict):
+                    # New format: object with title and artist
+                    title = song.get("title", song.get("name", "")).strip()
+                    if title:
+                        cleaned.append(Song(
+                            title=title,
+                            artist=song.get("artist", "").strip()
+                        ))
+                elif isinstance(song, Song):
+                    # Already a Song object
+                    if song.title.strip():
+                        cleaned.append(song)
+            
             if not cleaned:
                 raise ValueError("Setlist must contain at least 1 non-empty song")
             return cleaned
@@ -102,7 +148,7 @@ class Setlist(SetlistBase):
 
     id: int
     band_id: int
-    songs: List[str] = Field(default_factory=list)
+    songs: List[Song] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
@@ -111,12 +157,24 @@ class Setlist(SetlistBase):
     def parse_json_fields(cls, data: Any) -> Any:
         """
         Parse JSON string fields into Python objects.
+        Converts songs from JSON to Song objects, handling both old (string) and new (object) formats.
         """
         if isinstance(data, dict):
             # Already a dict, check if songs_json needs parsing
             if "songs_json" in data and isinstance(data["songs_json"], str):
                 try:
-                    data["songs"] = json.loads(data["songs_json"])
+                    songs_data = json.loads(data["songs_json"])
+                    # Convert to Song objects
+                    songs = []
+                    for song_data in songs_data:
+                        if isinstance(song_data, str):
+                            songs.append({"title": song_data, "artist": ""})
+                        elif isinstance(song_data, dict):
+                            songs.append({
+                                "title": song_data.get("title", song_data.get("name", "")),
+                                "artist": song_data.get("artist", "")
+                            })
+                    data["songs"] = songs
                 except json.JSONDecodeError:
                     data["songs"] = []
             return data
@@ -126,7 +184,16 @@ class Setlist(SetlistBase):
             songs = []
             if data.songs_json:
                 try:
-                    songs = json.loads(data.songs_json)
+                    songs_data = json.loads(data.songs_json)
+                    # Convert to Song objects
+                    for song_data in songs_data:
+                        if isinstance(song_data, str):
+                            songs.append({"title": song_data, "artist": ""})
+                        elif isinstance(song_data, dict):
+                            songs.append({
+                                "title": song_data.get("title", song_data.get("name", "")),
+                                "artist": song_data.get("artist", "")
+                            })
                 except json.JSONDecodeError:
                     songs = []
             

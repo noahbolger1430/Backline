@@ -13,6 +13,7 @@ from app.schemas.setlist import (
     SetlistCreate,
     SetlistSummary,
     SetlistUpdate,
+    Song,
 )
 
 router = APIRouter()
@@ -44,8 +45,9 @@ def create_setlist(
     band = get_band_or_404(setlist_in.band_id, db)
     check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN, BandRole.MEMBER])
 
-    # Convert songs to JSON string
-    songs_json = json.dumps(setlist_in.songs)
+    # Convert songs to JSON string (Song objects will be serialized as dicts)
+    songs_data = [song.model_dump() if isinstance(song, Song) else song for song in setlist_in.songs]
+    songs_json = json.dumps(songs_data)
 
     db_setlist = SetlistModel(
         band_id=setlist_in.band_id,
@@ -119,7 +121,9 @@ def update_setlist(
     if "name" in update_data:
         setlist.name = update_data["name"]
     if "songs" in update_data and update_data["songs"] is not None:
-        setlist.songs_json = json.dumps(setlist_update.songs)
+        # Convert Song objects to dicts for JSON serialization
+        songs_data = [song.model_dump() if isinstance(song, Song) else song for song in setlist_update.songs]
+        setlist.songs_json = json.dumps(songs_data)
 
     db.add(setlist)
     db.commit()

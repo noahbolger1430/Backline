@@ -4,7 +4,7 @@ import "./SetlistBuilder.css";
 
 const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
   const [name, setName] = useState("");
-  const [songs, setSongs] = useState([""]);
+  const [songs, setSongs] = useState([{ title: "", artist: "" }]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -20,7 +20,26 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
       setLoading(true);
       const setlist = await setlistService.getSetlist(setlistId);
       setName(setlist.name);
-      setSongs(setlist.songs.length > 0 ? setlist.songs : [""]);
+      
+      // Handle both old format (strings) and new format (objects)
+      if (setlist.songs && setlist.songs.length > 0) {
+        const normalizedSongs = setlist.songs.map(song => {
+          if (typeof song === 'string') {
+            // Old format: just a string
+            return { title: song, artist: "" };
+          } else if (song && typeof song === 'object') {
+            // New format: object with title and artist
+            return {
+              title: song.title || song.name || "",
+              artist: song.artist || ""
+            };
+          }
+          return { title: "", artist: "" };
+        });
+        setSongs(normalizedSongs);
+      } else {
+        setSongs([{ title: "", artist: "" }]);
+      }
       setError(null);
     } catch (err) {
       console.error("Failed to fetch setlist:", err);
@@ -34,15 +53,21 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
     setName(e.target.value);
   };
 
-  const handleSongChange = (index, value) => {
+  const handleSongTitleChange = (index, value) => {
     const newSongs = [...songs];
-    newSongs[index] = value;
+    newSongs[index] = { ...newSongs[index], title: value };
+    setSongs(newSongs);
+  };
+
+  const handleSongArtistChange = (index, value) => {
+    const newSongs = [...songs];
+    newSongs[index] = { ...newSongs[index], artist: value };
     setSongs(newSongs);
   };
 
   const handleAddSong = () => {
     if (songs.length < 50) {
-      setSongs([...songs, ""]);
+      setSongs([...songs, { title: "", artist: "" }]);
     }
   };
 
@@ -79,7 +104,7 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
     }
 
     // Filter out empty songs and validate
-    const validSongs = songs.filter(song => song.trim());
+    const validSongs = songs.filter(song => song.title.trim());
     if (validSongs.length === 0) {
       setError("At least one song is required");
       return;
@@ -94,7 +119,10 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
       setSaving(true);
       const setlistData = {
         name: name.trim(),
-        songs: validSongs.map(song => song.trim()),
+        songs: validSongs.map(song => ({
+          title: song.title.trim(),
+          artist: song.artist.trim()
+        })),
       };
 
       if (setlistId) {
@@ -124,6 +152,8 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
       </div>
     );
   }
+
+  const validSongsCount = songs.filter(s => s.title.trim()).length;
 
   return (
     <div className="setlist-builder-container">
@@ -159,7 +189,7 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
 
           <div className="songs-section">
             <div className="songs-header">
-              <label>Songs ({songs.filter(s => s.trim()).length}/50) *</label>
+              <label>Songs ({validSongsCount}/50) *</label>
               {songs.length < 50 && (
                 <button
                   type="button"
@@ -177,14 +207,24 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
               {songs.map((song, index) => (
                 <div key={index} className="song-item">
                   <div className="song-number">{index + 1}</div>
-                  <input
-                    type="text"
-                    value={song}
-                    onChange={(e) => handleSongChange(index, e.target.value)}
-                    placeholder={`Song ${index + 1}`}
-                    disabled={saving}
-                    className="song-input"
-                  />
+                  <div className="song-inputs">
+                    <input
+                      type="text"
+                      value={song.title}
+                      onChange={(e) => handleSongTitleChange(index, e.target.value)}
+                      placeholder={`Song ${index + 1} title`}
+                      disabled={saving}
+                      className="song-input song-title-input"
+                    />
+                    <input
+                      type="text"
+                      value={song.artist}
+                      onChange={(e) => handleSongArtistChange(index, e.target.value)}
+                      placeholder={`Artist (optional)`}
+                      disabled={saving}
+                      className="song-input song-artist-input"
+                    />
+                  </div>
                   <div className="song-actions">
                     <button
                       type="button"
@@ -244,4 +284,3 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
 };
 
 export default SetlistBuilder;
-

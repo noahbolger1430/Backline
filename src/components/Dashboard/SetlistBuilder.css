@@ -165,6 +165,12 @@
     flex-shrink: 0;
   }
   
+  .song-inputs {
+    flex: 1;
+    display: flex;
+    gap: 12px;
+  }
+
   .song-input {
     flex: 1;
     padding: 8px 12px;
@@ -174,12 +180,20 @@
     border-radius: 4px;
     color: #FFFFFF;
   }
-  
+
+  .song-title-input {
+    flex: 2;
+  }
+
+  .song-artist-input {
+    flex: 1.5;
+  }
+
   .song-input:focus {
     outline: none;
     border-color: #6F22D2;
   }
-  
+
   .song-input:disabled {
     opacity: 0.5;
     cursor: not-allowed;

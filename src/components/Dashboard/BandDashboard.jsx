@@ -313,6 +313,7 @@ const BandDashboard = ({ bandId, onLogout }) => {
               ) : selectedTool === "practice-companion" ? (
                 <PracticeCompanion
                   bandId={bandId}
+                  bandName={band?.name}
                   onBack={handleBackToTools}
                 />
               ) : (
