@@ -274,4 +274,101 @@ export const venueService = {
 
     return await response.json();
   },
+
+  // Venue Equipment Methods
+  async getVenueEquipmentCategories(venueId) {
+    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/equipment/categories`, {
+      method: "GET",
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to fetch venue equipment categories");
+    }
+
+    return await response.json();
+  },
+
+  async getVenueEquipment(venueId) {
+    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/equipment`, {
+      method: "GET",
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to fetch venue equipment");
+    }
+
+    return await response.json();
+  },
+
+  async createVenueEquipment(venueId, equipmentData) {
+    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/equipment`, {
+      method: "POST",
+      headers: this.getAuthHeader(),
+      body: JSON.stringify(equipmentData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      let errorMessage = "Failed to create venue equipment";
+      if (errorData.detail) {
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => {
+            const field = err.loc ? err.loc.join('.') : 'field';
+            const msg = err.msg || err;
+            return `${field}: ${msg}`;
+          }).join(", ");
+        } else {
+          errorMessage = errorData.detail;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    return await response.json();
+  },
+
+  async updateVenueEquipment(venueId, equipmentId, equipmentData) {
+    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/equipment/${equipmentId}`, {
+      method: "PUT",
+      headers: this.getAuthHeader(),
+      body: JSON.stringify(equipmentData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      let errorMessage = "Failed to update venue equipment";
+      if (errorData.detail) {
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => {
+            const field = err.loc ? err.loc.join('.') : 'field';
+            const msg = err.msg || err;
+            return `${field}: ${msg}`;
+          }).join(", ");
+        } else {
+          errorMessage = errorData.detail;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    return await response.json();
+  },
+
+  async deleteVenueEquipment(venueId, equipmentId) {
+    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/equipment/${equipmentId}`, {
+      method: "DELETE",
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to delete venue equipment");
+    }
+
+    return null; // 204 No Content
+  },
 };

@@ -1,11 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import EventCreateForm from "./EventCreateForm";
 import EventEditForm from "./EventEditForm";
 import EventApplicationsList from "./EventApplicationsList";
 import { eventService } from "../../services/eventService";
+import { equipmentService } from "../../services/equipmentService";
 import "./EventsView.css";
 
 const EventCard = ({ event, onDelete, onUpdate, isExpanded, onToggleExpand }) => {
+  const [backlineData, setBacklineData] = useState(null);
+  const [loadingBackline, setLoadingBackline] = useState(false);
+  const [fullEvent, setFullEvent] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const formRef = useRef(null);
+
   const formatDate = (dateString) => {
     const date = new Date(dateString + "T00:00:00");
     return date.toLocaleDateString("en-US", {
@@ -32,6 +39,44 @@ const EventCard = ({ event, onDelete, onUpdate, isExpanded, onToggleExpand }) =>
     if (priceInCents === null || priceInCents === undefined) return "Free";
     return `$${(priceInCents / 100).toFixed(2)}`;
   };
+
+  // Reset editing state when card is collapsed
+  useEffect(() => {
+    if (!isExpanded) {
+      setIsEditing(false);
+    }
+  }, [isExpanded]);
+
+  // Fetch full event details and backline when expanded
+  useEffect(() => {
+    const fetchEventDetails = async () => {
+      if (!isExpanded || !event?.id) return;
+      
+      try {
+        // Fetch full event details to get bands
+        const eventDetails = await eventService.getEvent(event.id);
+        setFullEvent(eventDetails);
+        
+        // Fetch backline if there are bands
+        if (eventDetails.bands && eventDetails.bands.length > 0) {
+          setLoadingBackline(true);
+          try {
+            const backline = await equipmentService.getEventBackline(event.id);
+            setBacklineData(backline);
+          } catch (err) {
+            console.error("Error fetching backline:", err);
+            // Don't set error state - backline is optional
+          } finally {
+            setLoadingBackline(false);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching event details:", err);
+      }
+    };
+
+    fetchEventDetails();
+  }, [isExpanded, event?.id]);
 
   const handleDelete = async (e) => {
     e.stopPropagation();
@@ -136,11 +181,151 @@ const EventCard = ({ event, onDelete, onUpdate, isExpanded, onToggleExpand }) =>
               />
             </div>
           )}
+
           <EventEditForm
             event={event}
             onUpdate={onUpdate}
-            onCancel={() => onToggleExpand()}
+            onCancel={() => {
+              setIsEditing(false);
+              onToggleExpand();
+            }}
+            hideButtons={true}
+            startEditing={isEditing}
+            formRef={formRef}
+            onEditingChange={setIsEditing}
           />
+
+          {/* Event Backline */}
+          {(() => {
+            // Define all backline categories
+            const backlineCategories = [
+              { key: "guitar_amp", label: "Guitar Amp" },
+              { key: "bass_amp", label: "Bass Amp" },
+              { key: "keyboard_amp", label: "Keyboard Amp" },
+              { key: "drum_kit", label: "Drum Kit" },
+              { key: "keyboard", label: "Keyboard" },
+            ];
+
+            if (loadingBackline) {
+              return (
+                <div className="event-backline-section">
+                  <h3 className="event-section-title">Event Backline</h3>
+                  <div className="event-backline-loading">Loading backline information...</div>
+                </div>
+              );
+            }
+
+            if (!backlineData || !backlineData.by_category) {
+              return null;
+            }
+
+            // Build a list of all backline items
+            const backlineItems = backlineCategories.map(({ key, label }) => {
+              const categoryItems = backlineData.by_category[key] || [];
+              const claimedItem = categoryItems.find(item => item.is_claimed);
+              
+              return {
+                category: label,
+                claimed: !!claimedItem,
+                item: claimedItem
+              };
+            });
+
+            return (
+              <div className="event-backline-section">
+                <h3 className="event-section-title">Event Backline</h3>
+                <div className="event-backline-list-container">
+                  <ul className="event-backline-list">
+                    {backlineItems.map(({ category, claimed, item }, index) => (
+                      <li key={index} className="event-backline-list-item">
+                        <div className="event-backline-list-category">{category}:</div>
+                        {claimed && item ? (
+                          <div className="event-backline-list-details">
+                            <span className="event-backline-list-equipment">
+                              {item.name}
+                              {(item.brand || item.model) && (
+                                <span className="event-backline-list-brand">
+                                  {" "}({item.brand || ""}{item.brand && item.model ? " - " : ""}{item.model || ""})
+                                </span>
+                              )}
+                            </span>
+                            <span className="event-backline-list-supplier">
+                              {" "}— Supplied by {item.member_name || "Unknown Member"}
+                              {item.band_name && ` from ${item.band_name}`}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="event-backline-list-unclaimed">Not claimed</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Edit/Update and Close Buttons */}
+          <div className="event-edit-actions">
+            {isEditing ? (
+              <>
+                <button
+                  type="button"
+                  className="btn-submit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Submit the form programmatically
+                    if (formRef.current) {
+                      // Use requestSubmit() which triggers validation and submit handler
+                      formRef.current.requestSubmit();
+                    }
+                  }}
+                >
+                  Update Event
+                </button>
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditing(false);
+                  }}
+                >
+                  Close
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="btn-edit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditing(true);
+                    // Scroll to top of form to show edit fields
+                    setTimeout(() => {
+                      const formElement = document.querySelector('.event-edit-form-container');
+                      if (formElement) {
+                        formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }, 100);
+                  }}
+                >
+                  Edit Event
+                </button>
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleExpand();
+                  }}
+                >
+                  Close
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

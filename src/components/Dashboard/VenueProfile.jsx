@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { venueService } from "../../services/venueService";
+import VenueEquipment from "./VenueEquipment";
 import "./Dashboard.css";
 
 const DAYS_OF_WEEK = [
@@ -1008,6 +1009,11 @@ const VenueProfile = ({ venueId, onVenueUpdate }) => {
               )}
             </div>
           )}
+        </div>
+
+        {/* Venue Equipment Section */}
+        <div className="venue-equipment-section-wrapper">
+          <VenueEquipment venueId={venueId} />
         </div>
       </div>
 

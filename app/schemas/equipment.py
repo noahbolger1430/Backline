@@ -141,6 +141,29 @@ class EquipmentCategories(BaseModel):
     categories: List[EquipmentCategoryInfo] = []
 
 
+class EquipmentClaimCreate(BaseModel):
+    """
+    Schema for claiming equipment for an event.
+    """
+    
+    equipment_id: int = Field(..., description="ID of the equipment to claim")
+
+
+class EquipmentClaim(BaseModel):
+    """
+    Schema representing an equipment claim for an event.
+    """
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: int
+    event_id: int
+    equipment_id: int
+    band_member_id: int
+    created_at: datetime
+    updated_at: datetime
+
+
 # Category display labels and descriptions
 EQUIPMENT_CATEGORY_INFO = {
     EquipmentCategory.GUITAR_AMP: {
@@ -222,6 +245,132 @@ def get_all_categories() -> EquipmentCategories:
     """Get all equipment categories with their labels and descriptions."""
     categories = []
     for cat in EquipmentCategory:
+        info = EQUIPMENT_CATEGORY_INFO.get(cat, {"label": cat.value, "description": None})
+        categories.append(EquipmentCategoryInfo(
+            value=cat.value,
+            label=info["label"],
+            description=info.get("description")
+        ))
+    return EquipmentCategories(categories=categories)
+
+
+# Venue Equipment Schemas (similar to member equipment, but without available_for_share)
+
+# Valid backline categories for venue equipment
+VENUE_BACKLINE_CATEGORIES = {
+    EquipmentCategory.GUITAR_AMP,
+    EquipmentCategory.BASS_AMP,
+    EquipmentCategory.KEYBOARD_AMP,
+    EquipmentCategory.DRUM_KIT,
+    EquipmentCategory.KEYBOARD,
+    EquipmentCategory.MICROPHONE,
+}
+
+
+class VenueEquipmentBase(BaseModel):
+    """
+    Base schema for venue equipment with common attributes.
+    Note: Venue equipment does not have available_for_share since it's always available.
+    """
+    
+    category: str = Field(..., description="Equipment category (backline items only)")
+    name: str = Field(..., min_length=1, max_length=255, description="Name/identifier for this piece of equipment")
+    brand: Optional[str] = Field(None, max_length=255, description="Brand/manufacturer")
+    model: Optional[str] = Field(None, max_length=255, description="Model name/number")
+    specs: Optional[str] = Field(None, max_length=2000, description="Detailed specifications")
+    notes: Optional[str] = Field(None, max_length=2000, description="Additional notes")
+    
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, v: str) -> str:
+        """Validate that category is a valid backline EquipmentCategory value for venues."""
+        valid_categories = [cat.value for cat in VENUE_BACKLINE_CATEGORIES]
+        if v not in valid_categories:
+            raise ValueError(f"Invalid category for venue equipment. Must be one of: {', '.join(valid_categories)}")
+        return v
+    
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Clean and validate equipment name."""
+        cleaned = " ".join(v.split())
+        if not cleaned:
+            raise ValueError("Name cannot be empty or only whitespace")
+        return cleaned
+    
+    @field_validator("brand", "model")
+    @classmethod
+    def validate_optional_string(cls, v: Optional[str]) -> Optional[str]:
+        """Clean optional string fields."""
+        if v is not None:
+            cleaned = " ".join(v.split())
+            return cleaned if cleaned else None
+        return v
+
+
+class VenueEquipmentCreate(VenueEquipmentBase):
+    """
+    Schema for creating new venue equipment.
+    """
+    pass
+
+
+class VenueEquipmentUpdate(BaseModel):
+    """
+    Schema for updating venue equipment. All fields are optional.
+    """
+    
+    category: Optional[str] = Field(None, description="Equipment category (backline items only)")
+    name: Optional[str] = Field(None, min_length=1, max_length=255, description="Name/identifier")
+    brand: Optional[str] = Field(None, max_length=255, description="Brand/manufacturer")
+    model: Optional[str] = Field(None, max_length=255, description="Model name/number")
+    specs: Optional[str] = Field(None, max_length=2000, description="Detailed specifications")
+    notes: Optional[str] = Field(None, max_length=2000, description="Additional notes")
+    
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, v: Optional[str]) -> Optional[str]:
+        """Validate that category is a valid backline EquipmentCategory value if provided."""
+        if v is not None:
+            valid_categories = [cat.value for cat in VENUE_BACKLINE_CATEGORIES]
+            if v not in valid_categories:
+                raise ValueError(f"Invalid category for venue equipment. Must be one of: {', '.join(valid_categories)}")
+        return v
+
+
+class VenueEquipmentInDB(VenueEquipmentBase):
+    """
+    Schema representing venue equipment as stored in database.
+    """
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: int
+    venue_id: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class VenueEquipment(VenueEquipmentInDB):
+    """
+    Schema for venue equipment responses.
+    """
+    pass
+
+
+class VenueEquipmentList(BaseModel):
+    """
+    Schema for listing venue equipment.
+    """
+    
+    equipment: List[VenueEquipment] = []
+    total: int = 0
+
+
+def get_venue_backline_categories() -> EquipmentCategories:
+    """Get backline equipment categories available for venues."""
+    categories = []
+    for cat in VENUE_BACKLINE_CATEGORIES:
         info = EQUIPMENT_CATEGORY_INFO.get(cat, {"label": cat.value, "description": None})
         categories.append(EquipmentCategoryInfo(
             value=cat.value,

@@ -135,5 +135,74 @@ export const equipmentService = {
 
     return await response.json();
   },
+
+  /**
+   * Get all backline equipment from all bands on an event
+   */
+  async getEventBackline(eventId) {
+    const response = await fetch(`${API_BASE_URL}/equipment/events/${eventId}/backline`, {
+      method: "GET",
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to fetch event backline");
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Check if the current user has equipment of a specific category for a band
+   */
+  async checkUserHasCategory(bandId, category) {
+    const response = await fetch(`${API_BASE_URL}/equipment/bands/${bandId}/has-category/${category}`, {
+      method: "GET",
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to check user equipment category");
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Claim equipment for backline at an event
+   */
+  async claimEquipmentForEvent(eventId, equipmentId) {
+    const response = await fetch(`${API_BASE_URL}/equipment/events/${eventId}/claim`, {
+      method: "POST",
+      headers: this.getAuthHeader(),
+      body: JSON.stringify({ equipment_id: equipmentId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to claim equipment");
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Unclaim equipment for backline at an event
+   */
+  async unclaimEquipmentForEvent(eventId, equipmentId) {
+    const response = await fetch(`${API_BASE_URL}/equipment/events/${eventId}/claim/${equipmentId}`, {
+      method: "DELETE",
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to unclaim equipment");
+    }
+
+    return true;
+  },
 };
 

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_current_user, get_venue_or_404
 from app.database import get_db
-from app.models import User, Venue, VenueRole, VenueStaff
+from app.models import User, Venue, VenueRole, VenueStaff, VenueEquipment
 from app.models.venue_operating_hours import VenueOperatingHours
 from app.schemas.venue import (
     Venue as VenueSchema,
@@ -21,6 +21,14 @@ from app.schemas.venue import (
     VenueStaffResponse,
     VenueStaffUpdate,
     VenueUpdate,
+)
+from app.schemas.equipment import (
+    VenueEquipment as VenueEquipmentSchema,
+    VenueEquipmentCreate,
+    VenueEquipmentUpdate,
+    VenueEquipmentList,
+    get_venue_backline_categories,
+    EquipmentCategories,
 )
 from app.services.venue_service import VenueService
 
@@ -802,4 +810,214 @@ def join_venue_with_invite(
     )
 
     return VenueResponse.model_validate(venue)
+
+
+# Venue Equipment Endpoints
+
+@router.get("/{venue_id}/equipment/categories", response_model=EquipmentCategories)
+def list_venue_equipment_categories() -> EquipmentCategories:
+    """
+    Get all available backline equipment categories for venues.
+    Returns only categories that are valid for venue backline equipment.
+    """
+    return get_venue_backline_categories()
+
+
+@router.get("/{venue_id}/equipment", response_model=VenueEquipmentList)
+def list_venue_equipment(
+    venue_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> VenueEquipmentList:
+    """
+    List all equipment for a venue.
+    Requires staff membership at the venue.
+    """
+    venue = get_venue_or_404(venue_id, db)
+    
+    # Check if user is staff member
+    if not VenueService.user_can_manage_venue(db, current_user, venue):
+        staff_check = (
+            db.query(VenueStaff)
+            .filter(VenueStaff.venue_id == venue_id, VenueStaff.user_id == current_user.id)
+            .first()
+        )
+        if not staff_check:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You must be a staff member to view venue equipment",
+            )
+    
+    equipment_list = (
+        db.query(VenueEquipment)
+        .filter(VenueEquipment.venue_id == venue_id)
+        .order_by(VenueEquipment.category, VenueEquipment.name)
+        .all()
+    )
+    
+    return VenueEquipmentList(
+        equipment=[VenueEquipmentSchema.model_validate(eq) for eq in equipment_list],
+        total=len(equipment_list)
+    )
+
+
+@router.post("/{venue_id}/equipment", response_model=VenueEquipmentSchema, status_code=status.HTTP_201_CREATED)
+def create_venue_equipment(
+    venue_id: int,
+    equipment_data: VenueEquipmentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> VenueEquipmentSchema:
+    """
+    Add a new piece of equipment to the venue's backline.
+    Requires owner or manager permissions.
+    """
+    venue = get_venue_or_404(venue_id, db)
+    
+    # Check permissions - only owners and managers can add equipment
+    if not VenueService.user_can_manage_venue(db, current_user, venue):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must be an owner or manager to add venue equipment",
+        )
+    
+    equipment = VenueEquipment(
+        venue_id=venue_id,
+        **equipment_data.model_dump()
+    )
+    
+    db.add(equipment)
+    db.commit()
+    db.refresh(equipment)
+    
+    return VenueEquipmentSchema.model_validate(equipment)
+
+
+@router.get("/{venue_id}/equipment/{equipment_id}", response_model=VenueEquipmentSchema)
+def get_venue_equipment(
+    venue_id: int,
+    equipment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> VenueEquipmentSchema:
+    """
+    Get a specific piece of venue equipment by ID.
+    Requires staff membership at the venue.
+    """
+    venue = get_venue_or_404(venue_id, db)
+    
+    # Check if user is staff member
+    staff_check = (
+        db.query(VenueStaff)
+        .filter(VenueStaff.venue_id == venue_id, VenueStaff.user_id == current_user.id)
+        .first()
+    )
+    if not staff_check:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must be a staff member to view venue equipment",
+        )
+    
+    equipment = (
+        db.query(VenueEquipment)
+        .filter(
+            VenueEquipment.id == equipment_id,
+            VenueEquipment.venue_id == venue_id
+        )
+        .first()
+    )
+    
+    if not equipment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Equipment not found"
+        )
+    
+    return VenueEquipmentSchema.model_validate(equipment)
+
+
+@router.put("/{venue_id}/equipment/{equipment_id}", response_model=VenueEquipmentSchema)
+def update_venue_equipment(
+    venue_id: int,
+    equipment_id: int,
+    equipment_data: VenueEquipmentUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> VenueEquipmentSchema:
+    """
+    Update a piece of venue equipment.
+    Requires owner or manager permissions.
+    """
+    venue = get_venue_or_404(venue_id, db)
+    
+    # Check permissions
+    if not VenueService.user_can_manage_venue(db, current_user, venue):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must be an owner or manager to update venue equipment",
+        )
+    
+    equipment = (
+        db.query(VenueEquipment)
+        .filter(
+            VenueEquipment.id == equipment_id,
+            VenueEquipment.venue_id == venue_id
+        )
+        .first()
+    )
+    
+    if not equipment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Equipment not found"
+        )
+    
+    update_data = equipment_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(equipment, field, value)
+    
+    db.add(equipment)
+    db.commit()
+    db.refresh(equipment)
+    
+    return VenueEquipmentSchema.model_validate(equipment)
+
+
+@router.delete("/{venue_id}/equipment/{equipment_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_venue_equipment(
+    venue_id: int,
+    equipment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """
+    Delete a piece of venue equipment.
+    Requires owner or manager permissions.
+    """
+    venue = get_venue_or_404(venue_id, db)
+    
+    # Check permissions
+    if not VenueService.user_can_manage_venue(db, current_user, venue):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must be an owner or manager to delete venue equipment",
+        )
+    
+    equipment = (
+        db.query(VenueEquipment)
+        .filter(
+            VenueEquipment.id == equipment_id,
+            VenueEquipment.venue_id == venue_id
+        )
+        .first()
+    )
+    
+    if not equipment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Equipment not found"
+        )
+    
+    db.delete(equipment)
+    db.commit()
 

@@ -387,4 +387,304 @@
   font-weight: 700;
   font-size: 16px;
 }
+
+/* Backline Section */
+.backline-loading {
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  text-align: center;
+  padding: 16px;
+  font-size: 14px;
+}
+
+.backline-empty {
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  text-align: center;
+  padding: 16px;
+  font-style: italic;
+  font-size: 14px;
+}
+
+.backline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.backline-category-group {
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.backline-category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #1F2833; /* Secondary Background - Charcoal Grey */
+}
+
+.backline-category-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #6F22D2; /* Primary Accent - Electric Violet */
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.backline-claim-btn {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.backline-claim-btn:hover {
+  background-color: #8B2FE8; /* Lighter purple */
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(111, 34, 210, 0.4);
+}
+
+.backline-claim-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.backline-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.backline-item {
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border-radius: 6px;
+  padding: 12px;
+  border-left: 3px solid #6F22D2; /* Primary Accent - Electric Violet */
+}
+
+.backline-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.backline-item-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+}
+
+.backline-item-band {
+  font-size: 13px;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.backline-item-member {
+  font-size: 12px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  font-style: italic;
+}
+
+.backline-item-details {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.backline-item-specs {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  font-style: italic;
+}
+
+.backline-item-notes {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  padding: 8px;
+  background-color: rgba(111, 34, 210, 0.1);
+  border-radius: 4px;
+}
+
+.backline-claimed-badge {
+  display: inline-block;
+  margin-left: 12px;
+  padding: 4px 10px;
+  background-color: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  border: 1px solid #4CAF50;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.backline-item.claimed {
+  border-left-color: #4CAF50;
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.backline-claimed-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  background-color: rgba(76, 175, 80, 0.2);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4CAF50;
+}
+
+.claimed-icon {
+  font-size: 14px;
+}
+
+.claimed-label {
+  font-size: 12px;
+}
+
+.backline-unclaim-btn {
+  margin-top: 10px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: transparent;
+  color: #FF4444;
+  border: 1px solid #FF4444;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.backline-unclaim-btn:hover {
+  background-color: #FF4444;
+  color: #FFFFFF;
+}
+
+/* Venue Backline Section Styles */
+.venue-backline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.venue-backline-item {
+  background-color: #0B0C10;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #1F2833;
+}
+
+.venue-backline-category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #1F2833;
+}
+
+.venue-backline-category-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.venue-backline-status {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.venue-backline-status.claimed {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  border: 1px solid #4CAF50;
+}
+
+.venue-backline-status.unclaimed {
+  background-color: rgba(142, 142, 147, 0.2);
+  color: #8E8E93;
+  border: 1px solid #8E8E93;
+}
+
+.venue-backline-claimed-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.venue-backline-equipment-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.venue-backline-equipment-brand {
+  font-size: 14px;
+  color: #C5C6C7;
+}
+
+.venue-backline-supplier {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #1F2833;
+  font-size: 14px;
+}
+
+.venue-backline-supplier-label {
+  color: #8E8E93;
+  font-weight: 500;
+}
+
+.venue-backline-supplier-name {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.venue-backline-supplier-separator {
+  color: #8E8E93;
+  margin: 0 4px;
+}
+
+.venue-backline-supplier-band {
+  color: #C5C6C7;
+  font-style: italic;
+}
+
+.venue-backline-unclaimed {
+  padding: 12px;
+  text-align: center;
+  background-color: rgba(142, 142, 147, 0.1);
+  border-radius: 4px;
+  border: 1px dashed #8E8E93;
+}
+
+.venue-backline-unclaimed-text {
+  color: #8E8E93;
+  font-size: 14px;
+  font-style: italic;
+}
   

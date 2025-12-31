@@ -55,6 +55,7 @@ class BandEventBase(BaseModel):
 class BandEventCreate(BaseModel):
     """
     Schema for creating a band-event relationship.
+    Includes event_id for cases where it's needed in the request body.
     """
 
     band_id: int
@@ -65,6 +66,41 @@ class BandEventCreate(BaseModel):
     performance_order: Optional[int] = None
     load_in_time: Optional[time] = None
     sound_check_time: Optional[time] = None
+
+
+class BandEventCreateWithoutEventId(BaseModel):
+    """
+    Schema for creating a band-event relationship when event_id comes from the path.
+    Used for POST /events/{event_id}/bands endpoint.
+    """
+
+    band_id: int
+    status: str = "pending"
+    set_time: Optional[time] = None
+    set_length_minutes: Optional[int] = None
+    performance_order: Optional[int] = None
+    load_in_time: Optional[time] = None
+    sound_check_time: Optional[time] = None
+
+    @field_validator("set_length_minutes")
+    @classmethod
+    def validate_set_length(cls, v: Optional[int]) -> Optional[int]:
+        """
+        Validate set length is positive and reasonable.
+        """
+        if v is not None and (v <= 0 or v > 480):
+            raise ValueError("set_length_minutes must be between 1 and 480")
+        return v
+
+    @field_validator("performance_order")
+    @classmethod
+    def validate_performance_order(cls, v: Optional[int]) -> Optional[int]:
+        """
+        Validate performance order is positive.
+        """
+        if v is not None and v <= 0:
+            raise ValueError("performance_order must be positive")
+        return v
 
 
 class BandEventUpdate(BaseModel):

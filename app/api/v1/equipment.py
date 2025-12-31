@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_active_user
 from app.database import get_db
-from app.models import BandMember, MemberEquipment, User
+from app.models import Band, BandEvent, BandMember, MemberEquipment, User, EventEquipmentClaim
+from app.models.member_equipment import EquipmentCategory
 from app.schemas.equipment import (
     Equipment,
     EquipmentBulkCreate,
@@ -17,6 +18,8 @@ from app.schemas.equipment import (
     EquipmentList,
     EquipmentUpdate,
     EquipmentCategories,
+    EquipmentClaimCreate,
+    EquipmentClaim,
     get_all_categories,
 )
 
@@ -274,4 +277,338 @@ def list_band_equipment(
         result["members_equipment"].append(member_data)
     
     return result
+
+
+# Relevant categories for backline gear sharing (excludes individual instruments)
+BACKLINE_CATEGORIES = {
+    EquipmentCategory.GUITAR_AMP,
+    EquipmentCategory.BASS_AMP,
+    EquipmentCategory.KEYBOARD_AMP,
+    EquipmentCategory.DRUM_KIT,
+    EquipmentCategory.KEYBOARD,
+}
+
+
+@router.get("/events/{event_id}/backline", response_model=dict)
+def get_event_backline(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> dict:
+    """
+    Get all backline equipment from all bands on an event.
+    Only includes relevant categories: guitar_amp, bass_amp, keyboard_amp, drum_kit, keyboard.
+    Returns equipment grouped by category and band, with claim information.
+    """
+    # Get all bands on the event
+    band_events = (
+        db.query(BandEvent)
+        .filter(BandEvent.event_id == event_id)
+        .all()
+    )
+    
+    if not band_events:
+        return {
+            "event_id": event_id,
+            "backline_items": [],
+            "by_category": {},
+            "claimed_equipment": {}
+        }
+    
+    # Get all claims for this event
+    claims = (
+        db.query(EventEquipmentClaim)
+        .filter(EventEquipmentClaim.event_id == event_id)
+        .all()
+    )
+    
+    # Create a map of equipment_id -> claim
+    claims_map = {claim.equipment_id: claim for claim in claims}
+    
+    # Collect all equipment from all bands
+    backline_items = []
+    by_category = {}
+    claimed_equipment = {}  # {category: equipment_id}
+    
+    for band_event in band_events:
+        band_id = band_event.band_id
+        band = db.query(Band).filter(Band.id == band_id).first()
+        
+        if not band:
+            continue
+        
+        # Get all members of this band
+        members = (
+            db.query(BandMember)
+            .filter(BandMember.band_id == band_id)
+            .all()
+        )
+        
+        for member in members:
+            # Get equipment for this member, filtered to backline categories
+            equipment_list = (
+                db.query(MemberEquipment)
+                .filter(
+                    MemberEquipment.band_member_id == member.id,
+                    MemberEquipment.category.in_([cat.value for cat in BACKLINE_CATEGORIES]),
+                    MemberEquipment.available_for_share == 1
+                )
+                .order_by(MemberEquipment.category, MemberEquipment.name)
+                .all()
+            )
+            
+            for eq in equipment_list:
+                user = member.user
+                is_claimed = eq.id in claims_map
+                claim = claims_map.get(eq.id)
+                
+                # Check if current user can unclaim (if they own the claim)
+                can_unclaim = False
+                if claim and claim.band_member_id == member.id and member.user_id == current_user.id:
+                    can_unclaim = True
+                
+                item_data = {
+                    "equipment_id": eq.id,
+                    "category": eq.category,
+                    "name": eq.name,
+                    "brand": eq.brand,
+                    "model": eq.model,
+                    "specs": eq.specs,
+                    "notes": eq.notes,
+                    "band_id": band_id,
+                    "band_name": band.name,
+                    "member_id": member.id,
+                    "member_name": user.full_name if user else None,
+                    "instrument": member.instrument,
+                    "is_claimed": is_claimed,
+                    "claimed_by_member_id": claim.band_member_id if claim else None,
+                    "can_unclaim": can_unclaim,
+                }
+                backline_items.append(item_data)
+                
+                # Group by category
+                if eq.category not in by_category:
+                    by_category[eq.category] = []
+                by_category[eq.category].append(item_data)
+                
+                # Track claimed equipment by category
+                if is_claimed:
+                    claimed_equipment[eq.category] = eq.id
+    
+    return {
+        "event_id": event_id,
+        "backline_items": backline_items,
+        "by_category": by_category,
+        "claimed_equipment": claimed_equipment
+    }
+
+
+@router.get("/bands/{band_id}/has-category/{category}", response_model=dict)
+def check_user_has_category(
+    band_id: int,
+    category: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> dict:
+    """
+    Check if the current user has equipment of a specific category for a band.
+    Returns whether the user has that category and optionally the equipment items.
+    """
+    # Validate category
+    valid_categories = [cat.value for cat in EquipmentCategory]
+    if category not in valid_categories:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid category. Must be one of: {', '.join(valid_categories)}"
+        )
+    
+    # Get user's band membership
+    member = (
+        db.query(BandMember)
+        .filter(
+            BandMember.band_id == band_id,
+            BandMember.user_id == current_user.id
+        )
+        .first()
+    )
+    
+    if not member:
+        return {
+            "has_category": False,
+            "equipment": []
+        }
+    
+    # Check if user has equipment of this category
+    equipment_list = (
+        db.query(MemberEquipment)
+        .filter(
+            MemberEquipment.band_member_id == member.id,
+            MemberEquipment.category == category,
+            MemberEquipment.available_for_share == 1
+        )
+        .order_by(MemberEquipment.name)
+        .all()
+    )
+    
+    return {
+        "has_category": len(equipment_list) > 0,
+        "equipment": [Equipment.model_validate(eq).model_dump() for eq in equipment_list]
+    }
+
+
+@router.post("/events/{event_id}/claim", response_model=EquipmentClaim, status_code=status.HTTP_201_CREATED)
+def claim_equipment_for_event(
+    event_id: int,
+    claim_data: EquipmentClaimCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> EquipmentClaim:
+    """
+    Claim equipment for backline at an event.
+    The equipment must belong to the current user and be available for sharing.
+    """
+    # Get the equipment
+    equipment = db.query(MemberEquipment).filter(MemberEquipment.id == claim_data.equipment_id).first()
+    if not equipment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Equipment not found"
+        )
+    
+    # Verify equipment is available for sharing
+    if equipment.available_for_share != 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This equipment is not available for sharing"
+        )
+    
+    # Verify equipment category is a backline category
+    if EquipmentCategory(equipment.category) not in BACKLINE_CATEGORIES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This equipment category cannot be claimed as backline"
+        )
+    
+    # Verify the equipment belongs to the current user
+    member = (
+        db.query(BandMember)
+        .filter(
+            BandMember.id == equipment.band_member_id,
+            BandMember.user_id == current_user.id
+        )
+        .first()
+    )
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only claim your own equipment"
+        )
+    
+    # Verify the user's band is on the event
+    band_event = (
+        db.query(BandEvent)
+        .filter(
+            BandEvent.event_id == event_id,
+            BandEvent.band_id == member.band_id
+        )
+        .first()
+    )
+    if not band_event:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your band must be on the event bill to claim equipment"
+        )
+    
+    # Check if this equipment is already claimed for this event
+    existing_claim = (
+        db.query(EventEquipmentClaim)
+        .filter(
+            EventEquipmentClaim.event_id == event_id,
+            EventEquipmentClaim.equipment_id == claim_data.equipment_id
+        )
+        .first()
+    )
+    if existing_claim:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This equipment is already claimed for this event"
+        )
+    
+    # Check if user already has a claim for this category on this event
+    # Get all equipment claimed by this user for this event
+    user_claims = (
+        db.query(EventEquipmentClaim)
+        .join(MemberEquipment, EventEquipmentClaim.equipment_id == MemberEquipment.id)
+        .filter(
+            EventEquipmentClaim.event_id == event_id,
+            EventEquipmentClaim.band_member_id == member.id
+        )
+        .all()
+    )
+    
+    # Check if any of the user's claims are for the same category
+    for user_claim in user_claims:
+        claimed_equipment = db.query(MemberEquipment).filter(MemberEquipment.id == user_claim.equipment_id).first()
+        if claimed_equipment and claimed_equipment.category == equipment.category:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"You have already claimed a {equipment.category.replace('_', ' ')} for this event. Please unclaim it first."
+            )
+    
+    # Create the claim
+    claim = EventEquipmentClaim(
+        event_id=event_id,
+        equipment_id=claim_data.equipment_id,
+        band_member_id=member.id
+    )
+    db.add(claim)
+    db.commit()
+    db.refresh(claim)
+    
+    return EquipmentClaim.model_validate(claim)
+
+
+@router.delete("/events/{event_id}/claim/{equipment_id}", status_code=status.HTTP_204_NO_CONTENT)
+def unclaim_equipment_for_event(
+    event_id: int,
+    equipment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> None:
+    """
+    Unclaim equipment for backline at an event.
+    Only the user who claimed it can unclaim it.
+    """
+    # Get the claim
+    claim = (
+        db.query(EventEquipmentClaim)
+        .filter(
+            EventEquipmentClaim.event_id == event_id,
+            EventEquipmentClaim.equipment_id == equipment_id
+        )
+        .first()
+    )
+    if not claim:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Equipment claim not found"
+        )
+    
+    # Verify the claim belongs to the current user
+    member = (
+        db.query(BandMember)
+        .filter(
+            BandMember.id == claim.band_member_id,
+            BandMember.user_id == current_user.id
+        )
+        .first()
+    )
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only unclaim your own equipment"
+        )
+    
+    db.delete(claim)
+    db.commit()
 

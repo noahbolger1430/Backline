@@ -15,16 +15,19 @@ from app.models.availability import AvailabilityStatus
 from app.models.event import EventStatus
 from app.models.notification import NotificationType
 from app.schemas.event import (
-    BandEventCreate,
-    BandEventResponse,
-    BandEventUpdate,
     EventCreate,
     EventListResponse,
     EventResponse,
     EventUpdate,
 )
 from app.schemas.event import EventWithBands 
-from app.schemas.band_event import BandEventStatus
+from app.schemas.band_event import (
+    BandEventCreate,
+    BandEventCreateWithoutEventId,
+    BandEventResponse,
+    BandEventStatus,
+    BandEventUpdate,
+)
 from app.schemas.notification import NotificationCreate
 from app.services.event_service import EventService
 from app.services.notification_service import NotificationService
@@ -1388,7 +1391,7 @@ def delete_event(event_id: int, db: Session = Depends(get_db)) -> None:
 
 
 @router.post("/{event_id}/bands", response_model=BandEventResponse)
-def add_band_to_event(event_id: int, band_event_data: BandEventCreate, db: Session = Depends(get_db)) -> BandEventResponse:
+def add_band_to_event(event_id: int, band_event_data: BandEventCreateWithoutEventId, db: Session = Depends(get_db)) -> BandEventResponse:
     """
     Add a band to an event lineup.
 
@@ -1648,9 +1651,9 @@ def update_event_schedule(
     db: Session = Depends(get_db),
 ) -> dict:
     """
-    Update event schedule (load in and sound check times) for bands.
+    Update event schedule (load in, sound check, and set times) for bands.
     
-    Expects: { "schedule": [{ "bandEventId": int, "load_in_time": str, "sound_check_time": str }, ...] }
+    Expects: { "schedule": [{ "bandEventId": int, "load_in_time": str, "sound_check_time": str, "set_time": str }, ...] }
     
     If the event_id is a synthetic ID from an expanded recurring event instance,
     extract the original event ID and use that instead.
@@ -1720,6 +1723,7 @@ def update_event_schedule(
         band_event_id = update.get("bandEventId")
         load_in_time_str = update.get("load_in_time")
         sound_check_time_str = update.get("sound_check_time")
+        set_time_str = update.get("set_time")
         
         band_event = db.query(BandEvent).filter(BandEvent.id == band_event_id).first()
         if not band_event or band_event.event_id != event_id:
@@ -1742,9 +1746,18 @@ def update_event_schedule(
             except (ValueError, IndexError):
                 pass
         
+        set_time = None
+        if set_time_str:
+            try:
+                time_parts = set_time_str.split(":")
+                set_time = time_type(int(time_parts[0]), int(time_parts[1]))
+            except (ValueError, IndexError):
+                pass
+        
         # Update band event
         band_event.load_in_time = load_in_time
         band_event.sound_check_time = sound_check_time
+        band_event.set_time = set_time
         updated_bands.append(band_event.band_id)
     
     db.commit()

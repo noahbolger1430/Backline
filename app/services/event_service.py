@@ -48,9 +48,10 @@ class EventService:
         db.commit()
 
     @staticmethod
-    def add_band_to_event(db: Session, event: Event, band: Band, band_event_data: BandEventCreate) -> BandEvent:
+    def add_band_to_event(db: Session, event: Event, band: Band, band_event_data) -> BandEvent:
         """
         Add a band to an event and create availability block.
+        band_event_data can be BandEventCreate or BandEventCreateWithoutEventId.
         """
         band_event = BandEvent(
             event_id=event.id,
@@ -59,6 +60,8 @@ class EventService:
             set_time=band_event_data.set_time,
             set_length_minutes=band_event_data.set_length_minutes,
             performance_order=band_event_data.performance_order,
+            load_in_time=getattr(band_event_data, 'load_in_time', None),
+            sound_check_time=getattr(band_event_data, 'sound_check_time', None),
         )
         db.add(band_event)
 

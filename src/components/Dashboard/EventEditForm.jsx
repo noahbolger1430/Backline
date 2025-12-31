@@ -6,7 +6,7 @@ import BandSearchSelect from "./BandSearchSelect";
 import StagePlot from "./StagePlot";
 import "./EventEditForm.css";
 
-const EventEditForm = ({ event, onUpdate, onCancel }) => {
+const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEditing = false, formRef, onEditingChange }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -22,7 +22,12 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(startEditing);
+
+  // Sync startEditing prop with isEditing state
+  useEffect(() => {
+    setIsEditing(startEditing);
+  }, [startEditing]);
   const [eventBands, setEventBands] = useState([]);
   const [loadingBands, setLoadingBands] = useState(false);
   const [selectedBandsToAdd, setSelectedBandsToAdd] = useState([]);
@@ -425,13 +430,13 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
       await eventService.updateEvent(event.id, updateData, imageToSend, shouldRemoveImage);
       setIsEditing(false);
       setImageFile(null);
+      // Notify parent that editing is done
+      if (onEditingChange) {
+        onEditingChange(false);
+      }
       // Refresh image preview from updated event
       if (onUpdate) {
         onUpdate();
-      }
-      // Close the expanded section after successful update
-      if (onCancel) {
-        onCancel();
       }
     } catch (err) {
       setError(err.message || "Failed to update event");
@@ -659,27 +664,6 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
             ) : (
               <div className="no-bands">No bands added yet</div>
             )}
-
-            {/* Add Bands Section */}
-            <div className="add-bands-section">
-              <BandSearchSelect
-                selectedBands={selectedBandsToAdd}
-                onBandsChange={setSelectedBandsToAdd}
-              />
-              {selectedBandsToAdd.length > 0 && (
-                <button
-                  type="button"
-                  className="btn-add-bands"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddBands();
-                  }}
-                  disabled={loading}
-                >
-                  {loading ? "Adding..." : `Add ${selectedBandsToAdd.length} Band${selectedBandsToAdd.length > 1 ? 's' : ''}`}
-                </button>
-              )}
-            </div>
           </div>
 
           {/* Application Controls */}
@@ -723,28 +707,30 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
             </div>
           )}
         </div>
-        <div className="event-edit-actions">
-          <button
-            type="button"
-            className="btn-edit"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsEditing(true);
-            }}
-          >
-            Edit Event
-          </button>
-          <button
-            type="button"
-            className="btn-cancel"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onCancel) onCancel();
-            }}
-          >
-            Close
-          </button>
-        </div>
+        {!hideButtons && (
+          <div className="event-edit-actions">
+            <button
+              type="button"
+              className="btn-edit"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsEditing(true);
+              }}
+            >
+              Edit Event
+            </button>
+            <button
+              type="button"
+              className="btn-cancel"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onCancel) onCancel();
+              }}
+            >
+              Close
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Band Info Modal */}
@@ -903,7 +889,7 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
     <div className="event-edit-form-container" onClick={(e) => e.stopPropagation()}>
       {error && <div className="event-form-error">{error}</div>}
 
-      <form onSubmit={handleSubmit} className="event-edit-form">
+      <form ref={formRef} onSubmit={handleSubmit} className="event-edit-form">
         <div className="form-group">
           <label htmlFor="name">Event Name *</label>
           <input
@@ -1274,6 +1260,15 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
                   return `${String(defaultHours).padStart(2, '0')}:${String(defaultMins).padStart(2, '0')}`;
                 };
                 
+                const getDefaultSetTime = () => {
+                  if (!event.doors_time) return "";
+                  const [hours, minutes] = event.doors_time.split(":").map(Number);
+                  const totalMinutes = hours * 60 + minutes - (30 + index * 15); // 30 minutes before doors
+                  const defaultHours = Math.floor(totalMinutes / 60);
+                  const defaultMins = totalMinutes % 60;
+                  return `${String(defaultHours).padStart(2, '0')}:${String(defaultMins).padStart(2, '0')}`;
+                };
+                
                 const getLoadInTime = () => {
                   if (bandEvent.load_in_time) {
                     if (typeof bandEvent.load_in_time === 'string') {
@@ -1296,8 +1291,20 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
                   return getDefaultSoundCheckTime();
                 };
                 
+                const getSetTime = () => {
+                  if (bandEvent.set_time) {
+                    if (typeof bandEvent.set_time === 'string') {
+                      return bandEvent.set_time.substring(0, 5);
+                    } else if (bandEvent.set_time.hour !== undefined) {
+                      return `${String(bandEvent.set_time.hour).padStart(2, '0')}:${String(bandEvent.set_time.minute).padStart(2, '0')}`;
+                    }
+                  }
+                  return getDefaultSetTime();
+                };
+                
                 const loadInTime = scheduleTimes[bandEvent.id || bandEvent.band_id]?.load_in_time || getLoadInTime();
                 const soundCheckTime = scheduleTimes[bandEvent.id || bandEvent.band_id]?.sound_check_time || getSoundCheckTime();
+                const setTime = scheduleTimes[bandEvent.id || bandEvent.band_id]?.set_time || getSetTime();
                 
                 return (
                   <div key={bandEvent.id || bandEvent.band_id} className="event-schedule-item">
@@ -1321,6 +1328,15 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
                           onChange={(e) => handleScheduleTimeChange(bandEvent.id || bandEvent.band_id, 'sound_check_time', e.target.value)}
                         />
                       </div>
+                      <div className="schedule-time-input-group">
+                        <label htmlFor={`set_time_${bandEvent.id || bandEvent.band_id}`}>Set Time:</label>
+                        <input
+                          type="time"
+                          id={`set_time_${bandEvent.id || bandEvent.band_id}`}
+                          value={setTime}
+                          onChange={(e) => handleScheduleTimeChange(bandEvent.id || bandEvent.band_id, 'set_time', e.target.value)}
+                        />
+                      </div>
                     </div>
                   </div>
                 );
@@ -1337,27 +1353,29 @@ const EventEditForm = ({ event, onUpdate, onCancel }) => {
           </div>
         )}
 
-        <div className="form-actions">
-          <button
-            type="button"
-            className="btn-cancel"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsEditing(false);
-              setError(null);
-            }}
-            disabled={loading}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="btn-submit"
-            disabled={loading}
-          >
-            {loading ? "Updating..." : "Update Event"}
-          </button>
-        </div>
+        {!hideButtons && (
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn-cancel"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsEditing(false);
+                setError(null);
+              }}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn-submit"
+              disabled={loading}
+            >
+              {loading ? "Updating..." : "Update Event"}
+            </button>
+          </div>
+        )}
       </form>
     </div>
 
