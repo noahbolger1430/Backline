@@ -260,6 +260,7 @@ export const venueService = {
     if (params.max_capacity !== undefined) queryParams.append("max_capacity", params.max_capacity);
     if (params.skip !== undefined) queryParams.append("skip", params.skip);
     if (params.limit !== undefined) queryParams.append("limit", params.limit);
+    if (params.band_id !== undefined) queryParams.append("band_id", params.band_id);
 
     const url = `${API_BASE_URL}/venues/${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
     const response = await fetch(url, {

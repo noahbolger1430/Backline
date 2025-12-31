@@ -92,7 +92,7 @@ def submit_application(
 @router.get("/events/{event_id}/applications", response_model=EventApplicationListResponse)
 def list_event_applications(
     event_id: int,
-    status: Optional[ApplicationStatus] = None,
+    application_status: Optional[ApplicationStatus] = Query(None, alias="status", description="Filter by application status"),
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(get_current_user),
@@ -121,7 +121,7 @@ def list_event_applications(
     applications, total = EventApplicationService.list_event_applications(
         db,
         event,
-        status=status,
+        status=application_status,
         user=current_user if not is_venue_staff else None,
         skip=skip,
         limit=limit,
@@ -138,7 +138,7 @@ def list_event_applications(
 @router.get("/bands/{band_id}/applications", response_model=EventApplicationListResponse)
 def list_band_applications(
     band_id: int,
-    status: Optional[ApplicationStatus] = None,
+    application_status: Optional[ApplicationStatus] = Query(None, alias="status", description="Filter by application status"),
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(get_current_user),
@@ -159,7 +159,7 @@ def list_band_applications(
     applications, total = EventApplicationService.list_band_applications(
         db,
         band,
-        status=status,
+        status=application_status,
         skip=skip,
         limit=limit,
     )

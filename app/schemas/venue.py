@@ -130,6 +130,7 @@ class VenueResponse(VenueBase):
     updated_at: datetime
     event_count: int = 0
     staff_count: int = 0
+    is_favorited: Optional[bool] = None  # Only included when band_id is provided
 
 
 class VenueListResponse(BaseModel):

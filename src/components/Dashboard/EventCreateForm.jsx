@@ -307,6 +307,7 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
             <BandSearchSelect
               selectedBands={selectedBands}
               onBandsChange={setSelectedBands}
+              venueId={venueId}
             />
           </div>
         )}
@@ -316,6 +317,7 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
             <BandSearchSelect
               selectedBands={selectedBands}
               onBandsChange={setSelectedBands}
+              venueId={venueId}
             />
             <p className="form-help-text">
               You can also add bands directly while the event is pending.

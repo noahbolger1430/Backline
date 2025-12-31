@@ -627,7 +627,8 @@ const EventModal = ({ event, onClose, bandId = null }) => {
                   </span>
                 </div>
                 <EventApplicationsList 
-                  eventId={fullEvent.id} 
+                  eventId={fullEvent.id}
+                  venueId={fullEvent.venue_id}
                   isOpenForApplications={fullEvent.is_open_for_applications}
                   onApplicationReviewed={async () => {
                     // Refresh event details after application review

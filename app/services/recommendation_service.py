@@ -15,6 +15,7 @@ from app.models import (
     GigView,
     Venue,
 )
+from app.models.venue_favorite import VenueFavorite
 from app.models.event import EventStatus
 from app.models.event_application import ApplicationStatus
 from app.schemas.recommendation import RecommendationReason, RecommendedGig
@@ -44,6 +45,7 @@ class RecommendationService:
     
     PAST_SUCCESS_SCORE = 20.0  # Previously accepted at this venue
     PAST_REJECTION_PENALTY = -15.0  # Previously rejected at this venue
+    VENUE_FAVORITED_SCORE = 5.0  # Band has favorited this venue
     FRESHNESS_BONUS = 15.0     # Event is in the sweet spot timing
     LOW_COMPETITION_BONUS = 10.0  # Few other applicants
     
@@ -120,6 +122,14 @@ class RecommendationService:
             .all()
         )
 
+        # Get favorited venues for this band
+        favorite_venues = (
+            db.query(VenueFavorite)
+            .filter(VenueFavorite.band_id == band.id)
+            .all()
+        )
+        favorited_venue_ids = {fv.venue_id for fv in favorite_venues}
+
         # PHASE 2: Collaborative Filtering - Find similar bands
         # Similar bands = bands that have been accepted at the same venues as this band
         similar_bands_data = RecommendationService._get_similar_bands_data(
@@ -143,6 +153,7 @@ class RecommendationService:
                 booked_dates=booked_dates,
                 application_count=application_counts.get(event.id, 0),
                 similar_bands_data=similar_bands_data,
+                favorited_venue_ids=favorited_venue_ids,
             )
 
             # Only include events with positive scores
@@ -196,6 +207,7 @@ class RecommendationService:
         booked_dates: set,
         application_count: int,
         similar_bands_data: dict = None,
+        favorited_venue_ids: set = None,
     ) -> Tuple[float, List[RecommendationReason]]:
         """
         Calculate recommendation score for a single event.
@@ -255,6 +267,15 @@ class RecommendationService:
                 type="past_rejection",
                 label="Previously not selected",
                 score=RecommendationService.PAST_REJECTION_PENALTY,
+            ))
+
+        # 3.5. Venue favorited by band
+        if favorited_venue_ids and event.venue_id in favorited_venue_ids:
+            score += RecommendationService.VENUE_FAVORITED_SCORE
+            reasons.append(RecommendationReason(
+                type="venue_favorited",
+                label="Favorited venue",
+                score=RecommendationService.VENUE_FAVORITED_SCORE,
             ))
 
         # 4. PHASE 2: Collaborative Filtering - Similar bands accepted at this venue

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.api.deps import get_current_user, get_venue_or_404
 from app.database import get_db
 from app.models import User, Venue, VenueRole, VenueStaff, VenueEquipment
+from app.models.venue_favorite import VenueFavorite
 from app.models.venue_operating_hours import VenueOperatingHours
 from app.schemas.venue import (
     Venue as VenueSchema,
@@ -161,6 +162,7 @@ def list_venues(
     max_capacity: Optional[int] = Query(None, ge=0),
     skip: int = 0,
     limit: int = 100,
+    band_id: Optional[int] = Query(None, description="Optional band ID to include favorite status"),
     db: Session = Depends(get_db),
 ) -> VenueListResponse:
     """
@@ -206,8 +208,26 @@ def list_venues(
         limit=limit,
     )
 
+    # Get favorite status if band_id is provided
+    favorite_venue_ids = set()
+    if band_id:
+        favorites = (
+            db.query(VenueFavorite)
+            .filter(VenueFavorite.band_id == band_id)
+            .all()
+        )
+        favorite_venue_ids = {f.venue_id for f in favorites}
+
+    # Build response with favorite status
+    venue_responses = []
+    for venue in venues:
+        venue_data = VenueResponse.model_validate(venue).model_dump()
+        if band_id is not None:
+            venue_data["is_favorited"] = venue.id in favorite_venue_ids
+        venue_responses.append(VenueResponse(**venue_data))
+
     return VenueListResponse(
-        venues=[VenueResponse.model_validate(v) for v in venues],
+        venues=venue_responses,
         total=total,
         skip=skip,
         limit=limit,

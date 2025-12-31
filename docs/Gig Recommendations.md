@@ -197,6 +197,60 @@ If you have questions about how a specific recommendation was generated, reach o
 
 ---
 
+## For Venue Owners: Band Recommendations
+
+Backline also helps venue owners find the right bands for their events. When you're adding bands to an event or reviewing applications, our system scores each band to help you identify the best fits.
+
+### Where You'll See Band Recommendations
+
+1. **Band Search** — When adding bands to an event, recommended bands appear at the top of your search results
+2. **Application Review** — When reviewing band applications, applicants are sorted by match score with "Best Match" badges on top candidates
+
+### How We Score Bands for Your Event
+
+| Factor | Max Score | What It Means |
+|--------|-----------|---------------|
+| Genre Match (Event) | 30 pts | Band's genre matches your event's genre tags |
+| Genre Match (Venue) | 20 pts | Band's genre matches your venue's booking history |
+| Previous Success | 25 pts | Band has played at your venue before |
+| Gig Activity | 15 pts | Band is actively performing (5+ recent gigs = max score) |
+| Profile Completeness | 10 pts | Band has a complete profile (bio, photo, socials) |
+| Location | 15 pts | Band is local to your venue's city/state |
+
+### What the Reason Tags Mean
+
+When viewing recommended bands, you'll see tags explaining why they score well:
+
+- 🎸 **"Genre matches event"** — Band plays the genre you specified
+- 🎶 **"Genre fits venue"** — Band plays genres you've booked before
+- ⭐ **"Previously booked here"** — This band has played your venue successfully
+- 🔥 **"Very active"** — Band performs frequently (5+ gigs recently)
+- ✓ **"Complete profile"** — Band has filled out their full profile
+- 📍 **"Local band"** — Band is based in your city
+
+### Tips for Better Recommendations
+
+1. **Add genre tags to events** — Specify what genres you're looking for to get the best matches
+2. **Keep your venue location accurate** — Helps us find local bands
+3. **Review and book bands** — Your booking history improves future recommendations
+4. **Look at the reasons** — The tags tell you exactly why each band is recommended
+
+### Scoring Example
+
+Let's say you're looking for a Jazz band for your venue in Austin, TX:
+
+| Band | Score | Reasons |
+|------|-------|---------|
+| **Austin Jazz Trio** | 85 pts | Genre match (30) + Local (15) + Very active (15) + Complete profile (10) + Previously booked (25) |
+| **Dallas Blues Band** | 55 pts | Genre partial match (20) + Active (10) + Complete profile (10) + Same state (10) |
+| **New Band NYC** | 25 pts | Genre match (20) + Partial profile (5) |
+
+The Austin Jazz Trio would appear first as a "Best Match."
+
+**Note:** We don't score application messages, as we want venues to read them directly rather than relying on automated scoring.
+
+---
+
 ## Frequently Asked Questions
 
 **Q: Why do I see some gigs I'm not interested in?**

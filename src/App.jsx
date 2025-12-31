@@ -309,14 +309,15 @@ const App = () => {
         );
 
       case "dashboard":
+        // Prioritize venues if user has venues (venue users should see venue dashboard)
+        // If user has both, show venue dashboard as primary
+        if (userVenues.length > 0) {
+          return <VenueDashboard venueId={userVenues[0].id} onLogout={handleLogout} />;
+        }
+
         // If we have bands, show band dashboard
         if (userBands.length > 0) {
           return <BandDashboard bandId={userBands[0].id} onLogout={handleLogout} />;
-        }
-
-        // If we have venues, show venue dashboard
-        if (userVenues.length > 0) {
-          return <VenueDashboard venueId={userVenues[0].id} onLogout={handleLogout} />;
         }
 
         // No bands or venues - show placeholder to create/join

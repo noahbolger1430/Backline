@@ -197,6 +197,8 @@ const GigsView = ({ bandId }) => {
         return "⭐";
       case "past_rejection":
         return "⚠️";
+      case "venue_favorited":
+        return "⭐";
       case "timing":
         return "⏰";
       case "low_competition":

@@ -275,7 +275,7 @@ const BandDashboard = ({ bandId, onLogout }) => {
             ) : activeTab === "calendar" ? (
               <Calendar bandId={bandId} />
             ) : activeTab === "venues" ? (
-              <VenuesView />
+              <VenuesView bandId={bandId} />
             ) : activeTab === "gigs" ? (
               <GigsView bandId={bandId} />
             ) : activeTab === "tools" ? (

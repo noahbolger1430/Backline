@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { venueService } from "../../services/venueService";
+import { venueFavoriteService } from "../../services/venueFavoriteService";
 import "./Dashboard.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
-const VenuesView = () => {
+const VenuesView = ({ bandId = null }) => {
   const [venues, setVenues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,7 +22,9 @@ const VenuesView = () => {
     const fetchVenues = async () => {
       try {
         setLoading(true);
-        const response = await venueService.listVenues();
+        // Include band_id to get favorite status
+        const params = bandId ? { band_id: bandId } : {};
+        const response = await venueService.listVenues(params);
         setVenues(response.venues || []);
       } catch (err) {
         setError(err.message);
@@ -32,7 +35,7 @@ const VenuesView = () => {
     };
 
     fetchVenues();
-  }, []);
+  }, [bandId]);
 
   const formatLocation = (venue) => {
     const parts = [];
@@ -136,6 +139,41 @@ const VenuesView = () => {
       filterHasContact
     );
   };
+
+  const handleFavoriteToggle = async (venueId, isCurrentlyFavorited) => {
+    if (!bandId) {
+      return; // Can't favorite without a band
+    }
+
+    try {
+      if (isCurrentlyFavorited) {
+        await venueFavoriteService.unfavoriteVenue(bandId, venueId);
+      } else {
+        await venueFavoriteService.favoriteVenue(bandId, venueId);
+      }
+
+      // Update the venue's favorite status locally
+      setVenues((prevVenues) =>
+        prevVenues.map((venue) =>
+          venue.id === venueId
+            ? { ...venue, is_favorited: !isCurrentlyFavorited }
+            : venue
+        )
+      );
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+      setError(err.message);
+    }
+  };
+
+  // Sort venues: favorited first, then alphabetically
+  const sortedFilteredVenues = [...filteredVenues].sort((a, b) => {
+    // Favorited venues come first
+    if (a.is_favorited && !b.is_favorited) return -1;
+    if (!a.is_favorited && b.is_favorited) return 1;
+    // Then sort alphabetically by name
+    return a.name.localeCompare(b.name);
+  });
 
   if (loading) {
     return (
@@ -241,8 +279,9 @@ const VenuesView = () => {
         ) : filteredVenues.length === 0 ? (
           <div className="no-venues">No venues match your search criteria</div>
         ) : (
-          filteredVenues.map((venue) => {
+          sortedFilteredVenues.map((venue) => {
             const isExpanded = expandedVenues[venue.id] || false;
+            const isFavorited = venue.is_favorited === true;
             return (
               <div key={venue.id} className="venue-card">
                 <div className="venue-image-placeholder">
@@ -262,6 +301,18 @@ const VenuesView = () => {
                   <span className="venue-image-icon" style={{ display: venue.image_path ? 'none' : 'flex' }}>
                     🏢
                   </span>
+                  {bandId && (
+                    <button
+                      className={`venue-favorite-button ${isFavorited ? 'favorited' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleFavoriteToggle(venue.id, isFavorited);
+                      }}
+                      title={isFavorited ? "Unfavorite venue" : "Favorite venue"}
+                    >
+                      ⭐
+                    </button>
+                  )}
                 </div>
                 <div className="venue-card-content">
                   <h3 className="venue-name">{venue.name}</h3>

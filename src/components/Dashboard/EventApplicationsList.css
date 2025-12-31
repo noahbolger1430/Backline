@@ -30,6 +30,107 @@
   padding-bottom: 8px;
 }
 
+/* Main applications header */
+.applications-main-header {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #C5C6C7;
+}
+
+.applications-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.applications-main-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.applications-controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.application-status-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.application-status-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #C5C6C7;
+}
+
+.application-status-value {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.application-status-value.status-open {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.application-status-value.status-closed {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.application-button-container {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-open-applications,
+.btn-close-applications {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-open-applications {
+  background-color: #4CAF50;
+  color: #FFFFFF;
+}
+
+.btn-open-applications:hover:not(:disabled) {
+  background-color: #43a047;
+}
+
+.btn-close-applications {
+  background-color: rgba(244, 67, 54, 0.2);
+  color: #F44336;
+  border: 1px solid #F44336;
+}
+
+.btn-close-applications:hover:not(:disabled) {
+  background-color: rgba(244, 67, 54, 0.3);
+}
+
+.btn-open-applications:disabled,
+.btn-close-applications:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .application-card {
   background-color: #1F2833; /* Secondary Background - Charcoal Grey */
   border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
@@ -420,6 +521,129 @@
   transform: none;
 }
 
+/* Application Recommendation Styles */
+.applications-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+}
+
+.sorted-by-match {
+  font-size: 12px;
+  color: #6F22D2;
+  font-style: italic;
+}
+
+.application-card.top-match {
+  border-color: #6F22D2;
+  border-width: 2px;
+  background: linear-gradient(135deg, rgba(111, 34, 210, 0.08), rgba(111, 34, 210, 0.02));
+}
+
+.best-match-badge {
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #6F22D2, #8B2FE8);
+  color: #FFFFFF;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.application-recommendation-section {
+  margin: 12px 0;
+  padding: 12px;
+  background-color: rgba(111, 34, 210, 0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(111, 34, 210, 0.2);
+}
+
+.recommendation-score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.score-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #C5C6C7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.score-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #6F22D2;
+}
+
+.recommendation-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reason-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(111, 34, 210, 0.15);
+  color: #B794F4;
+  border: 1px solid rgba(111, 34, 210, 0.3);
+}
+
+.reason-tag.event_genre_match,
+.reason-tag.event_genre_partial {
+  background: rgba(72, 187, 120, 0.15);
+  color: #68D391;
+  border-color: rgba(72, 187, 120, 0.3);
+}
+
+.reason-tag.venue_genre_match,
+.reason-tag.venue_genre_partial {
+  background: rgba(66, 153, 225, 0.15);
+  color: #63B3ED;
+  border-color: rgba(66, 153, 225, 0.3);
+}
+
+.reason-tag.previous_success {
+  background: rgba(236, 201, 75, 0.15);
+  color: #F6E05E;
+  border-color: rgba(236, 201, 75, 0.3);
+}
+
+.reason-tag.gig_activity_high,
+.reason-tag.gig_activity_medium,
+.reason-tag.gig_activity_low {
+  background: rgba(237, 137, 54, 0.15);
+  color: #F6AD55;
+  border-color: rgba(237, 137, 54, 0.3);
+}
+
+.reason-tag.profile_complete,
+.reason-tag.profile_partial {
+  background: rgba(159, 122, 234, 0.15);
+  color: #B794F4;
+  border-color: rgba(159, 122, 234, 0.3);
+}
+
+.reason-tag.location_local,
+.reason-tag.location_state,
+.reason-tag.location_nearby {
+  background: rgba(245, 101, 101, 0.15);
+  color: #FC8181;
+  border-color: rgba(245, 101, 101, 0.3);
+}
+
 @media (max-width: 768px) {
   .application-header {
     flex-direction: column;
@@ -433,6 +657,12 @@
   .btn-submit-review,
   .btn-cancel-review {
     width: 100%;
+  }
+
+  .applications-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
   }
 }
 

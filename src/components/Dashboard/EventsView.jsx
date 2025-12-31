@@ -11,6 +11,7 @@ const EventCard = ({ event, onDelete, onUpdate, isExpanded, onToggleExpand }) =>
   const [loadingBackline, setLoadingBackline] = useState(false);
   const [fullEvent, setFullEvent] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [applicationActionLoading, setApplicationActionLoading] = useState(false);
   const formRef = useRef(null);
 
   const formatDate = (dateString) => {
@@ -165,23 +166,6 @@ const EventCard = ({ event, onDelete, onUpdate, isExpanded, onToggleExpand }) =>
       
       {isExpanded && (
         <div className="event-card-expanded">
-          {/* Show applications for pending events without requiring edit mode */}
-          {event.status === 'pending' && (
-            <div className="event-applications-section">
-              <h3 className="applications-section-title">Band Applications</h3>
-              <EventApplicationsList 
-                eventId={event.id} 
-                isOpenForApplications={event.is_open_for_applications}
-                onApplicationReviewed={async () => {
-                  // Refresh event data after application review
-                  if (onUpdate) {
-                    onUpdate();
-                  }
-                }}
-              />
-            </div>
-          )}
-
           <EventEditForm
             event={event}
             onUpdate={onUpdate}
@@ -194,6 +178,41 @@ const EventCard = ({ event, onDelete, onUpdate, isExpanded, onToggleExpand }) =>
             formRef={formRef}
             onEditingChange={setIsEditing}
           />
+
+          {/* Show applications for pending events - moved after bands section */}
+          {event.status === 'pending' && (
+            <div className="event-applications-section">
+              <EventApplicationsList 
+                eventId={event.id}
+                venueId={event.venue_id}
+                isOpenForApplications={event.is_open_for_applications}
+                onApplicationReviewed={async () => {
+                  // Refresh event data after application review
+                  if (onUpdate) {
+                    onUpdate();
+                  }
+                }}
+                onToggleApplications={async (open) => {
+                  setApplicationActionLoading(true);
+                  try {
+                    if (open) {
+                      await eventService.openEventForApplications(event.id);
+                    } else {
+                      await eventService.closeEventApplications(event.id);
+                    }
+                    if (onUpdate) {
+                      onUpdate();
+                    }
+                  } catch (err) {
+                    console.error("Error toggling applications:", err);
+                  } finally {
+                    setApplicationActionLoading(false);
+                  }
+                }}
+                applicationActionLoading={applicationActionLoading}
+              />
+            </div>
+          )}
 
           {/* Event Backline */}
           {(() => {

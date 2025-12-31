@@ -31,7 +31,6 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
   const [eventBands, setEventBands] = useState([]);
   const [loadingBands, setLoadingBands] = useState(false);
   const [selectedBandsToAdd, setSelectedBandsToAdd] = useState([]);
-  const [applicationActionLoading, setApplicationActionLoading] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [viewingStagePlot, setViewingStagePlot] = useState(null); // { bandId, bandName, stagePlotId, plotName }
@@ -226,49 +225,6 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
     return null;
   };
 
-  const handleOpenApplications = async () => {
-    setApplicationActionLoading(true);
-    setError(null);
-    
-    try {
-      await eventService.openEventForApplications(event.id);
-      if (onUpdate) {
-        onUpdate();
-      }
-      // Refresh event data
-      const updatedEvent = await eventService.getEvent(event.id);
-      setFormData(prev => ({
-        ...prev,
-        is_open_for_applications: updatedEvent.is_open_for_applications || false,
-      }));
-    } catch (err) {
-      setError(err.message || "Failed to open event for applications");
-    } finally {
-      setApplicationActionLoading(false);
-    }
-  };
-
-  const handleCloseApplications = async () => {
-    setApplicationActionLoading(true);
-    setError(null);
-    
-    try {
-      await eventService.closeEventApplications(event.id);
-      if (onUpdate) {
-        onUpdate();
-      }
-      // Refresh event data
-      const updatedEvent = await eventService.getEvent(event.id);
-      setFormData(prev => ({
-        ...prev,
-        is_open_for_applications: updatedEvent.is_open_for_applications || false,
-      }));
-    } catch (err) {
-      setError(err.message || "Failed to close event applications");
-    } finally {
-      setApplicationActionLoading(false);
-    }
-  };
 
   const handleScheduleTimeChange = (bandEventId, field, value) => {
     setScheduleTimes((prev) => ({
@@ -666,46 +622,6 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
             )}
           </div>
 
-          {/* Application Controls */}
-          {event.status === "pending" && (
-            <div className="application-controls">
-              <div className="application-status-row">
-                <div className="event-detail-row">
-                  <span className="detail-label">Application Status:</span>
-                  <span className="detail-value">
-                    {formData.is_open_for_applications ? "Open" : "Closed"}
-                  </span>
-                </div>
-                <div className="application-button-container">
-                  {!formData.is_open_for_applications ? (
-                    <button
-                      type="button"
-                      className="btn-open-applications"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenApplications();
-                      }}
-                      disabled={applicationActionLoading}
-                    >
-                      {applicationActionLoading ? "Opening..." : "Open for Applications"}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn-close-applications"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCloseApplications();
-                      }}
-                      disabled={applicationActionLoading}
-                    >
-                      {applicationActionLoading ? "Closing..." : "Close Applications"}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
         {!hideButtons && (
           <div className="event-edit-actions">
@@ -1173,6 +1089,8 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
             <BandSearchSelect
               selectedBands={selectedBandsToAdd}
               onBandsChange={setSelectedBandsToAdd}
+              eventId={event?.id}
+              venueId={event?.venue_id}
             />
             {selectedBandsToAdd.length > 0 && (
               <button
@@ -1190,47 +1108,6 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
           </div>
         </div>
 
-        {/* Application Controls in Edit Form */}
-        {formData.status === "pending" && (
-          <div className="form-section application-controls-section">
-            <h3 className="form-section-title">Applications</h3>
-            <div className="application-status-row">
-              <div className="event-detail-row">
-                <span className="detail-label">Application Status:</span>
-                <span className="detail-value">
-                  {formData.is_open_for_applications ? "Open" : "Closed"}
-                </span>
-              </div>
-              <div className="application-button-container">
-                {formData.is_open_for_applications ? (
-                  <button
-                    type="button"
-                    className="btn-close-applications"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCloseApplications();
-                    }}
-                    disabled={applicationActionLoading}
-                  >
-                    {applicationActionLoading ? "Closing..." : "Close Applications"}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn-open-applications"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenApplications();
-                    }}
-                    disabled={applicationActionLoading}
-                  >
-                    {applicationActionLoading ? "Opening..." : "Open for Applications"}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Event Schedule Section - Only for confirmed events */}
         {formData.status === "confirmed" && eventBands.length > 0 && (

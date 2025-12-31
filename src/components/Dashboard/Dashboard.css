@@ -1235,6 +1235,45 @@
   position: absolute;
 }
 
+.venue-favorite-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  transition: all 0.2s ease;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+
+.venue-favorite-button:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+
+.venue-favorite-button.favorited {
+  color: #FFD700; /* Yellow/Gold for favorited */
+  filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6));
+}
+
+.venue-favorite-button:not(.favorited) {
+  color: #FFFFFF;
+  opacity: 0.7;
+}
+
+.venue-favorite-button:not(.favorited):hover {
+  opacity: 1;
+  color: #FFD700;
+}
+
 .venue-card-content {
   padding: 20px;
   flex: 1;
@@ -2069,6 +2108,152 @@
 .band-search-option-genre {
   font-size: 14px;
   color: #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+/* Band Search Recommendations Styles */
+.band-search-recommendations-section {
+  border-bottom: 2px solid #6F22D2;
+  margin-bottom: 4px;
+}
+
+.band-search-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, rgba(111, 34, 210, 0.2), rgba(111, 34, 210, 0.1));
+  border-bottom: 1px solid rgba(111, 34, 210, 0.3);
+}
+
+.band-search-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6F22D2;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.band-search-section-title .recommendation-icon {
+  font-size: 14px;
+}
+
+.band-search-section-toggle {
+  background: none;
+  border: none;
+  color: #C5C6C7;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.band-search-section-toggle:hover {
+  background: rgba(111, 34, 210, 0.2);
+  color: #FFFFFF;
+}
+
+.band-search-option.recommended {
+  background: linear-gradient(135deg, rgba(111, 34, 210, 0.08), rgba(111, 34, 210, 0.03));
+  border-left: 3px solid #6F22D2;
+  padding-left: 13px;
+}
+
+.band-search-option.recommended:hover {
+  background: linear-gradient(135deg, rgba(111, 34, 210, 0.15), rgba(111, 34, 210, 0.08));
+}
+
+.band-search-option-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.band-search-option-location {
+  font-size: 12px;
+  color: #8B8D8F;
+}
+
+.band-search-recommendation-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.band-reason-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(111, 34, 210, 0.15);
+  color: #B794F4;
+  border: 1px solid rgba(111, 34, 210, 0.3);
+}
+
+.band-reason-tag.event_genre_match,
+.band-reason-tag.event_genre_partial {
+  background: rgba(72, 187, 120, 0.15);
+  color: #68D391;
+  border-color: rgba(72, 187, 120, 0.3);
+}
+
+.band-reason-tag.venue_genre_match,
+.band-reason-tag.venue_genre_partial {
+  background: rgba(66, 153, 225, 0.15);
+  color: #63B3ED;
+  border-color: rgba(66, 153, 225, 0.3);
+}
+
+.band-reason-tag.previous_success {
+  background: rgba(236, 201, 75, 0.15);
+  color: #F6E05E;
+  border-color: rgba(236, 201, 75, 0.3);
+}
+
+.band-reason-tag.gig_activity_high,
+.band-reason-tag.gig_activity_medium,
+.band-reason-tag.gig_activity_low {
+  background: rgba(237, 137, 54, 0.15);
+  color: #F6AD55;
+  border-color: rgba(237, 137, 54, 0.3);
+}
+
+.band-reason-tag.profile_complete,
+.band-reason-tag.profile_partial {
+  background: rgba(159, 122, 234, 0.15);
+  color: #B794F4;
+  border-color: rgba(159, 122, 234, 0.3);
+}
+
+.band-reason-tag.location_local,
+.band-reason-tag.location_state,
+.band-reason-tag.location_nearby {
+  background: rgba(245, 101, 101, 0.15);
+  color: #FC8181;
+  border-color: rgba(245, 101, 101, 0.3);
+}
+
+.band-search-loading-recommendations {
+  padding: 12px 16px;
+  text-align: center;
+  color: #8B8D8F;
+  font-size: 13px;
+}
+
+.band-search-results-section .band-search-section-header {
+  background: rgba(11, 12, 16, 0.5);
+  border-bottom: 1px solid #2D3748;
+}
+
+.band-search-results-section .band-search-section-title {
+  color: #C5C6C7;
 }
 
 .selected-bands-list {
@@ -3221,6 +3406,12 @@
 }
 
 .reason-tag.past_success {
+  background: rgba(234, 179, 8, 0.15);
+  color: #FDE047;
+  border-color: rgba(234, 179, 8, 0.3);
+}
+
+.reason-tag.venue_favorited {
   background: rgba(234, 179, 8, 0.15);
   color: #FDE047;
   border-color: rgba(234, 179, 8, 0.3);
