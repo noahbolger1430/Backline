@@ -230,6 +230,7 @@ async def create_event(
     show_time: str = Form(...),
     status: str = Form(EventStatus.CONFIRMED.value),
     is_open_for_applications: bool = Form(False),
+    genre_tags: Optional[str] = Form(None, description="Comma-separated genre tags for band matching"),
     is_ticketed: bool = Form(False),
     ticket_price: Optional[int] = Form(None),
     is_age_restricted: bool = Form(False),
@@ -384,6 +385,14 @@ async def create_event(
         # For recurring events, use recurring_start_date as the event_date
         event_date = recurring_start_date
 
+    # Clean and normalize genre tags
+    cleaned_genre_tags = None
+    if genre_tags:
+        # Clean up: strip whitespace, lowercase, remove empty tags
+        tags = [tag.strip().lower() for tag in genre_tags.split(",") if tag.strip()]
+        if tags:
+            cleaned_genre_tags = ",".join(tags)
+
     # Create event data
     event_data_dict = {
         "venue_id": venue_id,
@@ -394,6 +403,7 @@ async def create_event(
         "show_time": show_time_obj,
         "status": event_status,
         "is_open_for_applications": is_open_for_applications,
+        "genre_tags": cleaned_genre_tags,
         "is_ticketed": is_ticketed,
         "ticket_price": int(float(ticket_price)) if ticket_price is not None else None,
         "is_age_restricted": is_age_restricted,
@@ -646,6 +656,7 @@ async def update_event(
     show_time: Optional[str] = Form(None),
     status: Optional[str] = Form(None),  # Changed from event_status to match frontend
     is_open_for_applications: Optional[bool] = Form(None),
+    genre_tags: Optional[str] = Form(None),
     is_ticketed: Optional[bool] = Form(None),
     ticket_price: Optional[int] = Form(None),
     is_age_restricted: Optional[bool] = Form(None),
@@ -876,6 +887,13 @@ async def update_event(
             update_data["is_open_for_applications"] = is_open_for_applications.lower() in ('true', '1', 'yes', 'on')
         else:
             update_data["is_open_for_applications"] = bool(is_open_for_applications)
+    if genre_tags is not None:
+        # Clean and normalize genre tags (empty string clears them)
+        if genre_tags.strip():
+            tags = [tag.strip().lower() for tag in genre_tags.split(",") if tag.strip()]
+            update_data["genre_tags"] = ",".join(tags) if tags else None
+        else:
+            update_data["genre_tags"] = None
     if is_ticketed is not None:
         update_data["is_ticketed"] = is_ticketed
         # If event is not ticketed, explicitly set ticket_price to None

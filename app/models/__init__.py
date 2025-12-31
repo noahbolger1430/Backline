@@ -4,6 +4,7 @@ from app.models.band_event import BandEvent
 from app.models.band_member import BandMember, BandRole
 from app.models.event import Event
 from app.models.event_application import ApplicationStatus, EventApplication
+from app.models.gig_view import GigView
 from app.models.member_equipment import EquipmentCategory, MemberEquipment
 from app.models.venue_equipment import VenueEquipment
 from app.models.event_equipment_claim import EventEquipmentClaim
@@ -31,6 +32,7 @@ __all__ = [
     "MemberEquipment",
     "VenueEquipment",
     "EventEquipmentClaim",
+    "GigView",
     "Venue",
     "VenueStaff",
     "VenueRole",

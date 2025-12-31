@@ -32,6 +32,21 @@ class EventBase(BaseModel):
     recurring_frequency: Optional[str] = Field(None, pattern="^(weekly|bi_weekly|monthly)$")
     recurring_start_date: Optional[date] = None
     recurring_end_date: Optional[date] = None
+    genre_tags: Optional[str] = Field(None, max_length=500, description="Comma-separated genre tags, e.g., 'rock,alternative,indie'")
+
+    @field_validator("genre_tags")
+    @classmethod
+    def validate_genre_tags(cls, v: Optional[str]) -> Optional[str]:
+        """
+        Validate and clean genre tags.
+        """
+        if v is not None:
+            # Clean up: strip whitespace, lowercase, remove empty tags
+            tags = [tag.strip().lower() for tag in v.split(",") if tag.strip()]
+            if not tags:
+                return None
+            return ",".join(tags)
+        return v
 
     @field_validator("name")
     @classmethod
@@ -128,6 +143,7 @@ class EventUpdate(BaseModel):
     recurring_frequency: Optional[str] = Field(None, pattern="^(weekly|bi_weekly|monthly)$")
     recurring_start_date: Optional[date] = None
     recurring_end_date: Optional[date] = None
+    genre_tags: Optional[str] = Field(None, max_length=500, description="Comma-separated genre tags")
 
     @field_validator("name")
     @classmethod
@@ -138,6 +154,20 @@ class EventUpdate(BaseModel):
     @classmethod
     def validate_ticket_price(cls, v: Optional[int]) -> Optional[int]:
         return PriceValidator.validate_positive_price(v)
+
+    @field_validator("genre_tags")
+    @classmethod
+    def validate_genre_tags(cls, v: Optional[str]) -> Optional[str]:
+        """
+        Validate and clean genre tags.
+        """
+        if v is not None:
+            # Clean up: strip whitespace, lowercase, remove empty tags
+            tags = [tag.strip().lower() for tag in v.split(",") if tag.strip()]
+            if not tags:
+                return None
+            return ",".join(tags)
+        return v
 
 
 class EventInDB(EventBase):

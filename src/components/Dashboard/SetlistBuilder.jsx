@@ -4,7 +4,7 @@ import "./SetlistBuilder.css";
 
 const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
   const [name, setName] = useState("");
-  const [songs, setSongs] = useState([{ title: "", artist: "" }]);
+  const [songs, setSongs] = useState([{ title: "", artist: "", duration: "" }]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -26,19 +26,31 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
         const normalizedSongs = setlist.songs.map(song => {
           if (typeof song === 'string') {
             // Old format: just a string
-            return { title: song, artist: "" };
+            return { title: song, artist: "", duration: "" };
           } else if (song && typeof song === 'object') {
-            // New format: object with title and artist
+            // New format: object with title, artist, and duration
+            // Convert duration from seconds to MM:SS format if it exists
+            let durationStr = "";
+            if (song.duration) {
+              if (typeof song.duration === 'number') {
+                const minutes = Math.floor(song.duration / 60);
+                const seconds = song.duration % 60;
+                durationStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+              } else {
+                durationStr = song.duration.toString();
+              }
+            }
             return {
               title: song.title || song.name || "",
-              artist: song.artist || ""
+              artist: song.artist || "",
+              duration: durationStr
             };
           }
-          return { title: "", artist: "" };
+          return { title: "", artist: "", duration: "" };
         });
         setSongs(normalizedSongs);
       } else {
-        setSongs([{ title: "", artist: "" }]);
+        setSongs([{ title: "", artist: "", duration: "" }]);
       }
       setError(null);
     } catch (err) {
@@ -65,9 +77,38 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
     setSongs(newSongs);
   };
 
+  const handleSongDurationChange = (index, value) => {
+    const newSongs = [...songs];
+    newSongs[index] = { ...newSongs[index], duration: value };
+    setSongs(newSongs);
+  };
+
+  // Convert MM:SS format to seconds
+  const parseDuration = (durationStr) => {
+    if (!durationStr || !durationStr.trim()) return null;
+    
+    // Handle MM:SS format
+    const parts = durationStr.trim().split(':');
+    if (parts.length === 2) {
+      const minutes = parseInt(parts[0], 10);
+      const seconds = parseInt(parts[1], 10);
+      if (!isNaN(minutes) && !isNaN(seconds)) {
+        return minutes * 60 + seconds;
+      }
+    }
+    
+    // Handle just seconds
+    const seconds = parseInt(durationStr.trim(), 10);
+    if (!isNaN(seconds)) {
+      return seconds;
+    }
+    
+    return null;
+  };
+
   const handleAddSong = () => {
     if (songs.length < 50) {
-      setSongs([...songs, { title: "", artist: "" }]);
+      setSongs([...songs, { title: "", artist: "", duration: "" }]);
     }
   };
 
@@ -121,7 +162,8 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
         name: name.trim(),
         songs: validSongs.map(song => ({
           title: song.title.trim(),
-          artist: song.artist.trim()
+          artist: song.artist.trim(),
+          duration: parseDuration(song.duration)
         })),
       };
 
@@ -235,6 +277,15 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
                         Original
                       </button>
                     </div>
+                    <input
+                      type="text"
+                      value={song.duration}
+                      onChange={(e) => handleSongDurationChange(index, e.target.value)}
+                      placeholder="MM:SS"
+                      disabled={saving}
+                      className="song-input song-duration-input"
+                      title="Duration in MM:SS format (e.g., 3:45)"
+                    />
                   </div>
                   <div className="song-actions">
                     <button

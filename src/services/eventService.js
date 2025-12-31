@@ -49,6 +49,11 @@ export const eventService = {
     // Add is_open_for_applications field
     formData.append("is_open_for_applications", eventData.is_open_for_applications || false);
     
+    // Add genre tags for recommendation matching
+    if (eventData.genre_tags) {
+      formData.append("genre_tags", eventData.genre_tags);
+    }
+    
     formData.append("is_ticketed", eventData.is_ticketed);
     if (eventData.ticket_price !== null && eventData.ticket_price !== undefined) {
       formData.append("ticket_price", String(parseInt(eventData.ticket_price, 10)));
@@ -208,6 +213,9 @@ export const eventService = {
     }
     if (eventData.is_open_for_applications !== undefined) {
       formData.append("is_open_for_applications", eventData.is_open_for_applications);
+    }
+    if (eventData.genre_tags !== undefined) {
+      formData.append("genre_tags", eventData.genre_tags || "");
     }
     if (eventData.is_ticketed !== undefined) {
       formData.append("is_ticketed", eventData.is_ticketed);

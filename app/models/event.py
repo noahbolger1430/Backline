@@ -43,6 +43,9 @@ class Event(Base):
     age_restriction = Column(Integer, nullable=True)
     image_path = Column(String, nullable=True)
     
+    # Genre tags for recommendation matching (comma-separated, e.g., "rock,alternative,indie")
+    genre_tags = Column(String, nullable=True)
+    
     # Recurring event fields
     is_recurring = Column(Boolean, default=False, nullable=False)
     recurring_day_of_week = Column(Integer, nullable=True)  # 0=Monday, 6=Sunday

@@ -7,6 +7,7 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    genre_tags: "",
     event_date: "",
     doors_time: "",
     show_time: "",
@@ -112,6 +113,7 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
         venue_id: venueId,
         name: formData.name.trim(),
         description: formData.description?.trim() || null,
+        genre_tags: formData.genre_tags?.trim() || null,
         event_date: formData.is_recurring ? formData.recurring_start_date : formData.event_date,
         doors_time: formData.doors_time && formData.doors_time.trim() ? formData.doors_time.trim() : null,
         show_time: formData.show_time && formData.show_time.trim() ? formData.show_time.trim() : null,
@@ -277,6 +279,24 @@ const EventCreateForm = ({ venueId, onEventCreated, onCancel }) => {
               </label>
               <p className="form-help-text">
                 Allow bands to submit applications to perform at this event.
+              </p>
+            </div>
+          )}
+
+          {formData.is_open_for_applications && (
+            <div className="form-group genre-tags-group">
+              <label htmlFor="genre_tags">Looking for genres</label>
+              <input
+                type="text"
+                id="genre_tags"
+                name="genre_tags"
+                value={formData.genre_tags}
+                onChange={handleChange}
+                placeholder="e.g., rock, alternative, indie"
+                maxLength={500}
+              />
+              <p className="form-help-text">
+                Specify the genres you're looking for (comma-separated). This helps match your event with the right bands in recommendations.
               </p>
             </div>
           )}

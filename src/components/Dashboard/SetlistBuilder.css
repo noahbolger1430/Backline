@@ -194,6 +194,11 @@
     flex: 1;
   }
 
+  .song-duration-input {
+    flex: 0 0 80px;
+    min-width: 80px;
+  }
+
   .original-artist-button {
     padding: 8px 12px;
     font-size: 12px;

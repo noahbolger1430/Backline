@@ -7,10 +7,11 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 class Song(BaseModel):
     """
-    Schema for a song with title and optional artist.
+    Schema for a song with title, optional artist, and optional duration.
     """
     title: str = Field(..., min_length=1)
     artist: str = Field(default="", max_length=255)
+    duration: Optional[int] = Field(default=None, ge=0, description="Duration in seconds")
 
 
 class SetlistBase(BaseModel):
@@ -43,14 +44,22 @@ class SetlistBase(BaseModel):
             if isinstance(song, str):
                 # Legacy format: just a string
                 if song.strip():
-                    cleaned.append(Song(title=song.strip(), artist=""))
+                    cleaned.append(Song(title=song.strip(), artist="", duration=None))
             elif isinstance(song, dict):
-                # New format: object with title and artist
+                # New format: object with title, artist, and optional duration
                 title = song.get("title", song.get("name", "")).strip()
                 if title:
+                    duration = song.get("duration")
+                    # Convert duration to int if it's a number
+                    if duration is not None:
+                        try:
+                            duration = int(duration) if not isinstance(duration, int) else duration
+                        except (ValueError, TypeError):
+                            duration = None
                     cleaned.append(Song(
                         title=title,
-                        artist=song.get("artist", "").strip()
+                        artist=song.get("artist", "").strip(),
+                        duration=duration
                     ))
             elif isinstance(song, Song):
                 # Already a Song object
@@ -104,14 +113,22 @@ class SetlistUpdate(BaseModel):
                 if isinstance(song, str):
                     # Legacy format: just a string
                     if song.strip():
-                        cleaned.append(Song(title=song.strip(), artist=""))
+                        cleaned.append(Song(title=song.strip(), artist="", duration=None))
                 elif isinstance(song, dict):
-                    # New format: object with title and artist
+                    # New format: object with title, artist, and optional duration
                     title = song.get("title", song.get("name", "")).strip()
                     if title:
+                        duration = song.get("duration")
+                        # Convert duration to int if it's a number
+                        if duration is not None:
+                            try:
+                                duration = int(duration) if not isinstance(duration, int) else duration
+                            except (ValueError, TypeError):
+                                duration = None
                         cleaned.append(Song(
                             title=title,
-                            artist=song.get("artist", "").strip()
+                            artist=song.get("artist", "").strip(),
+                            duration=duration
                         ))
                 elif isinstance(song, Song):
                     # Already a Song object
@@ -168,11 +185,19 @@ class Setlist(SetlistBase):
                     songs = []
                     for song_data in songs_data:
                         if isinstance(song_data, str):
-                            songs.append({"title": song_data, "artist": ""})
+                            songs.append({"title": song_data, "artist": "", "duration": None})
                         elif isinstance(song_data, dict):
+                            duration = song_data.get("duration")
+                            # Ensure duration is an int or None
+                            if duration is not None:
+                                try:
+                                    duration = int(duration) if not isinstance(duration, int) else duration
+                                except (ValueError, TypeError):
+                                    duration = None
                             songs.append({
                                 "title": song_data.get("title", song_data.get("name", "")),
-                                "artist": song_data.get("artist", "")
+                                "artist": song_data.get("artist", ""),
+                                "duration": duration
                             })
                     data["songs"] = songs
                 except json.JSONDecodeError:
@@ -188,11 +213,19 @@ class Setlist(SetlistBase):
                     # Convert to Song objects
                     for song_data in songs_data:
                         if isinstance(song_data, str):
-                            songs.append({"title": song_data, "artist": ""})
+                            songs.append({"title": song_data, "artist": "", "duration": None})
                         elif isinstance(song_data, dict):
+                            duration = song_data.get("duration")
+                            # Ensure duration is an int or None
+                            if duration is not None:
+                                try:
+                                    duration = int(duration) if not isinstance(duration, int) else duration
+                                except (ValueError, TypeError):
+                                    duration = None
                             songs.append({
                                 "title": song_data.get("title", song_data.get("name", "")),
-                                "artist": song_data.get("artist", "")
+                                "artist": song_data.get("artist", ""),
+                                "duration": duration
                             })
                 except json.JSONDecodeError:
                     songs = []
