@@ -226,6 +226,34 @@ export const rehearsalService = {
     return await response.json();
   },
 
+  async attachSetlistToInstance(bandId, instanceId, setlistId) {
+    const formData = new FormData();
+    formData.append("setlist_id", setlistId.toString());
+    formData.append("file_type", "setlist");
+
+    const token = localStorage.getItem("access_token");
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      // Don't set Content-Type - let browser set it with boundary
+    };
+
+    const response = await fetch(
+      `${API_BASE_URL}/bands/${bandId}/rehearsals/instances/${instanceId}/attachments`,
+      {
+        method: "POST",
+        headers: headers,
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to attach setlist");
+    }
+
+    return await response.json();
+  },
+
   async deleteInstanceAttachment(bandId, instanceId, attachmentId) {
     const response = await fetch(
       `${API_BASE_URL}/bands/${bandId}/rehearsals/instances/${instanceId}/attachments/${attachmentId}`,

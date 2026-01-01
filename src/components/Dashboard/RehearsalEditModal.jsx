@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { rehearsalService } from "../../services/rehearsalService";
 import { getImageUrl } from "../../utils/imageUtils";
+import SetlistSelectModal from "./SetlistSelectModal";
+import SetlistViewModal from "./SetlistViewModal";
 import "./RehearsalEditModal.css";
 
 const RehearsalEditModal = ({ bandId, instanceId, onClose, onSuccess }) => {
@@ -11,6 +13,8 @@ const RehearsalEditModal = ({ bandId, instanceId, onClose, onSuccess }) => {
   const [instance, setInstance] = useState(null);
   const [existingAttachments, setExistingAttachments] = useState([]);
   const [newAttachments, setNewAttachments] = useState([]);
+  const [showSetlistSelectModal, setShowSetlistSelectModal] = useState(false);
+  const [viewingSetlistId, setViewingSetlistId] = useState(null);
   
   // Form state
   const [instanceDate, setInstanceDate] = useState("");
@@ -103,6 +107,31 @@ const RehearsalEditModal = ({ bandId, instanceId, onClose, onSuccess }) => {
     } catch (err) {
       setError(err.message || "Failed to delete attachment");
     }
+  };
+
+  const handleAttachSetlist = async (setlistId) => {
+    if (!instanceId) return;
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const attachment = await rehearsalService.attachSetlistToInstance(
+        bandId,
+        instanceId,
+        setlistId
+      );
+      // Add to existing attachments list
+      setExistingAttachments((prev) => [...prev, attachment]);
+    } catch (err) {
+      setError(err.message || "Failed to attach setlist");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleViewSetlist = (setlistId) => {
+    setViewingSetlistId(setlistId);
   };
 
   const handleSubmit = async (e) => {
@@ -291,37 +320,93 @@ const RehearsalEditModal = ({ bandId, instanceId, onClose, onSuccess }) => {
                 <label className="attachments-sub-label">Current attachments:</label>
                 {existingAttachments.map((attachment) => (
                   <div key={attachment.id} className="attachment-item existing">
-                    <a
-                      href={getImageUrl(attachment.file_path, process.env.REACT_APP_API_URL || "http://localhost:8000")}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="attachment-link"
-                    >
-                      {attachment.file_name}
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteAttachment(attachment.id)}
-                      className="remove-attachment"
-                      title="Delete attachment"
-                    >
-                      ×
-                    </button>
+                    {attachment.setlist_id ? (
+                      <>
+                        <span className="attachment-link">
+                          📋 {attachment.setlist_name || `Setlist (ID: ${attachment.setlist_id})`}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleViewSetlist(attachment.setlist_id)}
+                          className="view-setlist-button"
+                          title="View setlist"
+                        >
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAttachment(attachment.id)}
+                          className="remove-attachment"
+                          title="Delete attachment"
+                        >
+                          ×
+                        </button>
+                      </>
+                    ) : attachment.file_path ? (
+                      <>
+                        <a
+                          href={getImageUrl(attachment.file_path, process.env.REACT_APP_API_URL || "http://localhost:8000")}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="attachment-link"
+                        >
+                          {attachment.file_name || "File"}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAttachment(attachment.id)}
+                          className="remove-attachment"
+                          title="Delete attachment"
+                        >
+                          ×
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="attachment-link">
+                          {attachment.file_name || "Attachment"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAttachment(attachment.id)}
+                          className="remove-attachment"
+                          title="Delete attachment"
+                        >
+                          ×
+                        </button>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
             )}
 
-            {/* New attachments to upload */}
-            <input
-              type="file"
-              multiple
-              onChange={handleFileUpload}
-              disabled={uploading}
-              className="file-input"
-            />
+            {/* Attachment options */}
+            <div className="attachment-options">
+              <div className="attachment-option-group">
+                <label htmlFor="file-upload-input" className="file-upload-label">
+                  📎 Upload File
+                </label>
+                <input
+                  id="file-upload-input"
+                  type="file"
+                  multiple
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                  className="file-input"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSetlistSelectModal(true)}
+                disabled={uploading}
+                className="attach-setlist-button"
+              >
+                📋 Attach Setlist
+              </button>
+            </div>
             <small className="form-hint">
-              Upload setlists, videos, demo tapes, etc.
+              Upload files or attach a setlist from your setlist builder.
             </small>
             {newAttachments.length > 0 && (
               <div className="attachments-list">
@@ -359,6 +444,21 @@ const RehearsalEditModal = ({ bandId, instanceId, onClose, onSuccess }) => {
             </button>
           </div>
         </form>
+
+        {showSetlistSelectModal && (
+          <SetlistSelectModal
+            bandId={bandId}
+            onSelect={handleAttachSetlist}
+            onClose={() => setShowSetlistSelectModal(false)}
+          />
+        )}
+
+        {viewingSetlistId && (
+          <SetlistViewModal
+            setlistId={viewingSetlistId}
+            onClose={() => setViewingSetlistId(null)}
+          />
+        )}
       </div>
     </div>
   );

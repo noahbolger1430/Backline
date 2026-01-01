@@ -216,11 +216,11 @@ class RehearsalService:
     
     @staticmethod
     def add_attachment(
-        db: Session, rehearsal_id: int, file_path: str, file_name: str,
-        file_type: Optional[str], file_size: Optional[int], user_id: int,
-        instance_id: Optional[int] = None
+        db: Session, rehearsal_id: int, file_path: Optional[str] = None, file_name: Optional[str] = None,
+        file_type: Optional[str] = None, file_size: Optional[int] = None, user_id: int = None,
+        instance_id: Optional[int] = None, setlist_id: Optional[int] = None
     ) -> RehearsalAttachment:
-        """Add a file attachment to a rehearsal or specific instance."""
+        """Add a file attachment or setlist attachment to a rehearsal or specific instance."""
         attachment = RehearsalAttachment(
             rehearsal_id=rehearsal_id,
             instance_id=instance_id,
@@ -228,6 +228,7 @@ class RehearsalService:
             file_name=file_name,
             file_type=file_type,
             file_size=file_size,
+            setlist_id=setlist_id,
             uploaded_by_user_id=user_id,
         )
         db.add(attachment)

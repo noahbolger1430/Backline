@@ -11,6 +11,7 @@ from app.api.deps import check_band_permission, get_band_or_404, get_current_act
 from app.models.band_member import BandRole
 from app.database import get_db
 from app.models import User, Rehearsal, RehearsalInstance, RehearsalAttachment
+from app.models.setlist import Setlist as SetlistModel
 from app.schemas.rehearsal import (
     Rehearsal as RehearsalSchema,
     RehearsalCreate,
@@ -63,18 +64,24 @@ def create_rehearsal(
     
     rehearsal = RehearsalService.create_rehearsal(db, rehearsal_data, band_id, current_user.id)
     
-    # Load relationships
+    # Load relationships including setlist for attachments
     rehearsal = (
         db.query(Rehearsal)
         .options(
-            joinedload(Rehearsal.attachments),
+            joinedload(Rehearsal.attachments).joinedload(RehearsalAttachment.setlist),
             joinedload(Rehearsal.instances)
         )
         .filter(Rehearsal.id == rehearsal.id)
         .first()
     )
     
-    return RehearsalSchema.model_validate(rehearsal)
+    r_dict = RehearsalSchema.model_validate(rehearsal).model_dump()
+    if rehearsal.attachments:
+        for att_dict, att_model in zip(r_dict["attachments"], rehearsal.attachments):
+            if att_model.setlist:
+                att_dict["setlist_name"] = att_model.setlist.name
+    
+    return r_dict
 
 
 @router.get("/bands/{band_id}/rehearsals", response_model=List[RehearsalSchema])
@@ -96,18 +103,28 @@ def get_band_rehearsals(
     
     rehearsals = RehearsalService.get_band_rehearsals(db, band_id, start_date, end_date)
     
-    # Load relationships
+    # Load relationships including setlist for attachments
     rehearsals = (
         db.query(Rehearsal)
         .options(
-            joinedload(Rehearsal.attachments),
+            joinedload(Rehearsal.attachments).joinedload(RehearsalAttachment.setlist),
             joinedload(Rehearsal.instances)
         )
         .filter(Rehearsal.id.in_([r.id for r in rehearsals]))
         .all()
     )
     
-    return [RehearsalSchema.model_validate(r) for r in rehearsals]
+    # Convert to schema format with setlist_name for attachments
+    result = []
+    for r in rehearsals:
+        r_dict = RehearsalSchema.model_validate(r).model_dump()
+        if r.attachments:
+            for att_dict, att_model in zip(r_dict["attachments"], r.attachments):
+                if att_model.setlist:
+                    att_dict["setlist_name"] = att_model.setlist.name
+        result.append(r_dict)
+    
+    return result
 
 
 @router.get("/bands/{band_id}/rehearsals/calendar", response_model=List[RehearsalCalendarItem])
@@ -172,7 +189,7 @@ def get_rehearsal(
     rehearsal = (
         db.query(Rehearsal)
         .options(
-            joinedload(Rehearsal.attachments),
+            joinedload(Rehearsal.attachments).joinedload(RehearsalAttachment.setlist),
             joinedload(Rehearsal.instances)
         )
         .filter(
@@ -188,7 +205,13 @@ def get_rehearsal(
             detail="Rehearsal not found"
         )
     
-    return RehearsalSchema.model_validate(rehearsal)
+    r_dict = RehearsalSchema.model_validate(rehearsal).model_dump()
+    if rehearsal.attachments:
+        for att_dict, att_model in zip(r_dict["attachments"], rehearsal.attachments):
+            if att_model.setlist:
+                att_dict["setlist_name"] = att_model.setlist.name
+    
+    return r_dict
 
 
 @router.put("/bands/{band_id}/rehearsals/{rehearsal_id}", response_model=RehearsalSchema)
@@ -216,18 +239,24 @@ def update_rehearsal(
             detail="Rehearsal not found"
         )
     
-    # Load relationships
+    # Load relationships including setlist for attachments
     rehearsal = (
         db.query(Rehearsal)
         .options(
-            joinedload(Rehearsal.attachments),
+            joinedload(Rehearsal.attachments).joinedload(RehearsalAttachment.setlist),
             joinedload(Rehearsal.instances)
         )
         .filter(Rehearsal.id == rehearsal.id)
         .first()
     )
     
-    return RehearsalSchema.model_validate(rehearsal)
+    r_dict = RehearsalSchema.model_validate(rehearsal).model_dump()
+    if rehearsal.attachments:
+        for att_dict, att_model in zip(r_dict["attachments"], rehearsal.attachments):
+            if att_model.setlist:
+                att_dict["setlist_name"] = att_model.setlist.name
+    
+    return r_dict
 
 
 @router.delete("/bands/{band_id}/rehearsals/{rehearsal_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -297,7 +326,20 @@ async def upload_rehearsal_attachment(
         db, rehearsal_id, file_path, file.filename, file_type, file_size, current_user.id
     )
     
-    return RehearsalAttachmentSchema.model_validate(attachment)
+    # Reload with setlist relationship if it's a setlist attachment
+    if attachment.setlist_id:
+        attachment = (
+            db.query(RehearsalAttachment)
+            .options(joinedload(RehearsalAttachment.setlist))
+            .filter(RehearsalAttachment.id == attachment.id)
+            .first()
+        )
+    
+    att_dict = RehearsalAttachmentSchema.model_validate(attachment).model_dump()
+    if attachment.setlist:
+        att_dict["setlist_name"] = attachment.setlist.name
+    
+    return att_dict
 
 
 @router.delete(
@@ -344,8 +386,8 @@ def delete_rehearsal_attachment(
             detail="Attachment not found"
         )
     
-    # Delete file from filesystem
-    if os.path.exists(attachment.file_path):
+    # Delete file from filesystem (only if it's a file attachment, not a setlist)
+    if attachment.file_path and os.path.exists(attachment.file_path):
         try:
             os.remove(attachment.file_path)
         except Exception:
@@ -393,9 +435,29 @@ def get_rehearsal_instance(
     if rehearsal:
         instance_dict["start_time"] = rehearsal.start_time.strftime("%H:%M") if rehearsal.start_time else None
     
-    # Get instance-specific attachments
-    instance_attachments = RehearsalService.get_instance_attachments(db, instance_id, band_id)
-    instance_dict["attachments"] = [RehearsalAttachmentSchema.model_validate(att).model_dump() for att in instance_attachments]
+    # Get instance-specific attachments with setlist relationship loaded
+    instance_attachments = (
+        db.query(RehearsalAttachment)
+        .options(joinedload(RehearsalAttachment.setlist))
+        .join(RehearsalInstance)
+        .join(Rehearsal)
+        .filter(
+            RehearsalInstance.id == instance_id,
+            Rehearsal.band_id == band_id,
+            RehearsalAttachment.instance_id == instance_id
+        )
+        .all()
+    )
+    
+    # Convert to schema format with setlist_name
+    attachments_list = []
+    for att in instance_attachments:
+        att_dict = RehearsalAttachmentSchema.model_validate(att).model_dump()
+        if att.setlist:
+            att_dict["setlist_name"] = att.setlist.name
+        attachments_list.append(att_dict)
+    
+    instance_dict["attachments"] = attachments_list
     
     return instance_dict
 
@@ -439,15 +501,17 @@ def update_rehearsal_instance(
 async def upload_rehearsal_instance_attachment(
     band_id: int,
     instance_id: int,
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),
     file_type: Optional[str] = Form(None, description="File type/category (setlist, video, demo, etc.)"),
+    setlist_id: Optional[int] = Form(None, description="ID of setlist to attach (alternative to file upload)"),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> RehearsalAttachmentSchema:
     """
-    Upload a file attachment to a specific rehearsal instance.
+    Upload a file attachment or attach a setlist to a specific rehearsal instance.
     
     Requires admin or owner role in the band.
+    Either file or setlist_id must be provided.
     """
     # Check permissions
     band = get_band_or_404(band_id, db)
@@ -462,19 +526,82 @@ async def upload_rehearsal_instance_attachment(
             detail="Rehearsal instance not found"
         )
     
-    # Create attachments directory if it doesn't exist
-    attachments_dir = Path("rehearsal_attachments")
-    attachments_dir.mkdir(exist_ok=True)
+    # Validate that either file or setlist_id is provided
+    if not file and not setlist_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Either file or setlist_id must be provided"
+        )
     
-    # Upload file to GCP or local storage
-    file_path, file_size = await storage_service.upload_file(file, folder="rehearsal_attachments")
+    if file and setlist_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot provide both file and setlist_id"
+        )
     
-    # Create attachment record linked to the instance
-    attachment = RehearsalService.add_attachment(
-        db, instance.rehearsal_id, file_path, file.filename, file_type, file_size, current_user.id, instance_id=instance_id
-    )
+    # Handle setlist attachment
+    if setlist_id:
+        from app.models.setlist import Setlist as SetlistModel
+        # Verify setlist exists and belongs to band
+        setlist = db.query(SetlistModel).filter(
+            SetlistModel.id == setlist_id,
+            SetlistModel.band_id == band_id
+        ).first()
+        
+        if not setlist:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Setlist not found"
+            )
+        
+        # Create setlist attachment record
+        attachment = RehearsalService.add_attachment(
+            db, instance.rehearsal_id, file_path=None, file_name=None, 
+            file_type="setlist", file_size=None, user_id=current_user.id, 
+            instance_id=instance_id, setlist_id=setlist_id
+        )
+        
+        # Reload with setlist relationship
+        attachment = (
+            db.query(RehearsalAttachment)
+            .options(joinedload(RehearsalAttachment.setlist))
+            .filter(RehearsalAttachment.id == attachment.id)
+            .first()
+        )
+        
+        att_dict = RehearsalAttachmentSchema.model_validate(attachment).model_dump()
+        if attachment.setlist:
+            att_dict["setlist_name"] = attachment.setlist.name
+        
+        return att_dict
+    else:
+        # Handle file attachment
+        # Create attachments directory if it doesn't exist
+        attachments_dir = Path("rehearsal_attachments")
+        attachments_dir.mkdir(exist_ok=True)
+        
+        # Upload file to GCP or local storage
+        file_path, file_size = await storage_service.upload_file(file, folder="rehearsal_attachments")
+        
+        # Create attachment record linked to the instance
+        attachment = RehearsalService.add_attachment(
+            db, instance.rehearsal_id, file_path, file.filename, file_type, file_size, current_user.id, instance_id=instance_id
+        )
+        
+        # Reload with setlist relationship if it's a setlist attachment
+        if attachment.setlist_id:
+            attachment = (
+                db.query(RehearsalAttachment)
+                .options(joinedload(RehearsalAttachment.setlist))
+                .filter(RehearsalAttachment.id == attachment.id)
+                .first()
+            )
     
-    return RehearsalAttachmentSchema.model_validate(attachment)
+    att_dict = RehearsalAttachmentSchema.model_validate(attachment).model_dump()
+    if attachment.setlist:
+        att_dict["setlist_name"] = attachment.setlist.name
+    
+    return att_dict
 
 
 @router.delete(
@@ -518,8 +645,8 @@ def delete_rehearsal_instance_attachment(
             detail="Attachment not found"
         )
     
-    # Delete file from filesystem
-    if os.path.exists(attachment.file_path):
+    # Delete file from filesystem (only if it's a file attachment, not a setlist)
+    if attachment.file_path and os.path.exists(attachment.file_path):
         try:
             os.remove(attachment.file_path)
         except Exception:

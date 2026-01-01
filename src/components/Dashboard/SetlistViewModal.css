@@ -1,0 +1,108 @@
+.setlist-view-modal {
+  max-width: 700px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.setlist-view-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+}
+
+.setlist-view-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.setlist-view-duration {
+  font-size: 16px;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.setlist-view-content {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  margin-right: 8px;
+  padding-right: 4px;
+}
+
+.setlist-view-loading,
+.setlist-view-error,
+.setlist-view-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #FFFFFF;
+}
+
+.setlist-view-error {
+  color: #d32f2f;
+}
+
+.setlist-view-songs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.setlist-view-song {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.setlist-view-song:hover {
+  background-color: transparent;
+}
+
+.setlist-view-song-number {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #6F22D2;
+  color: white;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 16px;
+  margin-right: 16px;
+}
+
+.setlist-view-song-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.setlist-view-song-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 4px;
+}
+
+.setlist-view-song-artist {
+  font-size: 14px;
+  color: #FFFFFF;
+  font-style: italic;
+}
+
+.setlist-view-song-duration {
+  flex-shrink: 0;
+  font-size: 16px;
+  color: #FFFFFF;
+  font-weight: 500;
+  margin-left: 16px;
+  min-width: 60px;
+  text-align: right;
+}
+

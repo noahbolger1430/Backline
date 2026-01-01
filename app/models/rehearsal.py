@@ -91,6 +91,7 @@ class RehearsalAttachment(Base):
     
     Supports setlists, videos, demo tapes, and other files.
     Can be attached to either a rehearsal (all instances) or a specific instance.
+    Can be either a file attachment (file_path set) or a setlist attachment (setlist_id set).
     """
 
     __tablename__ = "rehearsal_attachments"
@@ -99,10 +100,12 @@ class RehearsalAttachment(Base):
     rehearsal_id = Column(Integer, ForeignKey("rehearsals.id", ondelete="CASCADE"), nullable=False, index=True)
     instance_id = Column(Integer, ForeignKey("rehearsal_instances.id", ondelete="CASCADE"), nullable=True, index=True)
     
-    file_path = Column(String, nullable=False)  # Path to stored file
-    file_name = Column(String, nullable=False)  # Original filename
+    file_path = Column(String, nullable=True)  # Path to stored file (nullable for setlist attachments)
+    file_name = Column(String, nullable=True)  # Original filename (nullable for setlist attachments)
     file_type = Column(String, nullable=True)  # MIME type or category (setlist, video, demo, etc.)
     file_size = Column(Integer, nullable=True)  # File size in bytes
+    
+    setlist_id = Column(Integer, ForeignKey("setlists.id", ondelete="CASCADE"), nullable=True, index=True)  # Link to setlist if this is a setlist attachment
     
     uploaded_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -110,4 +113,5 @@ class RehearsalAttachment(Base):
     rehearsal = relationship("Rehearsal", back_populates="attachments")
     instance = relationship("RehearsalInstance", back_populates="attachments")
     uploaded_by = relationship("User", foreign_keys=[uploaded_by_user_id])
+    setlist = relationship("Setlist", foreign_keys=[setlist_id])
 

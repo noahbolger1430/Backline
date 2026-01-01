@@ -37,9 +37,10 @@ class RehearsalUpdate(BaseModel):
 class RehearsalAttachmentBase(BaseModel):
     """Base schema for rehearsal attachment."""
     
-    file_name: str
+    file_name: Optional[str] = None
     file_type: Optional[str] = None
     file_size: Optional[int] = None
+    setlist_id: Optional[int] = None
 
 
 class RehearsalAttachmentCreate(RehearsalAttachmentBase):
@@ -55,9 +56,10 @@ class RehearsalAttachment(RehearsalAttachmentBase):
     
     id: int
     rehearsal_id: int
-    file_path: str
+    file_path: Optional[str] = None
     uploaded_by_user_id: Optional[int] = None
     uploaded_at: datetime
+    setlist_name: Optional[str] = None  # Name of attached setlist if setlist_id is set
 
 
 class RehearsalInstanceBase(BaseModel):

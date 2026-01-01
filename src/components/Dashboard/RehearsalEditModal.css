@@ -67,7 +67,6 @@
   justify-content: flex-end;
   margin-top: 2rem;
   padding-top: 1rem;
-  border-top: 1px solid #eee;
 }
 
 .rehearsal-edit-modal .modal-button {
@@ -211,5 +210,80 @@
 .rehearsal-edit-modal .remove-attachment:hover {
   transform: scale(1.2);
   color: #c0392b;
+}
+
+.rehearsal-edit-modal .attachment-options {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.rehearsal-edit-modal .attachment-option-group {
+  flex: 1;
+}
+
+.rehearsal-edit-modal .file-upload-label {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #1F2833;
+  border: 1px solid #C5C6C7;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.rehearsal-edit-modal .file-upload-label:hover {
+  background-color: #0B0C10;
+  border-color: #45A29E;
+}
+
+.rehearsal-edit-modal #file-upload-input {
+  display: none;
+}
+
+.rehearsal-edit-modal .attach-setlist-button {
+  padding: 8px 16px;
+  background-color: #45A29E;
+  color: white;
+  border: 1px solid #45A29E;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.rehearsal-edit-modal .attach-setlist-button:hover:not(:disabled) {
+  background-color: #66FCF1;
+  border-color: #66FCF1;
+  color: #1F2833;
+}
+
+.rehearsal-edit-modal .attach-setlist-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rehearsal-edit-modal .view-setlist-button {
+  padding: 4px 12px;
+  background-color: #45A29E;
+  color: white;
+  border: 1px solid #45A29E;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+  transition: all 0.2s ease;
+}
+
+.rehearsal-edit-modal .view-setlist-button:hover {
+  background-color: #66FCF1;
+  border-color: #66FCF1;
+  color: #1F2833;
 }
 
