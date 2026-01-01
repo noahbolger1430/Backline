@@ -12,6 +12,7 @@ from app.models import Band as BandModel
 from app.models import BandMember, BandRole, User, BandEvent, Event, Venue, VenueStaff, VenueRole, EventApplication
 from app.schemas import Band, BandCreate, BandJoinByInvite, BandMemberAdd, BandMemberSelfUpdate, BandMemberUpdate, BandUpdate
 from app.utils.exceptions import BandAlreadyExistsException
+from app.services.storage import storage_service
 
 router = APIRouter()
 
@@ -303,20 +304,7 @@ async def update_band(
     # Handle image upload
     image_path = None
     if image and image.filename:
-        # Create images directory if it doesn't exist
-        images_dir = Path("images")
-        images_dir.mkdir(exist_ok=True)
-        
-        # Generate unique filename
-        file_extension = Path(image.filename).suffix
-        unique_filename = f"{uuid.uuid4()}{file_extension}"
-        image_path = f"images/{unique_filename}"
-        
-        # Save file
-        file_path = images_dir / unique_filename
-        with open(file_path, "wb") as buffer:
-            content = await image.read()
-            buffer.write(content)
+        image_path = await storage_service.upload_image(image, folder="bands")
 
     # Update fields if provided
     if name is not None:

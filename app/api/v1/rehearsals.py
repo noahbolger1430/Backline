@@ -21,6 +21,7 @@ from app.schemas.rehearsal import (
     RehearsalCalendarItem,
 )
 from app.services.rehearsal_service import RehearsalService
+from app.services.storage import storage_service
 
 router = APIRouter()
 
@@ -288,23 +289,8 @@ async def upload_rehearsal_attachment(
             detail="Rehearsal not found"
         )
     
-    # Create attachments directory if it doesn't exist
-    attachments_dir = Path("rehearsal_attachments")
-    attachments_dir.mkdir(exist_ok=True)
-    
-    # Generate unique filename
-    file_extension = Path(file.filename).suffix
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-    file_path = f"rehearsal_attachments/{unique_filename}"
-    
-    # Save file
-    full_path = attachments_dir / unique_filename
-    with open(full_path, "wb") as buffer:
-        content = await file.read()
-        buffer.write(content)
-    
-    # Get file size
-    file_size = full_path.stat().st_size
+    # Upload file to GCP or local storage
+    file_path, file_size = await storage_service.upload_file(file, folder="rehearsal_attachments")
     
     # Create attachment record
     attachment = RehearsalService.add_attachment(
@@ -480,19 +466,8 @@ async def upload_rehearsal_instance_attachment(
     attachments_dir = Path("rehearsal_attachments")
     attachments_dir.mkdir(exist_ok=True)
     
-    # Generate unique filename
-    file_extension = Path(file.filename).suffix
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-    file_path = f"rehearsal_attachments/{unique_filename}"
-    
-    # Save file
-    full_path = attachments_dir / unique_filename
-    with open(full_path, "wb") as buffer:
-        content = await file.read()
-        buffer.write(content)
-    
-    # Get file size
-    file_size = full_path.stat().st_size
+    # Upload file to GCP or local storage
+    file_path, file_size = await storage_service.upload_file(file, folder="rehearsal_attachments")
     
     # Create attachment record linked to the instance
     attachment = RehearsalService.add_attachment(

@@ -95,17 +95,21 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 app.include_router(api_router, prefix="/api/v1")
 
-# Mount static files for images
-images_dir = "images"
-if not os.path.exists(images_dir):
-    os.makedirs(images_dir)
-app.mount("/images", StaticFiles(directory=images_dir), name="images")
+# Static file mounts are no longer needed when using GCP Storage
+# Files are now served directly from Google Cloud Storage buckets
+# If GCP is not configured, files will still be stored locally but won't be served
+# through these endpoints (they'll be served with their full GCS URLs or local paths)
 
-# Mount static files for rehearsal attachments
-rehearsal_attachments_dir = "rehearsal_attachments"
-if not os.path.exists(rehearsal_attachments_dir):
-    os.makedirs(rehearsal_attachments_dir)
-app.mount("/rehearsal_attachments", StaticFiles(directory=rehearsal_attachments_dir), name="rehearsal_attachments")
+# Legacy local storage mounts (commented out - files now served from GCP)
+# images_dir = "images"
+# if not os.path.exists(images_dir):
+#     os.makedirs(images_dir)
+# app.mount("/images", StaticFiles(directory=images_dir), name="images")
+#
+# rehearsal_attachments_dir = "rehearsal_attachments"
+# if not os.path.exists(rehearsal_attachments_dir):
+#     os.makedirs(rehearsal_attachments_dir)
+# app.mount("/rehearsal_attachments", StaticFiles(directory=rehearsal_attachments_dir), name="rehearsal_attachments")
 
 
 @app.get("/")

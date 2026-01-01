@@ -3,6 +3,7 @@ import { eventService } from "../../services/eventService";
 import { eventApplicationService } from "../../services/eventApplicationService";
 import { recommendationService } from "../../services/recommendationService";
 import GigApplicationModal from "./GigApplicationModal";
+import { getImageUrl } from "../../utils/imageUtils";
 import "./Dashboard.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
@@ -396,7 +397,7 @@ const GigsView = ({ bandId }) => {
         <div className="gig-image-placeholder">
           {gig.image_path ? (
             <img
-              src={`${API_BASE_URL}/${gig.image_path}`}
+              src={getImageUrl(gig.image_path, API_BASE_URL)}
               alt={gig.name}
               className="gig-image"
               onError={(e) => {
@@ -624,7 +625,7 @@ const GigsView = ({ bandId }) => {
                   <div className="gig-image-placeholder">
                     {event.image_path ? (
                       <img
-                        src={`${API_BASE_URL}/${event.image_path}`}
+                        src={getImageUrl(event.image_path, API_BASE_URL)}
                         alt={event.name}
                         className="gig-image"
                         onError={(e) => {

@@ -31,6 +31,7 @@ from app.schemas.band_event import (
 from app.schemas.notification import NotificationCreate
 from app.services.event_service import EventService
 from app.services.notification_service import NotificationService
+from app.services.storage import storage_service
 
 router = APIRouter()
 
@@ -283,20 +284,7 @@ async def create_event(
     # Handle image upload
     image_path = None
     if image and image.filename:
-        # Create images directory if it doesn't exist
-        images_dir = Path("images")
-        images_dir.mkdir(exist_ok=True)
-        
-        # Generate unique filename
-        file_extension = Path(image.filename).suffix
-        unique_filename = f"{uuid.uuid4()}{file_extension}"
-        image_path = f"images/{unique_filename}"
-        
-        # Save file
-        file_path = images_dir / unique_filename
-        with open(file_path, "wb") as buffer:
-            content = await image.read()
-            buffer.write(content)
+        image_path = await storage_service.upload_image(image, folder="events")
 
     # Parse time strings
     from datetime import time as time_type
@@ -965,31 +953,17 @@ async def update_event(
         images_dir.mkdir(exist_ok=True)
         
         # Delete old image if it exists
-        if event.image_path and os.path.exists(event.image_path):
-            try:
-                os.remove(event.image_path)
-            except Exception:
-                pass  # Ignore errors when deleting old image
+        if event.image_path:
+            storage_service.delete_image(event.image_path)
         
-        # Generate unique filename
-        file_extension = Path(image.filename).suffix
-        unique_filename = f"{uuid.uuid4()}{file_extension}"
-        image_path = f"images/{unique_filename}"
-        
-        # Save file
-        file_path = images_dir / unique_filename
-        with open(file_path, "wb") as buffer:
-            content = await image.read()
-            buffer.write(content)
+        # Upload new image
+        image_path = await storage_service.upload_image(image, folder="events")
         
         update_data["image_path"] = image_path
     elif remove_image_flag:
         # Remove existing image
-        if event.image_path and os.path.exists(event.image_path):
-            try:
-                os.remove(event.image_path)
-            except Exception:
-                pass  # Ignore errors when deleting image
+        if event.image_path:
+            storage_service.delete_image(event.image_path)
         update_data["image_path"] = None
 
     # Validate event_date change

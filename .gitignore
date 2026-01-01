@@ -21,3 +21,9 @@ turns/
 images/
 alembic/
 
+# GCP Service Account Keys (contains sensitive credentials)
+keys/
+*.json
+!package.json
+!tsconfig.json
+

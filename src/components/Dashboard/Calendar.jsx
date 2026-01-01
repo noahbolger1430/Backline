@@ -6,6 +6,7 @@ import RehearsalEditModal from "./RehearsalEditModal";
 import { availabilityService } from "../../services/availabilityService";
 import { bandService } from "../../services/bandService";
 import { rehearsalService } from "../../services/rehearsalService";
+import { getImageUrl } from "../../utils/imageUtils";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
@@ -219,7 +220,7 @@ const Calendar = ({ bandId }) => {
             <div className="event-content">
               {firstEvent.image_path ? (
                 <img
-                  src={`${API_BASE_URL}/${firstEvent.image_path}`}
+                  src={getImageUrl(firstEvent.image_path, API_BASE_URL)}
                   alt={firstEvent.name || "Event"}
                   className="event-thumbnail-small"
                   onError={(e) => {

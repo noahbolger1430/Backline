@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { venueService } from "../../services/venueService";
 import { venueFavoriteService } from "../../services/venueFavoriteService";
+import { getImageUrl } from "../../utils/imageUtils";
 import "./Dashboard.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
@@ -287,7 +288,7 @@ const VenuesView = ({ bandId = null }) => {
                 <div className="venue-image-placeholder">
                   {venue.image_path ? (
                     <img 
-                      src={`${API_BASE_URL}/${venue.image_path}`} 
+                      src={getImageUrl(venue.image_path, API_BASE_URL)} 
                       alt={venue.name}
                       className="venue-image"
                       onError={(e) => {

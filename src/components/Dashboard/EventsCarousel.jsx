@@ -1,4 +1,5 @@
 import React from "react";
+import { getImageUrl } from "../../utils/imageUtils";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
@@ -32,7 +33,7 @@ const EventsCarousel = ({ events }) => {
           {event.image_path && (
             <div className="event-card-image">
               <img
-                src={`${API_BASE_URL}/${event.image_path}`}
+                src={getImageUrl(event.image_path, API_BASE_URL)}
                 alt={event.name || "Event"}
                 className="event-thumbnail"
                 onError={(e) => {

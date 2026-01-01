@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { eventApplicationService } from "../../services/eventApplicationService";
+import { getImageUrl } from "../../utils/imageUtils";
 import "./GigApplicationModal.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
@@ -62,7 +63,7 @@ const GigApplicationModal = ({ event, bandId, onClose, onApplicationSubmitted })
           <div className="event-image-container">
             {event.image_path ? (
               <img
-                src={`${API_BASE_URL}/${event.image_path}`}
+                src={getImageUrl(event.image_path, API_BASE_URL)}
                 alt={event.name}
                 className="event-image"
                 onError={(e) => {

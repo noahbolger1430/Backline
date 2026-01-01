@@ -32,6 +32,7 @@ from app.schemas.equipment import (
     EquipmentCategories,
 )
 from app.services.venue_service import VenueService
+from app.services.storage import storage_service
 
 router = APIRouter()
 
@@ -91,20 +92,7 @@ async def create_venue(
         # Handle image upload
         image_path = None
         if image and image.filename:
-            # Create images directory if it doesn't exist
-            images_dir = Path("images")
-            images_dir.mkdir(exist_ok=True)
-            
-            # Generate unique filename
-            file_extension = Path(image.filename).suffix
-            unique_filename = f"{uuid.uuid4()}{file_extension}"
-            image_path = f"images/{unique_filename}"
-            
-            # Save file
-            file_path = images_dir / unique_filename
-            with open(file_path, "wb") as buffer:
-                content = await image.read()
-                buffer.write(content)
+            image_path = await storage_service.upload_image(image, folder="venues")
 
         # Create venue data
         venue_data_dict = {
@@ -375,24 +363,10 @@ async def update_venue_image(
     try:
         # Delete old image if it exists
         if venue.image_path:
-            old_image_path = Path(venue.image_path)
-            if old_image_path.exists():
-                old_image_path.unlink()
+            storage_service.delete_image(venue.image_path)
 
-        # Create images directory if it doesn't exist
-        images_dir = Path("images")
-        images_dir.mkdir(exist_ok=True)
-
-        # Generate unique filename
-        file_extension = Path(image.filename).suffix if image.filename else ".jpg"
-        unique_filename = f"{uuid.uuid4()}{file_extension}"
-        image_path = f"images/{unique_filename}"
-
-        # Save file
-        file_path = images_dir / unique_filename
-        with open(file_path, "wb") as buffer:
-            content = await image.read()
-            buffer.write(content)
+        # Upload new image
+        image_path = await storage_service.upload_image(image, folder="venues")
 
         # Update venue with new image path
         venue.image_path = image_path

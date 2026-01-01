@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { rehearsalService } from "../../services/rehearsalService";
+import { getImageUrl } from "../../utils/imageUtils";
 import "./RehearsalEditModal.css";
 
 const RehearsalEditModal = ({ bandId, instanceId, onClose, onSuccess }) => {
@@ -291,7 +292,7 @@ const RehearsalEditModal = ({ bandId, instanceId, onClose, onSuccess }) => {
                 {existingAttachments.map((attachment) => (
                   <div key={attachment.id} className="attachment-item existing">
                     <a
-                      href={`${process.env.REACT_APP_API_URL || "http://localhost:8000"}/${attachment.file_path}`}
+                      href={getImageUrl(attachment.file_path, process.env.REACT_APP_API_URL || "http://localhost:8000")}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="attachment-link"

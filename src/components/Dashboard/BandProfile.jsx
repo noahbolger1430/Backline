@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { bandService } from "../../services/bandService";
+import { getImageUrl } from "../../utils/imageUtils";
 import "./Dashboard.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
@@ -159,7 +160,7 @@ const BandProfile = ({ band, onBandUpdate }) => {
               {(imagePreview || (band.image_path && !selectedImage)) && (
                 <div className="band-profile-image-preview">
                   <img
-                    src={imagePreview || `${API_BASE_URL}/${band.image_path}`}
+                    src={imagePreview || getImageUrl(band.image_path, API_BASE_URL)}
                     alt="Band profile preview"
                     className="band-profile-preview-img"
                   />
@@ -170,7 +171,7 @@ const BandProfile = ({ band, onBandUpdate }) => {
             <div className="band-profile-image-display">
               {band.image_path ? (
                 <img
-                  src={`${API_BASE_URL}/${band.image_path}`}
+                  src={getImageUrl(band.image_path, API_BASE_URL)}
                   alt={`${band.name} profile`}
                   className="band-profile-img"
                 />
