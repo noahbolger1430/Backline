@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { eventService } from "../../services/eventService";
 import { stagePlotService } from "../../services/stagePlotService";
 import { bandService } from "../../services/bandService";
+import { getImageUrl } from "../../utils/imageUtils";
 import BandSearchSelect from "./BandSearchSelect";
 import StagePlot from "./StagePlot";
+import PhysicalTicketsModal from "./PhysicalTicketsModal";
 import "./EventEditForm.css";
 
 const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEditing = false, formRef, onEditingChange }) => {
@@ -38,6 +40,7 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
   const [bandModalLoading, setBandModalLoading] = useState(false);
   const [bandModalError, setBandModalError] = useState(null);
   const [scheduleTimes, setScheduleTimes] = useState({}); // { bandEventId: { load_in_time, sound_check_time } }
+  const [showPhysicalTicketsModal, setShowPhysicalTicketsModal] = useState(false);
 
   useEffect(() => {
     if (event) {
@@ -81,9 +84,16 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
 
       // Set current image preview if image exists
       if (event.image_path) {
-        // Construct image URL - adjust based on your API base URL
+        // Construct image URL using utility function that handles GCP URLs
         const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
-        setImagePreview(`${apiBaseUrl}/${event.image_path}`);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventEditForm.jsx:86',message:'Setting event image preview',data:{imagePath:event.image_path,isGcpUrl:event.image_path?.startsWith('http://')||event.image_path?.startsWith('https://')},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
+        const imageUrl = getImageUrl(event.image_path, apiBaseUrl);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventEditForm.jsx:92',message:'Event image preview URL',data:{imagePath:event.image_path,imageUrl:imageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
+        setImagePreview(imageUrl);
       } else {
         setImagePreview(null);
       }
@@ -556,7 +566,13 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
                   const bandName = bandEvent.band_name || bandEvent.band?.name || `Band ${bandEvent.band_id}`;
                   const bandImagePath = bandEvent.band_image_path || bandEvent.band?.image_path || null;
                   const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
-                  const imageUrl = bandImagePath ? `${apiBaseUrl}/${bandImagePath}` : null;
+                  // #region agent log
+                  fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventEditForm.jsx:557',message:'Building band image URL',data:{bandImagePath:bandImagePath,isGcpUrl:bandImagePath?.startsWith('http://')||bandImagePath?.startsWith('https://')},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})}).catch(()=>{});
+                  // #endregion
+                  const imageUrl = bandImagePath ? getImageUrl(bandImagePath, apiBaseUrl) : null;
+                  // #region agent log
+                  fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventEditForm.jsx:563',message:'Band image URL result',data:{bandImagePath:bandImagePath,imageUrl:imageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})}).catch(()=>{});
+                  // #endregion
                   
                   return (
                     <div 
@@ -927,6 +943,19 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
           </div>
         )}
 
+        {/* Physical Tickets Management - only for existing ticketed events */}
+        {event?.id && event?.is_ticketed && (
+          <div className="form-group">
+            <button
+              type="button"
+              className="physical-tickets-btn"
+              onClick={() => setShowPhysicalTicketsModal(true)}
+            >
+              🎫 Manage Physical Tickets
+            </button>
+          </div>
+        )}
+
         <div className="form-group checkbox-group">
           <label>
             <input
@@ -1045,7 +1074,13 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
                 const bandName = bandEvent.band_name || bandEvent.band?.name || `Band ${bandEvent.band_id}`;
                 const bandImagePath = bandEvent.band_image_path || bandEvent.band?.image_path || null;
                 const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
-                const imageUrl = bandImagePath ? `${apiBaseUrl}/${bandImagePath}` : null;
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventEditForm.jsx:1046',message:'Building band image URL (second location)',data:{bandImagePath:bandImagePath,isGcpUrl:bandImagePath?.startsWith('http://')||bandImagePath?.startsWith('https://')},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})}).catch(()=>{});
+                // #endregion
+                const imageUrl = bandImagePath ? getImageUrl(bandImagePath, apiBaseUrl) : null;
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventEditForm.jsx:1052',message:'Band image URL result (second location)',data:{bandImagePath:bandImagePath,imageUrl:imageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})}).catch(()=>{});
+                // #endregion
                 
                 return (
                   <div 
@@ -1402,6 +1437,14 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
           </div>
         </div>
       </div>
+    )}
+
+    {/* Physical Tickets Modal */}
+    {showPhysicalTicketsModal && event && (
+      <PhysicalTicketsModal
+        event={event}
+        onClose={() => setShowPhysicalTicketsModal(false)}
+      />
     )}
     </>
   );

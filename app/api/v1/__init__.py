@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1 import availability, auth, bands, equipment, event_applications, events, notifications, recommendations, users, venue_availability, venue_favorites, venue_recommendations, venues, stage_plots, setlists, rehearsals, youtube
+from app.api.v1 import availability, auth, bands, equipment, event_applications, events, notifications, physical_tickets, recommendations, users, venue_availability, venue_favorites, venue_recommendations, venues, stage_plots, setlists, rehearsals, youtube
 
 api_router = APIRouter()
 
@@ -14,6 +14,7 @@ api_router.include_router(availability.router, prefix="/availability", tags=["av
 api_router.include_router(events.router, prefix="/events", tags=["events"])
 api_router.include_router(event_applications.router, prefix="/event-applications", tags=["event-applications"])
 api_router.include_router(notifications.router, prefix="", tags=["notifications"])
+api_router.include_router(physical_tickets.router, prefix="", tags=["physical-tickets"])
 api_router.include_router(recommendations.router, prefix="/recommendations", tags=["recommendations"])
 api_router.include_router(venue_recommendations.router, prefix="/venue-recommendations", tags=["venue-recommendations"])
 api_router.include_router(venue_favorites.router, prefix="", tags=["venue-favorites"])

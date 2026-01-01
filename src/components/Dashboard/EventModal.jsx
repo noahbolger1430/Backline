@@ -3,6 +3,9 @@ import { eventService } from "../../services/eventService";
 import { equipmentService } from "../../services/equipmentService";
 import EventApplicationsList from "./EventApplicationsList";
 import ClaimEquipmentModal from "./ClaimEquipmentModal";
+import PhysicalTicketsModal from "./PhysicalTicketsModal";
+import BandTicketSalesModal from "./BandTicketSalesModal";
+import { getImageUrl } from "../../utils/imageUtils";
 import "./EventModal.css";
 
 const EventModal = ({ event, onClose, bandId = null }) => {
@@ -14,6 +17,8 @@ const EventModal = ({ event, onClose, bandId = null }) => {
   const [loadingBackline, setLoadingBackline] = useState(false);
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [claimingCategory, setClaimingCategory] = useState(null); // category being claimed
+  const [physicalTicketsModalOpen, setPhysicalTicketsModalOpen] = useState(false);
+  const [bandTicketSalesModalOpen, setBandTicketSalesModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchEventDetails = async () => {
@@ -162,12 +167,15 @@ const EventModal = ({ event, onClose, bandId = null }) => {
     }
   };
 
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return null;
-    // Assuming images are served from the backend at /images endpoint
-    const baseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
-    return `${baseUrl}/${imagePath}`;
+  // #region agent log
+  const getImageUrlWithLogging = (imagePath) => {
+    const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
+    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventModal.jsx:167',message:'getImageUrl called (post-fix)',data:{imagePath:imagePath,isGcpUrl:imagePath?.startsWith('http://')||imagePath?.startsWith('https://')},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
+    const finalUrl = getImageUrl(imagePath, apiBaseUrl);
+    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventModal.jsx:172',message:'getImageUrl returning (post-fix)',data:{imagePath:imagePath,finalUrl:finalUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
+    return finalUrl;
   };
+  // #endregion
 
   if (!event) return null;
 
@@ -188,7 +196,7 @@ const EventModal = ({ event, onClose, bandId = null }) => {
             {fullEvent.image_path && (
               <div className="modal-image-container">
                 <img 
-                  src={getImageUrl(fullEvent.image_path)} 
+                  src={getImageUrlWithLogging(fullEvent.image_path)} 
                   alt={fullEvent.name}
                   className="modal-event-image"
                   onError={(e) => {
@@ -594,6 +602,24 @@ const EventModal = ({ event, onClose, bandId = null }) => {
                     {fullEvent.ticket_price ? formatCurrency(fullEvent.ticket_price) : 'Free'}
                   </span>
                 </div>
+                {/* Physical Tickets button - venue view */}
+                {!bandId && (
+                  <button
+                    className="physical-tickets-button"
+                    onClick={() => setPhysicalTicketsModalOpen(true)}
+                  >
+                    🎫 Manage Physical Tickets
+                  </button>
+                )}
+                {/* Band Ticket Sales button - band view */}
+                {bandId && (
+                  <button
+                    className="physical-tickets-button"
+                    onClick={() => setBandTicketSalesModalOpen(true)}
+                  >
+                    🎫 Manage Ticket Sales
+                  </button>
+                )}
               </div>
             )}
 
@@ -665,6 +691,23 @@ const EventModal = ({ event, onClose, bandId = null }) => {
               setClaimingCategory(null);
             }}
             onClaimSuccess={handleClaimSuccess}
+          />
+        )}
+
+        {/* Physical Tickets Modal */}
+        {physicalTicketsModalOpen && fullEvent && (
+          <PhysicalTicketsModal
+            event={fullEvent}
+            onClose={() => setPhysicalTicketsModalOpen(false)}
+          />
+        )}
+
+        {/* Band Ticket Sales Modal */}
+        {bandTicketSalesModalOpen && fullEvent && bandId && (
+          <BandTicketSalesModal
+            event={fullEvent}
+            bandId={bandId}
+            onClose={() => setBandTicketSalesModalOpen(false)}
           />
         )}
       </div>

@@ -1,0 +1,607 @@
+/* Physical Tickets Modal Styles */
+
+.physical-tickets-modal {
+  max-width: 900px;
+  width: 95%;
+  max-height: 85vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: #1F2833;
+  padding: 30px;
+  box-sizing: border-box;
+}
+
+.physical-tickets-header {
+  margin-bottom: 24px;
+  border-bottom: 1px solid #45A29E;
+  padding-bottom: 16px;
+}
+
+.physical-tickets-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.physical-tickets-event-name {
+  color: #8E8E93;
+  font-size: 14px;
+  margin: 0;
+}
+
+.physical-tickets-error {
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid #EF4444;
+  color: #EF4444;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.physical-tickets-loading {
+  padding: 40px 20px;
+  text-align: center;
+  color: #8E8E93;
+}
+
+.physical-tickets-info {
+  color: #8E8E93;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* Create Pool Form */
+.physical-tickets-create {
+  padding: 20px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.physical-tickets-create h3 {
+  color: #FFFFFF;
+  margin: 0 0 12px 0;
+  font-size: 18px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  background-color: #0B0C10;
+  border: 1px solid #45A29E;
+  border-radius: 4px;
+  color: #FFFFFF;
+  font-size: 14px;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #6F22D2;
+}
+
+.form-help {
+  display: block;
+  color: #8E8E93;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.form-actions {
+  margin-top: 20px;
+}
+
+/* Summary Section */
+.physical-tickets-summary {
+  background-color: rgba(111, 34, 210, 0.1);
+  border: 1px solid #6F22D2;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.stat-label {
+  display: block;
+  font-size: 12px;
+  color: #8E8E93;
+  text-transform: uppercase;
+}
+
+.summary-range {
+  color: #8E8E93;
+  font-size: 13px;
+  text-align: center;
+  padding-top: 12px;
+  border-top: 1px solid rgba(111, 34, 210, 0.3);
+}
+
+/* Actions */
+.physical-tickets-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.btn-primary {
+  background-color: #6F22D2;
+  color: #FFFFFF;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #8B2FE8;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: #45A29E;
+  color: #FFFFFF;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #66FCF1;
+  color: #0B0C10;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-danger-outline {
+  background-color: transparent;
+  color: #EF4444;
+  border: 1px solid #EF4444;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-danger-outline:hover:not(:disabled) {
+  background-color: #EF4444;
+  color: #FFFFFF;
+}
+
+.btn-danger-outline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-small {
+  background-color: #6F22D2;
+  color: #FFFFFF;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-small:hover {
+  background-color: #8B2FE8;
+}
+
+.btn-cancel {
+  background-color: transparent;
+  color: #8E8E93;
+  border: 1px solid #8E8E93;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-cancel:hover {
+  border-color: #FFFFFF;
+  color: #FFFFFF;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #6F22D2;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 14px;
+  padding: 0;
+}
+
+.btn-link:hover {
+  color: #8B2FE8;
+}
+
+.allocations-header .btn-link {
+  margin-top: 0;
+}
+
+.allocations-empty .btn-link {
+  margin-top: 8px;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.btn-icon:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.btn-icon:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-icon.danger:hover:not(:disabled) {
+  filter: brightness(1.2);
+}
+
+.btn-small-confirm {
+  background-color: #22C55E;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-small-cancel {
+  background-color: transparent;
+  color: #8E8E93;
+  border: 1px solid #8E8E93;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Allocations Section */
+.physical-tickets-allocations {
+  margin-bottom: 24px;
+}
+
+.allocations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.allocations-header h3 {
+  color: #FFFFFF;
+  margin: 0;
+  font-size: 18px;
+}
+
+.allocate-form {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-row select {
+  flex: 1 1 auto;
+  min-width: 150px;
+  max-width: calc(50% - 5px);
+  padding: 8px 12px;
+  background-color: #0B0C10;
+  border: 1px solid #45A29E;
+  border-radius: 4px;
+  color: #FFFFFF;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-row input[type="number"] {
+  width: 80px;
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  background-color: #0B0C10;
+  border: 1px solid #45A29E;
+  border-radius: 4px;
+  color: #FFFFFF;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-actions-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-actions-row .btn-primary,
+.form-actions-row .btn-cancel {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.allocations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.allocation-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.allocation-item:hover {
+  border-color: #45A29E;
+}
+
+.allocation-band-name {
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 600;
+  width: 100%;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.allocation-details-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.allocation-info {
+  flex: 0 0 auto;
+}
+
+.allocation-range {
+  color: #8E8E93;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.allocation-stats {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  justify-content: center;
+}
+
+.alloc-stat {
+  text-align: center;
+}
+
+.alloc-stat-value {
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.alloc-stat-value.paid {
+  color: #22C55E;
+}
+
+.alloc-stat-value.unpaid {
+  color: #F59E0B;
+}
+
+.alloc-stat-label {
+  display: block;
+  font-size: 10px;
+  color: #8E8E93;
+  text-transform: uppercase;
+}
+
+.allocation-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.edit-allocation-form {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.edit-allocation-form input {
+  width: 70px;
+  padding: 4px 8px;
+  background-color: #0B0C10;
+  border: 1px solid #45A29E;
+  border-radius: 4px;
+  color: #FFFFFF;
+  font-size: 14px;
+}
+
+.allocations-empty {
+  padding: 30px;
+  text-align: center;
+  color: #8E8E93;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Proceeds Section */
+.physical-tickets-proceeds {
+  background-color: rgba(34, 197, 94, 0.1);
+  border: 1px solid #22C55E;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.physical-tickets-proceeds h3 {
+  color: #22C55E;
+  margin: 0 0 12px 0;
+  font-size: 16px;
+}
+
+.proceeds-stats {
+  display: flex;
+  gap: 32px;
+}
+
+.proceeds-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.proceeds-label {
+  color: #8E8E93;
+  font-size: 14px;
+}
+
+.proceeds-value {
+  color: #FFFFFF;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Modal Actions */
+.physical-tickets-modal .modal-actions {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .physical-tickets-modal {
+    padding: 20px;
+    width: 98%;
+  }
+
+  .summary-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .physical-tickets-actions {
+    flex-direction: column;
+  }
+
+  .allocation-details-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .allocation-stats {
+    width: 100%;
+    justify-content: space-around;
+  }
+
+  .allocation-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .form-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-row select {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .form-row input[type="number"] {
+    width: 100%;
+  }
+
+  .form-actions-row {
+    flex-direction: column;
+  }
+
+  .form-actions-row .btn-primary,
+  .form-actions-row .btn-cancel {
+    width: 100%;
+  }
+}
+

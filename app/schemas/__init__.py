@@ -113,6 +113,23 @@ from app.schemas.equipment import (
     EquipmentCategoryInfo,
     get_all_categories,
 )
+from app.schemas.physical_ticket import (
+    PhysicalTicketPoolBase,
+    PhysicalTicketPoolCreate,
+    PhysicalTicketPoolResponse,
+    PhysicalTicketPoolWithAllocations,
+    PhysicalTicketAllocationBase,
+    PhysicalTicketAllocationCreate,
+    PhysicalTicketAllocationUpdate,
+    PhysicalTicketAllocationResponse,
+    PhysicalTicketAllocationWithSales,
+    PhysicalTicketSaleBase,
+    PhysicalTicketSaleCreate,
+    PhysicalTicketSaleUpdate,
+    PhysicalTicketSaleResponse,
+    BandTicketSummary,
+    EventTicketingSummary,
+)
 
 __all__ = [
     "User",
@@ -216,5 +233,20 @@ __all__ = [
     "EquipmentCategories",
     "EquipmentCategoryInfo",
     "get_all_categories",
+    "PhysicalTicketPoolBase",
+    "PhysicalTicketPoolCreate",
+    "PhysicalTicketPoolResponse",
+    "PhysicalTicketPoolWithAllocations",
+    "PhysicalTicketAllocationBase",
+    "PhysicalTicketAllocationCreate",
+    "PhysicalTicketAllocationUpdate",
+    "PhysicalTicketAllocationResponse",
+    "PhysicalTicketAllocationWithSales",
+    "PhysicalTicketSaleBase",
+    "PhysicalTicketSaleCreate",
+    "PhysicalTicketSaleUpdate",
+    "PhysicalTicketSaleResponse",
+    "BandTicketSummary",
+    "EventTicketingSummary",
 ]
 

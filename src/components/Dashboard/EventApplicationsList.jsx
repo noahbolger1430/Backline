@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { eventApplicationService } from "../../services/eventApplicationService";
 import { bandService } from "../../services/bandService";
 import { venueRecommendationService } from "../../services/venueRecommendationService";
+import { getImageUrl } from "../../utils/imageUtils";
 import "./EventApplicationsList.css";
 
 const EventApplicationsList = ({ 
@@ -204,11 +205,15 @@ const EventApplicationsList = ({
     }
   };
 
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return null;
-    const baseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
-    return `${baseUrl}/${imagePath}`;
+  // #region agent log
+  const getImageUrlWithLogging = (imagePath) => {
+    const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
+    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventApplicationsList.jsx:207',message:'getImageUrl called (post-fix)',data:{imagePath:imagePath,isGcpUrl:imagePath?.startsWith('http://')||imagePath?.startsWith('https://')},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'B'})}).catch(()=>{});
+    const finalUrl = getImageUrl(imagePath, apiBaseUrl);
+    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventApplicationsList.jsx:211',message:'getImageUrl returning (post-fix)',data:{imagePath:imagePath,finalUrl:finalUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'B'})}).catch(()=>{});
+    return finalUrl;
   };
+  // #endregion
 
   // Get icon for recommendation reason
   const getReasonIcon = (type) => {
@@ -362,7 +367,7 @@ const EventApplicationsList = ({
                     {bandInfo.image_path && (
                       <div className="band-photo-container">
                         <img 
-                          src={getImageUrl(bandInfo.image_path)} 
+                          src={getImageUrlWithLogging(bandInfo.image_path)} 
                           alt={bandName}
                           className="band-photo"
                           onError={(e) => {

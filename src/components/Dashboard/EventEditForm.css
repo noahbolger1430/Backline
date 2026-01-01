@@ -1062,3 +1062,28 @@
   cursor: not-allowed;
 }
 
+/* Physical Tickets Button */
+.physical-tickets-btn {
+  padding: 12px 20px;
+  background-color: #6F22D2;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.physical-tickets-btn:hover {
+  background-color: #8B2FE8;
+}
+
+.physical-tickets-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

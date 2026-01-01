@@ -61,3 +61,4 @@ class Event(Base):
     venue = relationship("Venue", back_populates="events")
     applications = relationship("EventApplication", back_populates="event", cascade="all, delete-orphan")
     bands = relationship("BandEvent", back_populates="event", cascade="all, delete-orphan")
+    ticket_pool = relationship("PhysicalTicketPool", back_populates="event", uselist=False, cascade="all, delete-orphan")

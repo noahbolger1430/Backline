@@ -9,6 +9,7 @@ from app.models.member_equipment import EquipmentCategory, MemberEquipment
 from app.models.venue_equipment import VenueEquipment
 from app.models.event_equipment_claim import EventEquipmentClaim
 from app.models.notification import Notification, NotificationType
+from app.models.physical_ticket import PhysicalTicketPool, PhysicalTicketAllocation, PhysicalTicketSale
 from app.models.rehearsal import Rehearsal, RehearsalAttachment, RehearsalInstance, RecurrenceFrequency
 from app.models.user import User
 from app.models.venue import Venue
@@ -46,6 +47,9 @@ __all__ = [
     "ApplicationStatus",
     "Notification",
     "NotificationType",
+    "PhysicalTicketPool",
+    "PhysicalTicketAllocation",
+    "PhysicalTicketSale",
     "StagePlot",
     "Setlist",
     "Rehearsal",

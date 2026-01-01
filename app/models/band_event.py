@@ -35,6 +35,7 @@ class BandEvent(Base):
     band = relationship("Band", back_populates="events")
     event = relationship("Event", back_populates="bands")
     availability = relationship("BandAvailability", back_populates="band_event", uselist=False)
+    ticket_allocations = relationship("PhysicalTicketAllocation", back_populates="band_event", cascade="all, delete-orphan")
 
     __table_args__ = (
         UniqueConstraint(
