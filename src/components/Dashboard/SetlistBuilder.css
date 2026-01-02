@@ -67,7 +67,7 @@
     padding: 12px;
     font-size: 14px;
     background-color: #1F2833;
-    border: 2px solid #C5C6C7;
+    border: 1px solid #C5C6C7;
     border-radius: 4px;
     color: #FFFFFF;
     box-sizing: border-box;
@@ -140,13 +140,28 @@
     gap: 12px;
     padding: 12px;
     background-color: #1F2833;
-    border: 2px solid #C5C6C7;
+    border: 1px solid #C5C6C7;
     border-radius: 4px;
     transition: all 0.2s;
+    cursor: move;
   }
   
   .song-item:focus-within {
     border-color: #6F22D2;
+  }
+
+  .song-item.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+  }
+
+  .song-item.drag-over {
+    border-color: #6F22D2;
+    background-color: rgba(111, 34, 210, 0.1);
+  }
+
+  .song-item[draggable="true"]:hover {
+    cursor: grab;
   }
   
   .song-number {
@@ -161,6 +176,25 @@
     font-weight: 600;
     font-size: 14px;
     flex-shrink: 0;
+  }
+
+  .song-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 32px;
+    color: #8E8E93;
+    font-size: 18px;
+    cursor: grab;
+    flex-shrink: 0;
+    user-select: none;
+    line-height: 1;
+    letter-spacing: -2px;
+  }
+
+  .song-drag-handle:active {
+    cursor: grabbing;
   }
   
   .song-inputs {
@@ -177,21 +211,16 @@
     border: 1px solid #C5C6C7;
     border-radius: 4px;
     color: #FFFFFF;
+    box-sizing: border-box;
   }
+
 
   .song-title-input {
     flex: 2;
   }
 
-  .song-artist-input-wrapper {
-    flex: 1.5;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
   .song-artist-input {
-    flex: 1;
+    flex: 1.5;
   }
 
   .song-duration-input {
@@ -278,7 +307,6 @@
     justify-content: flex-end;
     gap: 12px;
     padding-top: 24px;
-    border-top: 1px solid #C5C6C7;
   }
   
   .setlist-cancel-button {

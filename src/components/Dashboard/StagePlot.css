@@ -13,26 +13,28 @@
   background-color: #1F2833;
 }
 
-.back-button {
+.stage-plot-back-button {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: none;
-  border: none;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: transparent;
   color: #FFFFFF;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 8px 12px;
+  border: 1px solid #C5C6C7;
   border-radius: 4px;
+  cursor: pointer;
   transition: all 0.2s;
 }
 
-.back-button:hover {
-  background-color: #2F3843;
+.stage-plot-back-button:hover {
+  background-color: #1F2833;
+  border-color: #6F22D2;
 }
 
-.back-arrow {
-  font-size: 20px;
+.stage-plot-back-arrow {
+  font-size: 18px;
 }
 
 .stage-plot-title-container {
@@ -81,7 +83,7 @@
   padding: 8px 20px;
   font-size: 14px;
   font-weight: 600;
-  border-radius: 4px;
+  border-radius: 2px;
   border: none;
   cursor: pointer;
   transition: all 0.2s;
@@ -95,7 +97,6 @@
 .save-button {
   background-color: #6F22D2;
   color: #FFFFFF;
-  border: 2px solid #0B0C10;
 }
 
 .save-button:hover:not(:disabled) {

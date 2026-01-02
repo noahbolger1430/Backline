@@ -49,17 +49,27 @@ export const rehearsalService = {
       start_date: startDate,
       end_date: endDate,
     });
+    const url = `${API_BASE_URL}/bands/${bandId}/rehearsals/calendar?${params.toString()}`;
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'rehearsalService.js:47',message:'Calling rehearsals calendar endpoint',data:{url:url,bandId:bandId,startDate:startDate,endDate:endDate},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
 
     const response = await fetch(
-      `${API_BASE_URL}/bands/${bandId}/rehearsals/calendar?${params.toString()}`,
+      url,
       {
         method: "GET",
         headers: this.getAuthHeader(),
       }
     );
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'rehearsalService.js:59',message:'Received response from rehearsals calendar',data:{status:response.status,statusText:response.statusText,ok:response.ok},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
 
     if (!response.ok) {
       const error = await response.json();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'rehearsalService.js:65',message:'Error response from rehearsals calendar',data:{status:response.status,error:error},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       throw new Error(error.detail || "Failed to fetch rehearsals for calendar");
     }
 

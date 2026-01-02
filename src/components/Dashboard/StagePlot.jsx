@@ -1539,9 +1539,9 @@ const StagePlot = ({ onBack, bandId, stagePlotId = null, viewOnly = false, onPlo
     <div className="stage-plot-container">
       {!viewOnly && (
         <div className="stage-plot-header">
-          <button className="back-button" onClick={handleBack}>
-            <span className="back-arrow">←</span>
-            Back to Stage Plots
+          <button className="stage-plot-back-button" onClick={handleBack}>
+            <span className="stage-plot-back-arrow">←</span>
+            Back
           </button>
           <div className="stage-plot-title-container">
             <h2 className="stage-plot-title">{plotName}</h2>

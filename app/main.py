@@ -40,8 +40,22 @@ app.add_middleware(
 # Add a custom middleware to ensure CORS headers are always present
 class EnsureCORSHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        # #region agent log
+        import json
+        log_path = r"c:\Users\Noah\CursorProjects\Backline\.cursor\debug.log"
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"location":"main.py:43","message":"Incoming request","data":{"method":request.method,"path":str(request.url.path),"query":str(request.url.query)},"timestamp":int(__import__("time").time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}) + "\n")
+        except: pass
+        # #endregion
         try:
             response = await call_next(request)
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"location":"main.py:52","message":"Request processed","data":{"method":request.method,"path":str(request.url.path),"status":response.status_code},"timestamp":int(__import__("time").time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}) + "\n")
+            except: pass
+            # #endregion
             # Ensure CORS headers are present
             origin = request.headers.get("origin")
             if origin in ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000", "http://127.0.0.1:8000"]:

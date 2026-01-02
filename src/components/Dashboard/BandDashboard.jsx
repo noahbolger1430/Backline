@@ -13,6 +13,7 @@ import StagePlotList from "./StagePlotList";
 import SetlistBuilder from "./SetlistBuilder";
 import SetlistList from "./SetlistList";
 import PracticeCompanion from "./PracticeCompanion";
+import TourGenerator from "./TourGenerator";
 import NotificationBell from "./NotificationBell";
 import { bandService } from "../../services/bandService";
 import { stagePlotService } from "../../services/stagePlotService";
@@ -89,6 +90,9 @@ const BandDashboard = ({ bandId, onLogout }) => {
       setShowSetlistList(true);
     } else if (toolId === "practice-companion") {
       // Practice companion opens directly
+      setSelectedTool(toolId);
+    } else if (toolId === "tour-generator") {
+      // Tour generator opens directly
       setSelectedTool(toolId);
     }
     setSelectedTool(toolId);
@@ -323,6 +327,11 @@ const BandDashboard = ({ bandId, onLogout }) => {
                   bandId={bandId}
                   bandName={band?.name}
                   userId={currentUserEmail}
+                  onBack={handleBackToTools}
+                />
+              ) : selectedTool === "tour-generator" ? (
+                <TourGenerator
+                  bandId={bandId}
                   onBack={handleBackToTools}
                 />
               ) : (

@@ -8,6 +8,8 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   useEffect(() => {
     if (setlistId) {
@@ -119,20 +121,48 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
     }
   };
 
-  const handleMoveUp = (index) => {
-    if (index > 0) {
-      const newSongs = [...songs];
-      [newSongs[index - 1], newSongs[index]] = [newSongs[index], newSongs[index - 1]];
-      setSongs(newSongs);
-    }
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/html", e.target.outerHTML);
+    e.target.style.opacity = "0.5";
   };
 
-  const handleMoveDown = (index) => {
-    if (index < songs.length - 1) {
-      const newSongs = [...songs];
-      [newSongs[index], newSongs[index + 1]] = [newSongs[index + 1], newSongs[index]];
-      setSongs(newSongs);
+  const handleDragEnd = (e) => {
+    e.target.style.opacity = "";
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+    
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      return;
     }
+
+    const newSongs = [...songs];
+    const draggedSong = newSongs[draggedIndex];
+    
+    // Remove the dragged item
+    newSongs.splice(draggedIndex, 1);
+    
+    // Insert at new position
+    newSongs.splice(dropIndex, 0, draggedSong);
+    
+    setSongs(newSongs);
+    setDraggedIndex(null);
   };
 
   const handleSave = async () => {
@@ -247,9 +277,19 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
 
             <div className="songs-list">
               {songs.map((song, index) => (
-                <div key={index} className="song-item">
+                <div
+                  key={index}
+                  className={`song-item ${draggedIndex === index ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''}`}
+                  draggable={!saving}
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, index)}
+                >
                   <div className="song-number">{index + 1}</div>
-                  <div className="song-inputs">
+                  <div className="song-drag-handle">⋮⋮</div>
+                  <div className="song-inputs" onDragStart={(e) => e.stopPropagation()}>
                     <input
                       type="text"
                       value={song.title}
@@ -257,26 +297,17 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
                       placeholder={`Song ${index + 1} title`}
                       disabled={saving}
                       className="song-input song-title-input"
+                      draggable="false"
                     />
-                    <div className="song-artist-input-wrapper">
-                      <input
-                        type="text"
-                        value={song.artist}
-                        onChange={(e) => handleSongArtistChange(index, e.target.value)}
-                        placeholder={`Artist (optional)`}
-                        disabled={saving}
-                        className="song-input song-artist-input"
-                      />
-                      <button
-                        type="button"
-                        className="original-artist-button"
-                        onClick={() => handleSongArtistChange(index, "Original")}
-                        disabled={saving}
-                        title="Mark as original song"
-                      >
-                        Original
-                      </button>
-                    </div>
+                    <input
+                      type="text"
+                      value={song.artist || ""}
+                      onChange={(e) => handleSongArtistChange(index, e.target.value)}
+                      placeholder="Original"
+                      disabled={saving}
+                      className="song-input song-artist-input"
+                      draggable="false"
+                    />
                     <input
                       type="text"
                       value={song.duration}
@@ -285,27 +316,10 @@ const SetlistBuilder = ({ bandId, setlistId, onBack, onSave }) => {
                       disabled={saving}
                       className="song-input song-duration-input"
                       title="Duration in MM:SS format (e.g., 3:45)"
+                      draggable="false"
                     />
                   </div>
                   <div className="song-actions">
-                    <button
-                      type="button"
-                      className="song-action-button"
-                      onClick={() => handleMoveUp(index)}
-                      disabled={index === 0 || saving}
-                      title="Move up"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      className="song-action-button"
-                      onClick={() => handleMoveDown(index)}
-                      disabled={index === songs.length - 1 || saving}
-                      title="Move down"
-                    >
-                      ↓
-                    </button>
                     <button
                       type="button"
                       className="song-action-button delete"

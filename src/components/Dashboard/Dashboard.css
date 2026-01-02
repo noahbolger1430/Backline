@@ -1543,7 +1543,7 @@
 }
 
 .gigs-filter-section .filter-input::placeholder {
-  color: #8E8E93; /* Subtle Text - Slate Silver */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
 }
 
 /* Style calendar icon for date inputs */

@@ -7,14 +7,21 @@ const ToolsView = ({ onToolSelect }) => {
       id: "stage-plot",
       name: "Stage Plot",
       description: "Create and edit your band's stage plot",
-      icon: "🎭",
+      icon: "🎸",
       available: true
     },
     {
       id: "setlist-builder",
       name: "Setlist Builder",
       description: "Build and manage your setlists",
-      icon: "📋",
+      icon: "📝",
+      available: true
+    },
+    {
+      id: "tour-generator",
+      name: "Tour Generator",
+      description: "Generate optimized tour routes with recommended venues and events",
+      icon: "🚐",
       available: true
     },
     {
@@ -37,7 +44,7 @@ const ToolsView = ({ onToolSelect }) => {
       id: "practice-companion",
       name: "Practice Companion",
       description: "Import setlists, find tabs, and listen to songs you need to learn",
-      icon: "🎸",
+      icon: "🎵",
       available: true
     }
   ];
