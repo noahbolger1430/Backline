@@ -144,21 +144,5 @@
   font-size: 14px;
 }
 
-/* Custom scrollbar for notification list */
-.notification-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.notification-list::-webkit-scrollbar-track {
-  background: #0B0C10;
-}
-
-.notification-list::-webkit-scrollbar-thumb {
-  background: #6F22D2;
-  border-radius: 3px;
-}
-
-.notification-list::-webkit-scrollbar-thumb:hover {
-  background: #8B2FE8;
-}
+/* Custom scrollbar for notification list - Uses global purple scrollbar */
 

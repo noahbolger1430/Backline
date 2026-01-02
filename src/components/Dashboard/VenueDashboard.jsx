@@ -8,7 +8,6 @@ import VenueProfile from "./VenueProfile";
 import NotificationBell from "./NotificationBell";
 import { venueService } from "../../services/venueService";
 import { authService } from "../../services/authService";
-import logoImage from "../../logos/Backline logo.jpg";
 import "./Dashboard.css";
 
 const VenueDashboard = ({ venueId, onLogout }) => {
@@ -187,7 +186,7 @@ const VenueDashboard = ({ venueId, onLogout }) => {
     <div className="dashboard-container">
       <header className="dashboard-header">
         <div className="header-left">
-          <img src={logoImage} alt="BackLine" className="app-logo" />
+          <img src="/favicon.jpg" alt="BackLine" className="app-logo" />
         </div>
         <div className="header-center">
           <h2 className="venue-name">{venue.name}</h2>

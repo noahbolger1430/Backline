@@ -7,6 +7,7 @@ import { availabilityService } from "../../services/availabilityService";
 import { bandService } from "../../services/bandService";
 import { rehearsalService } from "../../services/rehearsalService";
 import { getImageUrl } from "../../utils/imageUtils";
+import { getCanadianHolidays } from "../../utils/canadianHolidays";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
@@ -138,6 +139,9 @@ const Calendar = ({ bandId }) => {
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const days = [];
+    
+    // Get holidays for the current year
+    const holidays = getCanadianHolidays(currentDate.getFullYear());
 
     for (let i = 0; i < firstDay; i += 1) {
       days.push(<div key={`empty-${i}`} className="calendar-day empty" />);
@@ -157,6 +161,7 @@ const Calendar = ({ bandId }) => {
 
       const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       const dateStr = formatDateString(dateObj);
+      const holidayName = holidays.get(dateStr) || null;
       const availabilityInfo = dateAvailability.get(dateStr);
       const unavailableCount = availabilityInfo?.unavailableCount || 0;
       const totalMembers = availabilityInfo?.totalMembers || 0;
@@ -245,6 +250,9 @@ const Calendar = ({ bandId }) => {
           )}
           {availabilityText && !hasEvent && !hasRehearsal && (
             <div className="availability-text">{availabilityText}</div>
+          )}
+          {holidayName && !hasEvent && !hasRehearsal && !availabilityText && (
+            <div className="holiday-text">{holidayName}</div>
           )}
         </div>,
       );

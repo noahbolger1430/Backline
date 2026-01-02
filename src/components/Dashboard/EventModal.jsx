@@ -208,7 +208,30 @@ const EventModal = ({ event, onClose, bandId = null }) => {
 
             {/* Event Title and Status */}
             <div className="modal-header">
-              <h2 className="modal-title">{fullEvent.name}</h2>
+              <div className="modal-header-content">
+                <h2 className="modal-title">{fullEvent.name}</h2>
+                {fullEvent.description && (
+                  <p className="modal-description-header">{fullEvent.description}</p>
+                )}
+                {fullEvent.venue_name && (
+                  <div className="modal-venue-location">
+                    <span className="location-pin-icon">📍</span>
+                    <span className="venue-location-text">
+                      {fullEvent.venue_name}
+                      {(fullEvent.venue_street_address || fullEvent.venue_city || fullEvent.venue_state || fullEvent.venue_zip_code) && (
+                        <>
+                          , {[
+                            fullEvent.venue_street_address,
+                            fullEvent.venue_city,
+                            fullEvent.venue_state,
+                            fullEvent.venue_zip_code
+                          ].filter(Boolean).join(", ")}
+                        </>
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
               <span className={`status-badge ${getStatusBadgeClass(fullEvent.status)}`}>
                 {fullEvent.status}
               </span>
@@ -235,18 +258,10 @@ const EventModal = ({ event, onClose, bandId = null }) => {
               </div>
             </div>
 
-            {/* Event Description */}
-            {fullEvent.description && (
-              <div className="modal-section">
-                <h3 className="modal-section-title">Description</h3>
-                <p className="modal-description">{fullEvent.description}</p>
-              </div>
-            )}
-
             {/* Bands on the Bill */}
             <div className="modal-section">
               <h3 className="modal-section-title">Bands on the Bill</h3>
-              <div className="modal-bands-list">
+              <div className="modal-bands-grid">
                 {fullEvent.bands && fullEvent.bands.length > 0 ? (
                   fullEvent.bands
                     .sort((a, b) => {
@@ -256,33 +271,62 @@ const EventModal = ({ event, onClose, bandId = null }) => {
                       }
                       return 0;
                     })
-                    .map((bandEvent, index) => (
-                      <div key={bandEvent.id || index} className="modal-band-item">
-                        <div className="band-item-header">
-                          {bandEvent.performance_order && (
-                            <span className="band-order">#{bandEvent.performance_order}</span>
-                          )}
-                          <span className="band-name">{bandEvent.band_name}</span>
-                          <span className={`band-status ${bandEvent.status}`}>
-                            {bandEvent.status}
-                          </span>
-                        </div>
-                        {(bandEvent.set_time || bandEvent.set_length_minutes) && (
-                          <div className="band-item-details">
-                            {bandEvent.set_time && (
-                              <span className="band-detail">
-                                Set Time: {formatTime(bandEvent.set_time)}
-                              </span>
-                            )}
-                            {bandEvent.set_length_minutes && (
-                              <span className="band-detail">
-                                Length: {bandEvent.set_length_minutes} minutes
-                              </span>
+                    .map((bandEvent, index) => {
+                      const bandName = bandEvent.band_name || `Band ${bandEvent.band_id}`;
+                      const bandImagePath = bandEvent.band_image_path || bandEvent.band?.image_path || null;
+                      const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
+                      const imageUrl = bandImagePath ? getImageUrl(bandImagePath, apiBaseUrl) : null;
+                      
+                      return (
+                        <div key={bandEvent.id || index} className="modal-band-card">
+                          <div className="modal-band-card-image-container">
+                            {imageUrl ? (
+                              <img 
+                                src={imageUrl} 
+                                alt={bandName} 
+                                className="modal-band-card-image"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  const placeholder = e.target.parentElement.querySelector('.modal-band-card-placeholder');
+                                  if (placeholder) placeholder.style.display = 'flex';
+                                }}
+                              />
+                            ) : null}
+                            <div 
+                              className="modal-band-card-placeholder" 
+                              style={{ display: imageUrl ? 'none' : 'flex' }}
+                            >
+                              🎸
+                            </div>
+                            {bandEvent.performance_order && (
+                              <div className="modal-band-order-badge">
+                                #{bandEvent.performance_order}
+                              </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    ))
+                          <div className="modal-band-card-content">
+                            <div className="modal-band-card-name">{bandName}</div>
+                            <div className={`modal-band-card-status ${bandEvent.status}`}>
+                              {bandEvent.status}
+                            </div>
+                            {(bandEvent.set_time || bandEvent.set_length_minutes) && (
+                              <div className="modal-band-card-details">
+                                {bandEvent.set_time && (
+                                  <div className="modal-band-card-detail">
+                                    Set: {formatTime(bandEvent.set_time)}
+                                  </div>
+                                )}
+                                {bandEvent.set_length_minutes && (
+                                  <div className="modal-band-card-detail">
+                                    {bandEvent.set_length_minutes} min
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
                 ) : (
                   <div className="modal-no-bands">No bands scheduled yet</div>
                 )}
@@ -343,12 +387,6 @@ const EventModal = ({ event, onClose, bandId = null }) => {
                                   key={`${item.equipment_id}-${idx}`} 
                                   className={`backline-item ${isClaimed ? "claimed" : ""}`}
                                 >
-                                  {isClaimed && (
-                                    <div className="backline-claimed-indicator">
-                                      <span className="claimed-icon">✓</span>
-                                      <span className="claimed-label">Claimed for Backline</span>
-                                    </div>
-                                  )}
                                   <div className="backline-item-info">
                                     <span className="backline-item-name">{item.name}</span>
                                     {item.band_name && (
@@ -634,13 +672,6 @@ const EventModal = ({ event, onClose, bandId = null }) => {
               </div>
             )}
 
-            {/* Venue Information */}
-            <div className="modal-section">
-              <h3 className="modal-section-title">Venue</h3>
-              <div className="modal-info-row">
-                <span className="modal-info-value">{fullEvent.venue_name}</span>
-              </div>
-            </div>
 
             {/* Band Applications */}
             {fullEvent.status === 'pending' && (

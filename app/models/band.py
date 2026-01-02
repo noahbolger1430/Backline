@@ -30,6 +30,7 @@ class Band(Base):
         default=lambda: str(uuid.uuid4()),
     )
     image_path = Column(String, nullable=True)
+    logo_path = Column(String, nullable=True)
     instagram_url = Column(String, nullable=True)
     facebook_url = Column(String, nullable=True)
     spotify_url = Column(String, nullable=True)

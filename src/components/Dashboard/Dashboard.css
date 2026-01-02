@@ -22,8 +22,8 @@
 }
 
 .app-logo {
-  height: 180px;
-  width: auto;
+  height: 40px;
+  width: 40px;
   margin: 0;
   object-fit: contain;
 }
@@ -38,6 +38,14 @@
   font-weight: normal;
   margin: 0;
   color: #FFFFFF; /* High Contrast Text - Pure White */
+}
+
+.band-logo-navbar {
+  max-height: 60px;
+  max-width: 200px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }
 
 .header-right {
@@ -131,7 +139,7 @@
 .dashboard-content {
   flex: 1;
   display: flex;
-  height: calc(100vh - 75px);
+  min-height: calc(100vh - 75px);
 }
 
 .dashboard-sidebar {
@@ -194,7 +202,7 @@
 .main-content {
   flex: 1;
   padding: 30px;
-  overflow-y: auto;
+  overflow: visible;
   background-color: #0B0C10; /* Primary Background - Obsidian Black */
 }
 
@@ -203,10 +211,9 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   width: 100%;
   box-sizing: border-box;
-  min-height: calc(100vh - 75px - 60px); /* Match events-carousel min-height: viewport - header (75px) - main-content padding (60px) */
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Remove scrollbar from calendar container */
+  overflow: visible; /* Allow page scrolling instead of container scrolling */
 }
 
 .calendar-header-section {
@@ -273,7 +280,7 @@
 
 .calendar-select {
   padding: 8px 12px;
-  border: 2px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
   border-radius: 4px;
   font-size: 14px;
   background-color: #1F2833; /* Secondary Background - Charcoal Grey */
@@ -357,6 +364,17 @@
   text-align: center;
   padding: 0 2px;
   word-wrap: break-word;
+}
+
+.calendar-day .holiday-text {
+  font-size: 9px;
+  line-height: 1.1;
+  text-align: center;
+  padding: 0 2px;
+  word-wrap: break-word;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  font-style: italic;
+  margin-top: 2px;
 }
 
 .calendar-day .event-content {
@@ -577,8 +595,12 @@
   gap: 16px;
   overflow-y: auto;
   position: relative;
-  /* Custom scrollbar styling */
-  scrollbar-width: thin;
+  /* Custom scrollbar styling - hidden by default */
+  scrollbar-width: auto;
+  scrollbar-color: transparent transparent;
+}
+
+.events-carousel:hover {
   scrollbar-color: #6F22D2 #1F2833;
 }
 
@@ -587,13 +609,22 @@
 }
 
 .events-carousel::-webkit-scrollbar-track {
-  background: #1F2833;
+  background: transparent;
   border-radius: 4px;
 }
 
 .events-carousel::-webkit-scrollbar-thumb {
-  background: #6F22D2;
+  background: transparent;
   border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.events-carousel:hover::-webkit-scrollbar-track {
+  background: #1F2833;
+}
+
+.events-carousel:hover::-webkit-scrollbar-thumb {
+  background: #6F22D2;
 }
 
 .events-carousel::-webkit-scrollbar-thumb:hover {
@@ -1094,7 +1125,7 @@
 .filter-label {
   font-size: 12px;
   font-weight: 600;
-  color: #8E8E93; /* Subtle Text - Slate Silver */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
@@ -1799,6 +1830,14 @@
   color: #C5C6C7; /* Secondary Accent - Sterling Silver */
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.band-profile-field label .social-logo {
+  flex-shrink: 0;
+  color: #C5C6C7; /* Secondary Accent - Sterling Silver */
 }
 
 .band-profile-value {
@@ -2316,7 +2355,7 @@
 }
 
 .profile-view-container {
-  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  background-color: #1F2833; /* Primary Background - Obsidian Black */
   border-radius: 8px;
   border: 2px solid #6F22D2; /* Primary Accent - Electric Violet */
   width: 100%;
@@ -2331,7 +2370,6 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 30px;
-  border-bottom: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
 }
 
 .profile-view-header h2 {
@@ -2367,7 +2405,7 @@
   padding: 30px;
   height: 100%;
   overflow-y: auto;
-  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
   position: relative;
   max-width: 800px;
   margin: 0 auto;
@@ -2514,9 +2552,7 @@
 
 /* Band Memberships Section */
 .user-profile-band-memberships {
-  margin-top: 40px;
-  padding-top: 30px;
-  border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  padding-top: 10px;
 }
 
 .user-profile-section-title {
@@ -2529,16 +2565,44 @@
 .user-profile-band-membership {
   margin-bottom: 24px;
   padding: 20px;
-  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
   border-radius: 4px;
-  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+}
+
+.user-profile-band-membership-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.user-profile-band-membership-info {
+  flex: 1;
 }
 
 .user-profile-band-name {
   font-size: 18px;
   font-weight: 600;
-  color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
   margin-bottom: 16px;
+}
+
+.user-profile-band-image-container {
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.user-profile-band-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.user-profile-gear-section {
+  padding-top: 10px;
 }
 
 /* Venue Profile Image Styles */

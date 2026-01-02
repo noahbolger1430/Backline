@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import { userService } from "../../services/userService";
 import { bandService } from "../../services/bandService";
 import MemberEquipment from "./MemberEquipment";
+import { getImageUrl } from "../../utils/imageUtils";
 import "./Dashboard.css";
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 const UserProfile = ({ onUserUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -313,37 +316,58 @@ const UserProfile = ({ onUserUpdate }) => {
 
               return (
                 <div key={band.id} className="user-profile-band-membership">
-                  <div className="user-profile-band-name">{band.name}</div>
-                  <div className="user-profile-field">
-                    <label htmlFor={`band-${band.id}-instrument`}>Instrument</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        id={`band-${band.id}-instrument`}
-                        value={memberInfo.instrument || ""}
-                        onChange={(e) =>
-                          handleBandMemberInputChange(band.id, e.target.value)
-                        }
-                        className="user-profile-input"
-                        disabled={saving}
-                        placeholder="e.g., Guitar, Drums, Vocals"
-                      />
-                    ) : (
-                      <div className="user-profile-value">
-                        {memberInfo.instrument || "Not set"}
+                  <div className="user-profile-band-membership-content">
+                    <div className="user-profile-band-membership-info">
+                      <div className="user-profile-band-name">{band.name}</div>
+                      <div className="user-profile-field">
+                        <label htmlFor={`band-${band.id}-instrument`}>Instrument</label>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            id={`band-${band.id}-instrument`}
+                            value={memberInfo.instrument || ""}
+                            onChange={(e) =>
+                              handleBandMemberInputChange(band.id, e.target.value)
+                            }
+                            className="user-profile-input"
+                            disabled={saving}
+                            placeholder="e.g., Guitar, Drums, Vocals"
+                          />
+                        ) : (
+                          <div className="user-profile-value">
+                            {memberInfo.instrument || "Not set"}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {band.image_path && (
+                      <div className="user-profile-band-image-container">
+                        <img
+                          src={getImageUrl(band.image_path, API_BASE_URL)}
+                          alt={band.name}
+                          className="user-profile-band-image"
+                        />
                       </div>
                     )}
                   </div>
-                  
-                  {/* Equipment Section for Gear Share */}
-                  <MemberEquipment
-                    bandId={band.id}
-                    bandName={band.name}
-                    isEditing={isEditing}
-                  />
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Gear Section */}
+        {bands && bands.length > 0 && (
+          <div className="user-profile-gear-section">
+            <h3 className="user-profile-section-title">Gear</h3>
+            {bands.map((band) => (
+              <MemberEquipment
+                key={band.id}
+                bandId={band.id}
+                bandName={band.name}
+                isEditing={isEditing}
+              />
+            ))}
           </div>
         )}
       </div>

@@ -29,6 +29,7 @@ def serialize_band_with_members(band: BandModel) -> dict:
         "location": band.location,
         "invite_code": band.invite_code,
         "image_path": band.image_path,
+        "logo_path": getattr(band, "logo_path", None),
         "instagram_url": getattr(band, "instagram_url", None),
         "facebook_url": getattr(band, "facebook_url", None),
         "spotify_url": getattr(band, "spotify_url", None),
@@ -292,6 +293,7 @@ async def update_band(
     spotify_url: Optional[str] = Form(None),
     website_url: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
+    logo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Band:
@@ -301,10 +303,40 @@ async def update_band(
     band = get_band_or_404(band_id, db)
     check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN])
 
+    # #region agent log
+    import json
+    with open(r'c:\Users\Noah\CursorProjects\Backline\.cursor\debug.log', 'a') as f:
+        f.write(json.dumps({"location":"bands.py:update_band","message":"Endpoint called","data":{"band_id":band_id,"has_image":image is not None,"image_filename":image.filename if image else None,"has_logo":logo is not None,"logo_filename":logo.filename if logo else None},"timestamp":int(__import__('time').time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"D"})+'\n')
+    # #endregion
+
     # Handle image upload
     image_path = None
     if image and image.filename:
         image_path = await storage_service.upload_image(image, folder="bands")
+    
+    # Handle logo upload
+    logo_path = None
+    # #region agent log
+    with open(r'c:\Users\Noah\CursorProjects\Backline\.cursor\debug.log', 'a') as f:
+        f.write(json.dumps({"location":"bands.py:update_band","message":"Before logo upload check","data":{"has_logo":logo is not None,"logo_filename":logo.filename if logo else None,"logo_size":logo.size if logo else None},"timestamp":int(__import__('time').time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"D"})+'\n')
+    # #endregion
+    if logo and logo.filename:
+        # #region agent log
+        with open(r'c:\Users\Noah\CursorProjects\Backline\.cursor\debug.log', 'a') as f:
+            f.write(json.dumps({"location":"bands.py:update_band","message":"Calling storage_service.upload_image for logo","data":{"logo_filename":logo.filename,"logo_size":logo.size,"folder":"bands/logos"},"timestamp":int(__import__('time').time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"E"})+'\n')
+        # #endregion
+        try:
+            logo_path = await storage_service.upload_image(logo, folder="bands/logos")
+            # #region agent log
+            with open(r'c:\Users\Noah\CursorProjects\Backline\.cursor\debug.log', 'a') as f:
+                f.write(json.dumps({"location":"bands.py:update_band","message":"Logo upload successful","data":{"logo_path":logo_path},"timestamp":int(__import__('time').time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"E"})+'\n')
+            # #endregion
+        except Exception as e:
+            # #region agent log
+            with open(r'c:\Users\Noah\CursorProjects\Backline\.cursor\debug.log', 'a') as f:
+                f.write(json.dumps({"location":"bands.py:update_band","message":"Logo upload failed","data":{"error":str(e),"error_type":type(e).__name__},"timestamp":int(__import__('time').time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"E"})+'\n')
+            # #endregion
+            raise
 
     # Update fields if provided
     if name is not None:
@@ -325,9 +357,23 @@ async def update_band(
         band.website_url = website_url if website_url.strip() else None
     if image_path is not None:
         band.image_path = image_path
+    if logo_path is not None:
+        # #region agent log
+        with open(r'c:\Users\Noah\CursorProjects\Backline\.cursor\debug.log', 'a') as f:
+            f.write(json.dumps({"location":"bands.py:update_band","message":"Setting band.logo_path","data":{"logo_path":logo_path,"band_id":band.id},"timestamp":int(__import__('time').time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"F"})+'\n')
+        # #endregion
+        band.logo_path = logo_path
 
+    # #region agent log
+    with open(r'c:\Users\Noah\CursorProjects\Backline\.cursor\debug.log', 'a') as f:
+        f.write(json.dumps({"location":"bands.py:update_band","message":"Before db commit","data":{"band_id":band.id,"logo_path":band.logo_path,"image_path":band.image_path},"timestamp":int(__import__('time').time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"F"})+'\n')
+    # #endregion
     db.add(band)
     db.commit()
+    # #region agent log
+    with open(r'c:\Users\Noah\CursorProjects\Backline\.cursor\debug.log', 'a') as f:
+        f.write(json.dumps({"location":"bands.py:update_band","message":"After db commit","data":{"band_id":band.id,"logo_path":band.logo_path},"timestamp":int(__import__('time').time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"F"})+'\n')
+    # #endregion
     
     # Reload with relationships
     band = (
@@ -336,8 +382,19 @@ async def update_band(
         .options(joinedload(BandModel.members).joinedload(BandMember.user))
         .first()
     )
-
-    return Band.model_validate(serialize_band_with_members(band))
+    
+    # #region agent log
+    serialized = serialize_band_with_members(band)
+    with open(r'c:\Users\Noah\CursorProjects\Backline\.cursor\debug.log', 'a') as f:
+        f.write(json.dumps({"location":"bands.py:update_band","message":"Before response serialization","data":{"band_id":band.id,"logo_path_in_model":band.logo_path,"serialized_has_logo_path":"logo_path" in serialized,"serialized_logo_path":serialized.get("logo_path")},"timestamp":int(__import__('time').time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"G"})+'\n')
+    # #endregion
+    
+    result = Band.model_validate(serialized)
+    # #region agent log
+    with open(r'c:\Users\Noah\CursorProjects\Backline\.cursor\debug.log', 'a') as f:
+        f.write(json.dumps({"location":"bands.py:update_band","message":"Response ready","data":{"band_id":result.id,"has_logo_path":hasattr(result,"logo_path"),"logo_path":getattr(result,"logo_path",None)},"timestamp":int(__import__('time').time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"G"})+'\n')
+    # #endregion
+    return result
 
 
 @router.delete("/{band_id}", status_code=status.HTTP_204_NO_CONTENT)

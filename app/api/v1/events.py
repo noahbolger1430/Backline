@@ -169,11 +169,19 @@ def serialize_event_with_details(event: Event) -> dict:
     """
     Serialize an event with venue name and band count.
     """
-    # Safely access venue name
+    # Safely access venue name and address fields
     venue_name = ""
+    venue_street_address = None
+    venue_city = None
+    venue_state = None
+    venue_zip_code = None
     try:
         if hasattr(event, 'venue') and event.venue:
             venue_name = event.venue.name
+            venue_street_address = event.venue.street_address
+            venue_city = event.venue.city
+            venue_state = event.venue.state
+            venue_zip_code = event.venue.zip_code
     except Exception:
         # If venue relationship is not loaded, try to get it from the venue_id
         pass
@@ -207,6 +215,10 @@ def serialize_event_with_details(event: Event) -> dict:
         "created_at": event.created_at,
         "updated_at": event.updated_at,
         "venue_name": venue_name,
+        "venue_street_address": venue_street_address,
+        "venue_city": venue_city,
+        "venue_state": venue_state,
+        "venue_zip_code": venue_zip_code,
         "band_count": band_count,
         "is_recurring": getattr(event, 'is_recurring', False),
         "recurring_day_of_week": getattr(event, 'recurring_day_of_week', None),
@@ -562,6 +574,7 @@ def get_event(event_id: int, db: Session = Depends(get_db)) -> EventWithBands:
             'id': be.id,
             'band_id': be.band_id,
             'band_name': be.band.name if be.band else 'Unknown',
+            'band_image_path': be.band.image_path if be.band else None,
             'event_id': be.event_id,
             'status': be.status,
             'set_time': be.set_time,

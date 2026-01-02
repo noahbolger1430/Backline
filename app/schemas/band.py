@@ -155,6 +155,7 @@ class BandInDB(BandBase):
     id: int
     invite_code: str
     image_path: Optional[str] = None
+    logo_path: Optional[str] = None
     instagram_url: Optional[str] = None
     facebook_url: Optional[str] = None
     spotify_url: Optional[str] = None

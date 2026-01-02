@@ -226,22 +226,5 @@
   transform: none;
 }
 
-/* Scrollbar Styling */
-.claim-equipment-list::-webkit-scrollbar {
-  width: 8px;
-}
-
-.claim-equipment-list::-webkit-scrollbar-track {
-  background: #0B0C10;
-  border-radius: 4px;
-}
-
-.claim-equipment-list::-webkit-scrollbar-thumb {
-  background: #6F22D2;
-  border-radius: 4px;
-}
-
-.claim-equipment-list::-webkit-scrollbar-thumb:hover {
-  background: #8B2FE8;
-}
+/* Scrollbar Styling - Uses global purple scrollbar */
 

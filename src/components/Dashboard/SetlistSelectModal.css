@@ -7,14 +7,14 @@
 .setlist-select-modal h2 {
   margin-bottom: 20px;
   font-size: 24px;
-  color: #333;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
 }
 
 .setlist-select-loading,
 .setlist-select-empty {
   padding: 40px 20px;
   text-align: center;
-  color: #666;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
 }
 
 .setlist-select-list {
@@ -25,17 +25,17 @@
 }
 
 .setlist-select-item {
-  border: 1px solid #e0e0e0;
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
   border-radius: 8px;
   padding: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
-  background-color: #fff;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
 }
 
 .setlist-select-item:hover {
-  border-color: #4a90e2;
-  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.15);
+  border-color: #6F22D2; /* Primary Accent - Electric Violet */
+  box-shadow: 0 2px 8px rgba(111, 34, 210, 0.2);
   transform: translateY(-1px);
 }
 
@@ -50,13 +50,13 @@
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
 }
 
 .setlist-select-button {
   padding: 6px 16px;
-  background-color: #4a90e2;
-  color: white;
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -66,14 +66,14 @@
 }
 
 .setlist-select-button:hover {
-  background-color: #357abd;
+  background-color: #8B2FE8; /* Lighter purple */
 }
 
 .setlist-select-item-meta {
   display: flex;
   gap: 16px;
   font-size: 14px;
-  color: #666;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
 }
 
 .setlist-select-item-meta span {

@@ -69,12 +69,11 @@
 .equipment-group-title {
   font-size: 14px;
   font-weight: 600;
-  color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin: 0 0 12px 0;
   padding-bottom: 8px;
-  border-bottom: 1px solid #1F2833;
 }
 
 .equipment-items {
@@ -157,7 +156,9 @@
   gap: 8px;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid rgba(197, 198, 199, 0.2);
+  justify-content: flex-end;
+  margin-left: auto;
+  width: fit-content;
 }
 
 .equipment-action-btn {

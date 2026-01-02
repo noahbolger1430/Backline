@@ -7,6 +7,74 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
     Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+}
+
+html {
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+}
+
+/* Global Purple Scrollbar Styling for all scrollable elements */
+/* Firefox - auto hides when not scrolling */
+* {
+  scrollbar-width: auto;
+  scrollbar-color: transparent transparent;
+}
+
+/* Show scrollbar on hover - applies to all elements */
+*:hover {
+  scrollbar-color: #6F22D2 #1F2833;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) - hidden by default */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent !important;
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+/* Show scrollbar on hover */
+*:hover::-webkit-scrollbar-thumb {
+  background: #6F22D2; /* Primary Accent - Electric Violet */
+}
+
+*:hover::-webkit-scrollbar-track {
+  background: #1F2833 !important; /* Secondary Background - Charcoal Grey */
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #8B2FE8; /* Lighter purple on hover */
+}
+
+/* Ensure body and html scrollbars are always transparent when not hovered */
+body::-webkit-scrollbar-track,
+html::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+body::-webkit-scrollbar-thumb,
+html::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+body:hover::-webkit-scrollbar-track,
+html:hover::-webkit-scrollbar-track {
+  background: #1F2833 !important;
+}
+
+body:hover::-webkit-scrollbar-thumb,
+html:hover::-webkit-scrollbar-thumb {
+  background: #6F22D2;
 }
 
 .app {

@@ -17,8 +17,10 @@ import NotificationBell from "./NotificationBell";
 import { bandService } from "../../services/bandService";
 import { stagePlotService } from "../../services/stagePlotService";
 import { authService } from "../../services/authService";
-import logoImage from "../../logos/Backline logo.jpg";
+import { getImageUrl } from "../../utils/imageUtils";
 import "./Dashboard.css";
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 const BandDashboard = ({ bandId, onLogout }) => {
   const [band, setBand] = useState(null);
@@ -27,7 +29,7 @@ const BandDashboard = ({ bandId, onLogout }) => {
   const [error, setError] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [activeTab, setActiveTab] = useState("band");
+  const [activeTab, setActiveTab] = useState("calendar");
   const [selectedTool, setSelectedTool] = useState(null);
   const [selectedStagePlotId, setSelectedStagePlotId] = useState(null);
   const [showStagePlotList, setShowStagePlotList] = useState(false);
@@ -148,7 +150,13 @@ const BandDashboard = ({ bandId, onLogout }) => {
   };
 
   const handleBandUpdate = (updatedBand) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BandDashboard.jsx:handleBandUpdate',message:'Updating band state',data:{hasLogoPath:!!updatedBand.logo_path,logoPath:updatedBand.logo_path,bandId:updatedBand.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+    // #endregion
     setBand(updatedBand);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BandDashboard.jsx:handleBandUpdate',message:'Band state updated',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+    // #endregion
   };
 
   if (loading) {
@@ -220,7 +228,7 @@ const BandDashboard = ({ bandId, onLogout }) => {
     <div className="dashboard-container">
       <header className="dashboard-header">
         <div className="header-left">
-          <img src={logoImage} alt="BackLine" className="app-logo" />
+          <img src="/favicon.jpg" alt="BackLine" className="app-logo" />
         </div>
         <div className="header-center">
           <h2 className="band-name">{band.name}</h2>

@@ -152,7 +152,7 @@ export const bandService = {
     return await response.json();
   },
 
-  async updateBand(bandId, bandData, imageFile = null) {
+  async updateBand(bandId, bandData, imageFile = null, logoFile = null) {
     const formData = new FormData();
     
     // Add all band data fields to FormData (only if they're provided)
@@ -186,22 +186,47 @@ export const bandService = {
       formData.append("image", imageFile);
     }
     
+    // Add logo file if provided
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bandService.js:updateBand',message:'Before FormData append',data:{hasLogoFile:!!logoFile,logoFileName:logoFile?.name,logoFileSize:logoFile?.size,formDataKeys:Array.from(formData.keys())},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    if (logoFile) {
+      formData.append("logo", logoFile);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bandService.js:updateBand',message:'Logo appended to FormData',data:{formDataKeys:Array.from(formData.keys()),hasLogo:formData.has('logo')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
+    }
+    
     // Get auth header but remove Content-Type to let browser set it with boundary
     const headers = this.getAuthHeader();
     delete headers["Content-Type"];
 
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bandService.js:updateBand',message:'Sending API request',data:{bandId,url:`${API_BASE_URL}/bands/${bandId}`,formDataKeys:Array.from(formData.keys())},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     const response = await fetch(`${API_BASE_URL}/bands/${bandId}`, {
       method: "PUT",
       headers: headers,
       body: formData,
     });
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bandService.js:updateBand',message:'API response received',data:{status:response.status,statusText:response.statusText,ok:response.ok},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+    // #endregion
 
     if (!response.ok) {
       const error = await response.json();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bandService.js:updateBand',message:'API error response',data:{status:response.status,error:error.detail||error},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+      // #endregion
       throw new Error(error.detail || "Failed to update band");
     }
 
-    return await response.json();
+    const result = await response.json();
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bandService.js:updateBand',message:'API response parsed',data:{hasLogoPath:!!result.logo_path,logoPath:result.logo_path,bandId:result.id,bandName:result.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+    // #endregion
+    return result;
   },
 
   async updateMyBandMemberInfo(bandId, instrument) {

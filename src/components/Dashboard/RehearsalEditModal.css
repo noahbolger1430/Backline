@@ -93,12 +93,12 @@
 }
 
 .rehearsal-edit-modal .confirm-button {
-  background-color: #3498db;
-  color: white;
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
 }
 
 .rehearsal-edit-modal .confirm-button:hover:not(:disabled) {
-  background-color: #2980b9;
+  background-color: #8B2FE8; /* Lighter purple */
 }
 
 .rehearsal-edit-modal input[type="file"] {
@@ -147,7 +147,7 @@
 }
 
 .rehearsal-edit-modal .attachment-item {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem 0.5rem 1rem;
@@ -157,6 +157,7 @@
   color: white;
   font-size: 0.875rem;
   max-width: 100%;
+  width: 100%;
 }
 
 .rehearsal-edit-modal .attachment-item.existing {
@@ -180,6 +181,16 @@
   text-decoration: underline;
 }
 
+.rehearsal-edit-modal .attachment-link.clickable-setlist {
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.rehearsal-edit-modal .attachment-link.clickable-setlist:hover {
+  color: #6F22D2; /* Primary Accent - Electric Violet */
+  text-decoration: underline;
+}
+
 .rehearsal-edit-modal .attachment-item span {
   color: white;
   overflow: hidden;
@@ -190,26 +201,32 @@
 
 .rehearsal-edit-modal .remove-attachment {
   background: transparent;
-  color: #e74c3c;
   border: none;
   cursor: pointer;
-  font-size: 1.1rem;
-  line-height: 1;
   padding: 0;
   margin: 0;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   transition: transform 0.2s;
-  font-weight: bold;
+  margin-left: auto;
 }
 
 .rehearsal-edit-modal .remove-attachment:hover {
-  transform: scale(1.2);
-  color: #c0392b;
+  transform: scale(1.15);
+  opacity: 0.8;
+}
+
+.rehearsal-edit-modal .remove-attachment svg {
+  width: 16px;
+  height: 16px;
+}
+
+.rehearsal-edit-modal .remove-attachment:hover svg path {
+  stroke: #c0392b;
 }
 
 .rehearsal-edit-modal .attachment-options {
@@ -219,36 +236,18 @@
   align-items: center;
 }
 
-.rehearsal-edit-modal .attachment-option-group {
-  flex: 1;
+.rehearsal-edit-modal .attach-dropdown-container {
+  position: relative;
 }
 
-.rehearsal-edit-modal .file-upload-label {
-  display: inline-block;
+.rehearsal-edit-modal .attach-dropdown-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 16px;
-  background-color: #1F2833;
-  border: 1px solid #C5C6C7;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  color: white;
-  transition: all 0.2s ease;
-}
-
-.rehearsal-edit-modal .file-upload-label:hover {
-  background-color: #0B0C10;
-  border-color: #45A29E;
-}
-
-.rehearsal-edit-modal #file-upload-input {
-  display: none;
-}
-
-.rehearsal-edit-modal .attach-setlist-button {
-  padding: 8px 16px;
-  background-color: #45A29E;
-  color: white;
-  border: 1px solid #45A29E;
+  background-color: #6F22D2; /* Primary Accent - Electric Violet */
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  border: 1px solid #6F22D2;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
@@ -257,33 +256,62 @@
   white-space: nowrap;
 }
 
-.rehearsal-edit-modal .attach-setlist-button:hover:not(:disabled) {
-  background-color: #66FCF1;
-  border-color: #66FCF1;
-  color: #1F2833;
+.rehearsal-edit-modal .attach-dropdown-button:hover:not(:disabled) {
+  background-color: #8B2FE8; /* Lighter purple */
+  border-color: #8B2FE8;
 }
 
-.rehearsal-edit-modal .attach-setlist-button:disabled {
+.rehearsal-edit-modal .attach-dropdown-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.rehearsal-edit-modal .view-setlist-button {
-  padding: 4px 12px;
-  background-color: #45A29E;
-  color: white;
-  border: 1px solid #45A29E;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  margin-left: 8px;
-  transition: all 0.2s ease;
+.rehearsal-edit-modal .attach-icon {
+  font-size: 16px;
 }
 
-.rehearsal-edit-modal .view-setlist-button:hover {
-  background-color: #66FCF1;
-  border-color: #66FCF1;
-  color: #1F2833;
+.rehearsal-edit-modal .dropdown-arrow {
+  font-size: 10px;
+  margin-left: 4px;
+}
+
+.rehearsal-edit-modal .attach-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  min-width: 150px;
+  overflow: hidden;
+}
+
+.rehearsal-edit-modal .attach-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  background-color: transparent;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #0B0C10; /* Primary Background - Obsidian Black */
+}
+
+.rehearsal-edit-modal .attach-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.rehearsal-edit-modal .attach-dropdown-item:hover {
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+}
+
+.rehearsal-edit-modal .attach-dropdown-item input[type="file"] {
+  display: none;
 }
 

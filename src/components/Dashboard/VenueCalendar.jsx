@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { eventService } from "../../services/eventService";
+import { getCanadianHolidays } from "../../utils/canadianHolidays";
 
 const VenueCalendar = ({ venueId, onEventClick }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -108,6 +109,9 @@ const VenueCalendar = ({ venueId, onEventClick }) => {
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const days = [];
+    
+    // Get holidays for the current year
+    const holidays = getCanadianHolidays(currentDate.getFullYear());
 
     for (let i = 0; i < firstDay; i += 1) {
       days.push(<div key={`empty-${i}`} className="calendar-day empty" />);
@@ -127,6 +131,7 @@ const VenueCalendar = ({ venueId, onEventClick }) => {
 
       const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       const dateStr = formatDateString(dateObj);
+      const holidayName = holidays.get(dateStr) || null;
       const eventsForDate = eventsByDate.get(dateStr) || [];
       const hasEvents = eventsForDate.length > 0;
       // For display, show the first event if multiple exist
@@ -155,6 +160,9 @@ const VenueCalendar = ({ venueId, onEventClick }) => {
               </div>
               <div className="event-time">{formatTime(displayEvent.show_time)}</div>
             </div>
+          )}
+          {holidayName && !hasEvents && (
+            <div className="holiday-text">{holidayName}</div>
           )}
         </div>
       );

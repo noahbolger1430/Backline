@@ -193,6 +193,10 @@ class EventResponse(EventBase):
     id: int
     venue_id: int
     venue_name: str
+    venue_street_address: Optional[str] = None
+    venue_city: Optional[str] = None
+    venue_state: Optional[str] = None
+    venue_zip_code: Optional[str] = None
     image_path: Optional[str] = None
     created_at: datetime
     updated_at: datetime

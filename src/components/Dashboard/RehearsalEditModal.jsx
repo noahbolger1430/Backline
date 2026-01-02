@@ -1,9 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { rehearsalService } from "../../services/rehearsalService";
 import { getImageUrl } from "../../utils/imageUtils";
 import SetlistSelectModal from "./SetlistSelectModal";
 import SetlistViewModal from "./SetlistViewModal";
 import "./RehearsalEditModal.css";
+
+// Trash can icon component
+const TrashIcon = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"
+      stroke="#e74c3c"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 const RehearsalEditModal = ({ bandId, instanceId, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(true);
@@ -15,6 +34,8 @@ const RehearsalEditModal = ({ bandId, instanceId, onClose, onSuccess }) => {
   const [newAttachments, setNewAttachments] = useState([]);
   const [showSetlistSelectModal, setShowSetlistSelectModal] = useState(false);
   const [viewingSetlistId, setViewingSetlistId] = useState(null);
+  const [showAttachDropdown, setShowAttachDropdown] = useState(false);
+  const attachDropdownRef = useRef(null);
   
   // Form state
   const [instanceDate, setInstanceDate] = useState("");
@@ -71,6 +92,23 @@ const RehearsalEditModal = ({ bandId, instanceId, onClose, onSuccess }) => {
 
     fetchInstance();
   }, [bandId, instanceId]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (attachDropdownRef.current && !attachDropdownRef.current.contains(event.target)) {
+        setShowAttachDropdown(false);
+      }
+    };
+
+    if (showAttachDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAttachDropdown]);
 
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
@@ -322,24 +360,20 @@ const RehearsalEditModal = ({ bandId, instanceId, onClose, onSuccess }) => {
                   <div key={attachment.id} className="attachment-item existing">
                     {attachment.setlist_id ? (
                       <>
-                        <span className="attachment-link">
-                          📋 {attachment.setlist_name || `Setlist (ID: ${attachment.setlist_id})`}
-                        </span>
-                        <button
-                          type="button"
+                        <span 
+                          className="attachment-link clickable-setlist"
                           onClick={() => handleViewSetlist(attachment.setlist_id)}
-                          className="view-setlist-button"
                           title="View setlist"
                         >
-                          View
-                        </button>
+                          📋 {attachment.setlist_name || `Setlist (ID: ${attachment.setlist_id})`}
+                        </span>
                         <button
                           type="button"
                           onClick={() => handleDeleteAttachment(attachment.id)}
                           className="remove-attachment"
                           title="Delete attachment"
                         >
-                          ×
+                          <TrashIcon />
                         </button>
                       </>
                     ) : attachment.file_path ? (
@@ -358,7 +392,7 @@ const RehearsalEditModal = ({ bandId, instanceId, onClose, onSuccess }) => {
                           className="remove-attachment"
                           title="Delete attachment"
                         >
-                          ×
+                          <TrashIcon />
                         </button>
                       </>
                     ) : (
@@ -372,7 +406,7 @@ const RehearsalEditModal = ({ bandId, instanceId, onClose, onSuccess }) => {
                           className="remove-attachment"
                           title="Delete attachment"
                         >
-                          ×
+                          <TrashIcon />
                         </button>
                       </>
                     )}
@@ -383,27 +417,47 @@ const RehearsalEditModal = ({ bandId, instanceId, onClose, onSuccess }) => {
 
             {/* Attachment options */}
             <div className="attachment-options">
-              <div className="attachment-option-group">
-                <label htmlFor="file-upload-input" className="file-upload-label">
-                  📎 Upload File
-                </label>
-                <input
-                  id="file-upload-input"
-                  type="file"
-                  multiple
-                  onChange={handleFileUpload}
+              <div className="attach-dropdown-container" ref={attachDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowAttachDropdown(!showAttachDropdown)}
                   disabled={uploading}
-                  className="file-input"
-                />
+                  className="attach-dropdown-button"
+                >
+                  <span className="attach-icon">📎</span>
+                  <span>Attach</span>
+                  <span className="dropdown-arrow">{showAttachDropdown ? '▲' : '▼'}</span>
+                </button>
+                {showAttachDropdown && (
+                  <div className="attach-dropdown-menu">
+                    <label htmlFor="file-upload-input" className="attach-dropdown-item">
+                      <input
+                        id="file-upload-input"
+                        type="file"
+                        multiple
+                        onChange={(e) => {
+                          handleFileUpload(e);
+                          setShowAttachDropdown(false);
+                        }}
+                        disabled={uploading}
+                        className="file-input"
+                      />
+                      <span>File</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSetlistSelectModal(true);
+                        setShowAttachDropdown(false);
+                      }}
+                      disabled={uploading}
+                      className="attach-dropdown-item"
+                    >
+                      <span>Setlist</span>
+                    </button>
+                  </div>
+                )}
               </div>
-              <button
-                type="button"
-                onClick={() => setShowSetlistSelectModal(true)}
-                disabled={uploading}
-                className="attach-setlist-button"
-              >
-                📋 Attach Setlist
-              </button>
             </div>
             <small className="form-hint">
               Upload files or attach a setlist from your setlist builder.
