@@ -97,6 +97,189 @@ export const tourService = {
   },
 
   /**
+   * Save a generated tour.
+   * 
+   * @param {number} bandId - The band ID
+   * @param {string} tourId - Temporary tour ID
+   * @param {string} name - Name for the saved tour
+   * @param {Object} tourData - The tour generation results
+   * @returns {Promise<Object>} Saved tour details
+   */
+  async saveTour(bandId, tourId, name, tourData) {
+    const response = await fetch(
+      `${API_BASE_URL}/tours/bands/${bandId}/tours/${tourId}/save`,
+      {
+        method: "POST",
+        headers: this.getAuthHeader(),
+        body: JSON.stringify({
+          save_request: {
+            name: name,
+          },
+          tour_data: tourData,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = "Failed to save tour";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === "string"
+          ? error.detail
+          : error.detail?.message || JSON.stringify(error.detail) || errorMessage;
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Update an existing saved tour.
+   * 
+   * @param {number} bandId - The band ID
+   * @param {number} tourId - The saved tour ID to update
+   * @param {string} name - Name for the saved tour
+   * @param {Object} tourData - The tour generation results
+   * @returns {Promise<Object>} Updated tour details
+   */
+  async updateSavedTour(bandId, tourId, name, tourData) {
+    const response = await fetch(
+      `${API_BASE_URL}/tours/bands/${bandId}/tours/${tourId}`,
+      {
+        method: "PUT",
+        headers: this.getAuthHeader(),
+        body: JSON.stringify({
+          save_request: {
+            name: name,
+          },
+          tour_data: tourData,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = "Failed to update tour";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === "string"
+          ? error.detail
+          : error.detail?.message || JSON.stringify(error.detail) || errorMessage;
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Get list of saved tours for a band.
+   * 
+   * @param {number} bandId - The band ID
+   * @returns {Promise<Array>} List of saved tour summaries
+   */
+  async getSavedTours(bandId) {
+    const response = await fetch(
+      `${API_BASE_URL}/tours/bands/${bandId}/tours`,
+      {
+        method: "GET",
+        headers: this.getAuthHeader(),
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = "Failed to fetch saved tours";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === "string"
+          ? error.detail
+          : error.detail?.message || JSON.stringify(error.detail) || errorMessage;
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Get details of a saved tour.
+   * 
+   * @param {number} bandId - The band ID
+   * @param {number} tourId - The saved tour ID
+   * @returns {Promise<Object>} Saved tour details with full tour results
+   */
+  async getSavedTour(bandId, tourId) {
+    const response = await fetch(
+      `${API_BASE_URL}/tours/bands/${bandId}/tours/${tourId}`,
+      {
+        method: "GET",
+        headers: this.getAuthHeader(),
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = "Failed to fetch saved tour";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === "string"
+          ? error.detail
+          : error.detail?.message || JSON.stringify(error.detail) || errorMessage;
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Delete a saved tour.
+   * 
+   * @param {number} bandId - The band ID
+   * @param {number} tourId - The saved tour ID
+   * @returns {Promise<void>}
+   */
+  async deleteSavedTour(bandId, tourId) {
+    const response = await fetch(
+      `${API_BASE_URL}/tours/bands/${bandId}/tours/${tourId}`,
+      {
+        method: "DELETE",
+        headers: this.getAuthHeader(),
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = "Failed to delete saved tour";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === "string"
+          ? error.detail
+          : error.detail?.message || JSON.stringify(error.detail) || errorMessage;
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+  },
+
+  /**
    * Get tour availability summary for planning.
    * 
    * @param {number} bandId - The band ID

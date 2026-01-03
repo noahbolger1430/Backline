@@ -1043,8 +1043,8 @@ class TourGeneratorService:
         
         # Determine home location for distance calculations
         home_location = params.starting_location
-        if not home_location and band.city and band.state:
-            home_location = f"{band.city}, {band.state}"
+        if not home_location and band.location:
+            home_location = band.location
         
         for stop in tour_stops:
             # For duplicate venues: only filter out direct bookings, not events
@@ -1398,7 +1398,7 @@ class TourGeneratorService:
         home_location = params.starting_location
         if not home_location:
             # Try to get from band profile if available
-            home_location = f"{band.city}, {band.state}" if band.city and band.state else None
+            home_location = band.location if band.location else None
 
         # Recalculate distances for all stops
         for i in range(len(all_stops)):

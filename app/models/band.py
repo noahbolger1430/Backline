@@ -47,3 +47,4 @@ class Band(Base):
     stage_plots = relationship("StagePlot", back_populates="band", cascade="all, delete-orphan")
     setlists = relationship("Setlist", back_populates="band", cascade="all, delete-orphan")
     rehearsals = relationship("Rehearsal", back_populates="band", cascade="all, delete-orphan")
+    saved_tours = relationship("SavedTour", back_populates="band", cascade="all, delete-orphan")

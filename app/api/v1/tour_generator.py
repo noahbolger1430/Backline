@@ -5,20 +5,24 @@ Endpoints for generating optimized tour schedules for bands.
 """
 
 from datetime import date, timedelta
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import check_band_permission, get_band_or_404, get_current_active_user
 from app.database import get_db
-from app.models import Band, BandAvailability, BandRole, User
+from app.models import Band, BandAvailability, BandRole, User, SavedTour
 from app.schemas.tour_generator import (
     AlgorithmWeights,
     TourGeneratorRequest,
     TourGeneratorResponse,
     TourEventRecommendation,
     TourVenueRecommendation,
+    SaveTourRequest,
+    SaveTourRequestWithData,
+    SavedTourSummary,
+    SavedTourDetail,
 )
 from app.services.availability_service import AvailabilityService
 from app.services.tour_generator_service import (
@@ -173,6 +177,283 @@ def generate_tour(
         availability_conflicts=result.availability_conflicts,
         routing_warnings=result.routing_warnings,
     )
+
+
+@router.post("/bands/{band_id}/tours/{tour_id}/save", status_code=status.HTTP_201_CREATED)
+def save_tour(
+    band_id: int,
+    tour_id: str,  # This will be a temporary ID from the frontend
+    request: SaveTourRequestWithData,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> SavedTourDetail:
+    """
+    Save a generated tour for future reference.
+    
+    **Parameters:**
+    - **band_id**: ID of the band
+    - **tour_id**: Temporary tour ID from frontend
+    - **request**: Request containing save_request (name) and tour_data (full tour results)
+    
+    **Returns:**
+    - **201 Created**: Saved tour details
+    
+    **Permissions:**
+    - Band owners, admins, and members can save tours
+    """
+    band = get_band_or_404(band_id, db)
+    check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN, BandRole.MEMBER])
+    
+    save_request = request.save_request
+    tour_data = request.tour_data
+    
+    # Extract parameters from tour data
+    start_date = date.fromisoformat(tour_data.tour_parameters['start_date'])
+    end_date = date.fromisoformat(tour_data.tour_parameters['end_date'])
+    
+    # Create saved tour
+    saved_tour = SavedTour(
+        band_id=band_id,
+        name=save_request.name,
+        start_date=start_date,
+        end_date=end_date,
+        tour_radius_km=tour_data.tour_parameters['tour_radius_km'],
+        starting_location=tour_data.tour_parameters.get('starting_location'),
+        tour_data=tour_data.model_dump(),
+        tour_params=tour_data.tour_parameters,
+    )
+    
+    db.add(saved_tour)
+    db.commit()
+    db.refresh(saved_tour)
+    
+    return SavedTourDetail(
+        id=saved_tour.id,
+        band_id=saved_tour.band_id,
+        name=saved_tour.name,
+        start_date=saved_tour.start_date,
+        end_date=saved_tour.end_date,
+        tour_radius_km=saved_tour.tour_radius_km,
+        starting_location=saved_tour.starting_location,
+        tour_data=saved_tour.tour_data,
+        tour_params=saved_tour.tour_params,
+        created_at=saved_tour.created_at,
+        updated_at=saved_tour.updated_at,
+        tour_results=TourGeneratorResponse(**saved_tour.tour_data),
+    )
+
+
+@router.get("/bands/{band_id}/tours", response_model=List[SavedTourSummary])
+def list_saved_tours(
+    band_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> List[SavedTourSummary]:
+    """
+    List all saved tours for a band.
+    
+    **Parameters:**
+    - **band_id**: ID of the band
+    
+    **Returns:**
+    - **200 OK**: List of saved tour summaries
+    
+    **Permissions:**
+    - Band members can view saved tours
+    """
+    band = get_band_or_404(band_id, db)
+    check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN, BandRole.MEMBER])
+    
+    saved_tours = (
+        db.query(SavedTour)
+        .filter(SavedTour.band_id == band_id)
+        .order_by(SavedTour.created_at.desc())
+        .all()
+    )
+    
+    summaries = []
+    for tour in saved_tours:
+        tour_data = tour.tour_data
+        total_shows = tour_data.get('tour_summary', {}).get('total_show_days', 0)
+        total_distance = tour_data.get('tour_summary', {}).get('total_distance_km', 0)
+        
+        summaries.append(
+            SavedTourSummary(
+                id=tour.id,
+                name=tour.name,
+                start_date=tour.start_date,
+                end_date=tour.end_date,
+                tour_radius_km=tour.tour_radius_km,
+                starting_location=tour.starting_location,
+                created_at=tour.created_at,
+                total_shows=total_shows,
+                total_distance_km=total_distance,
+            )
+        )
+    
+    return summaries
+
+
+@router.get("/bands/{band_id}/tours/{tour_id}", response_model=SavedTourDetail)
+def get_saved_tour(
+    band_id: int,
+    tour_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> SavedTourDetail:
+    """
+    Get details of a specific saved tour.
+    
+    **Parameters:**
+    - **band_id**: ID of the band
+    - **tour_id**: ID of the saved tour
+    
+    **Returns:**
+    - **200 OK**: Saved tour details with full tour results
+    
+    **Permissions:**
+    - Band members can view saved tours
+    """
+    band = get_band_or_404(band_id, db)
+    check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN, BandRole.MEMBER])
+    
+    saved_tour = (
+        db.query(SavedTour)
+        .filter(SavedTour.id == tour_id, SavedTour.band_id == band_id)
+        .first()
+    )
+    
+    if not saved_tour:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Saved tour not found"
+        )
+    
+    return SavedTourDetail(
+        id=saved_tour.id,
+        band_id=saved_tour.band_id,
+        name=saved_tour.name,
+        start_date=saved_tour.start_date,
+        end_date=saved_tour.end_date,
+        tour_radius_km=saved_tour.tour_radius_km,
+        starting_location=saved_tour.starting_location,
+        tour_data=saved_tour.tour_data,
+        tour_params=saved_tour.tour_params,
+        created_at=saved_tour.created_at,
+        updated_at=saved_tour.updated_at,
+        tour_results=TourGeneratorResponse(**saved_tour.tour_data),
+    )
+
+
+@router.put("/bands/{band_id}/tours/{tour_id}", response_model=SavedTourDetail)
+def update_saved_tour(
+    band_id: int,
+    tour_id: int,
+    request: SaveTourRequestWithData,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> SavedTourDetail:
+    """
+    Update an existing saved tour.
+    
+    **Parameters:**
+    - **band_id**: ID of the band
+    - **tour_id**: ID of the saved tour to update
+    - **request**: Request containing save_request (name) and tour_data (full tour results)
+    
+    **Returns:**
+    - **200 OK**: Updated saved tour details
+    
+    **Permissions:**
+    - Band owners, admins, and members can update saved tours
+    """
+    band = get_band_or_404(band_id, db)
+    check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN, BandRole.MEMBER])
+    
+    saved_tour = (
+        db.query(SavedTour)
+        .filter(SavedTour.id == tour_id, SavedTour.band_id == band_id)
+        .first()
+    )
+    
+    if not saved_tour:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Saved tour not found"
+        )
+    
+    save_request = request.save_request
+    tour_data = request.tour_data
+    
+    # Extract parameters from tour data
+    start_date = date.fromisoformat(tour_data.tour_parameters['start_date'])
+    end_date = date.fromisoformat(tour_data.tour_parameters['end_date'])
+    
+    # Update saved tour
+    saved_tour.name = save_request.name
+    saved_tour.start_date = start_date
+    saved_tour.end_date = end_date
+    saved_tour.tour_radius_km = tour_data.tour_parameters['tour_radius_km']
+    saved_tour.starting_location = tour_data.tour_parameters.get('starting_location')
+    saved_tour.tour_data = tour_data.model_dump()
+    saved_tour.tour_params = tour_data.tour_parameters
+    
+    db.commit()
+    db.refresh(saved_tour)
+    
+    return SavedTourDetail(
+        id=saved_tour.id,
+        band_id=saved_tour.band_id,
+        name=saved_tour.name,
+        start_date=saved_tour.start_date,
+        end_date=saved_tour.end_date,
+        tour_radius_km=saved_tour.tour_radius_km,
+        starting_location=saved_tour.starting_location,
+        tour_data=saved_tour.tour_data,
+        tour_params=saved_tour.tour_params,
+        created_at=saved_tour.created_at,
+        updated_at=saved_tour.updated_at,
+        tour_results=TourGeneratorResponse(**saved_tour.tour_data),
+    )
+
+
+@router.delete("/bands/{band_id}/tours/{tour_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_saved_tour(
+    band_id: int,
+    tour_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Delete a saved tour.
+    
+    **Parameters:**
+    - **band_id**: ID of the band
+    - **tour_id**: ID of the saved tour
+    
+    **Returns:**
+    - **204 No Content**: Tour deleted successfully
+    
+    **Permissions:**
+    - Band owners and admins can delete saved tours
+    """
+    band = get_band_or_404(band_id, db)
+    check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN])
+    
+    saved_tour = (
+        db.query(SavedTour)
+        .filter(SavedTour.id == tour_id, SavedTour.band_id == band_id)
+        .first()
+    )
+    
+    if not saved_tour:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Saved tour not found"
+        )
+    
+    db.delete(saved_tour)
+    db.commit()
 
 
 @router.get("/bands/{band_id}/tour-availability-summary")

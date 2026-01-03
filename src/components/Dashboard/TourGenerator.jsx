@@ -6,6 +6,14 @@ import "./TourGenerator.css";
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 const TourGenerator = ({ bandId, onBack }) => {
+  const [view, setView] = useState("landing"); // "landing", "generate", "saved"
+  const [savedTours, setSavedTours] = useState([]);
+  const [loadingSavedTours, setLoadingSavedTours] = useState(false);
+  const [selectedTour, setSelectedTour] = useState(null);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [tourName, setTourName] = useState("");
+  const [savingTour, setSavingTour] = useState(false);
+  
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [tourRadius, setTourRadius] = useState(1000);
@@ -37,6 +45,12 @@ const TourGenerator = ({ bandId, onBack }) => {
   const regenerateTimeoutRef = useRef(null);
 
   useEffect(() => {
+    if (view === "landing") {
+      fetchSavedTours();
+    }
+  }, [view]);
+
+  useEffect(() => {
     const today = new Date();
     const oneMonthFromNow = new Date(today);
     oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
@@ -48,10 +62,22 @@ const TourGenerator = ({ bandId, onBack }) => {
   }, []);
 
   useEffect(() => {
-    if (startDate && endDate && bandId) {
+    if (startDate && endDate && bandId && view === "generate") {
       fetchAvailabilitySummary();
     }
-  }, [startDate, endDate, bandId]);
+  }, [startDate, endDate, bandId, view]);
+
+  const fetchSavedTours = async () => {
+    try {
+      setLoadingSavedTours(true);
+      const tours = await tourService.getSavedTours(bandId);
+      setSavedTours(tours);
+    } catch (err) {
+      console.error("Failed to fetch saved tours:", err);
+    } finally {
+      setLoadingSavedTours(false);
+    }
+  };
 
   const fetchAvailabilitySummary = async () => {
     try {
@@ -115,6 +141,12 @@ const TourGenerator = ({ bandId, onBack }) => {
       setTourResults(results);
       if (!isRegeneration) {
         setShowSettings(false);
+        // Keep selectedTour if editing a saved tour, otherwise clear it
+        // (clearing null is a no-op, so this is safe)
+        if (!selectedTour) {
+          setSelectedTour(null);
+        }
+        // If selectedTour exists, we're editing a saved tour, so keep it set
       }
     } catch (err) {
       console.error("Failed to generate tour:", err);
@@ -125,7 +157,7 @@ const TourGenerator = ({ bandId, onBack }) => {
     }
   }, [startDate, endDate, tourRadius, startingLocation, minDaysBetweenShows, 
       maxDaysBetweenShows, maxDriveHours, prioritizeWeekends, preferredGenres, 
-      minVenueCapacity, maxVenueCapacity, algorithmWeights, bandId]);
+      minVenueCapacity, maxVenueCapacity, algorithmWeights, bandId, selectedTour]);
 
   const handleWeightChange = useCallback((weightKey, value) => {
     // Handle algorithm weight changes with automatic regeneration.
@@ -144,6 +176,94 @@ const TourGenerator = ({ bandId, onBack }) => {
       }, 500);
     }
   }, [tourResults, handleGenerateTour]);
+
+  const handleSaveTour = async () => {
+    if (!tourName.trim()) {
+      return;
+    }
+
+    try {
+      setSavingTour(true);
+      
+      if (selectedTour) {
+        // Update existing saved tour
+        const updatedTour = await tourService.updateSavedTour(
+          bandId, 
+          selectedTour.id, 
+          tourName.trim(), 
+          tourResults
+        );
+        // Update the selectedTour with the updated data
+        setSelectedTour(updatedTour);
+        // Update tourResults with the updated tour data
+        setTourResults(updatedTour.tour_results);
+      } else {
+        // Create new saved tour
+        const tempTourId = Date.now().toString();
+        await tourService.saveTour(bandId, tempTourId, tourName.trim(), tourResults);
+      }
+      
+      setShowSaveModal(false);
+      setTourName("");
+      // Refresh saved tours list
+      fetchSavedTours();
+      // Optionally show success message
+      alert(selectedTour ? "Tour updated successfully!" : "Tour saved successfully!");
+    } catch (err) {
+      console.error("Failed to save tour:", err);
+      alert("Failed to save tour: " + err.message);
+    } finally {
+      setSavingTour(false);
+    }
+  };
+
+  const handleViewSavedTour = async (tourId) => {
+    try {
+      setLoadingSavedTours(true);
+      const tour = await tourService.getSavedTour(bandId, tourId);
+      setTourResults(tour.tour_results);
+      setView("generate");
+      setShowSettings(true);
+      setSelectedTour(tour);
+      
+      // Populate form fields from saved tour parameters
+      if (tour.tour_params) {
+        if (tour.tour_params.start_date) {
+          setStartDate(tour.tour_params.start_date);
+        }
+        if (tour.tour_params.end_date) {
+          setEndDate(tour.tour_params.end_date);
+        }
+        if (tour.tour_params.tour_radius_km) {
+          setTourRadius(tour.tour_params.tour_radius_km);
+        }
+        if (tour.tour_params.starting_location) {
+          setStartingLocation(tour.tour_params.starting_location);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load tour:", err);
+      alert("Failed to load tour: " + err.message);
+    } finally {
+      setLoadingSavedTours(false);
+    }
+  };
+
+  const handleDeleteSavedTour = async (tourId, e) => {
+    e.stopPropagation();
+    
+    if (!window.confirm("Are you sure you want to delete this saved tour?")) {
+      return;
+    }
+
+    try {
+      await tourService.deleteSavedTour(bandId, tourId);
+      fetchSavedTours();
+    } catch (err) {
+      console.error("Failed to delete tour:", err);
+      alert("Failed to delete tour: " + err.message);
+    }
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -249,7 +369,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                   </span>
                   {item.travel_days_needed > 0 && (
                     <span className="tour-metric">
-                      🚐 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
+                      🚗 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
                     </span>
                   )}
                   {item.recommendation_score && (
@@ -269,7 +389,23 @@ const TourGenerator = ({ bandId, onBack }) => {
           ) : (
             <>
               <div className="tour-stop-image venue">
-                <span className="tour-stop-image-icon">🏢</span>
+                {item.image_path ? (
+                  <img
+                    src={getImageUrl(item.image_path, API_BASE_URL)}
+                    alt={item.venue_name}
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      const icon = e.target.parentElement.querySelector(".tour-stop-image-icon");
+                      if (icon) icon.style.display = "flex";
+                    }}
+                  />
+                ) : null}
+                <span 
+                  className="tour-stop-image-icon" 
+                  style={{ display: item.image_path ? "none" : "flex" }}
+                >
+                  🏛️
+                </span>
               </div>
               
               <div className="tour-stop-details">
@@ -286,7 +422,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                       <div className="contact-item">✉️ {item.venue_contact_email}</div>
                     )}
                     {item.venue_contact_phone && (
-                      <div className="contact-item">📞 {item.venue_contact_phone}</div>
+                      <div className="contact-item">📱 {item.venue_contact_phone}</div>
                     )}
                   </div>
                 )}
@@ -302,7 +438,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                   </span>
                   {item.travel_days_needed > 0 && (
                     <span className="tour-metric">
-                      🚐 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
+                      🚗 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
                     </span>
                   )}
                 </div>
@@ -319,6 +455,80 @@ const TourGenerator = ({ bandId, onBack }) => {
       </div>
     );
   };
+
+  if (view === "landing") {
+    return (
+      <div className="tour-generator-container">
+        <div className="tour-generator-main-header">
+          <button className="tour-back-button" onClick={onBack}>
+            <span className="tour-back-arrow">←</span>
+            Back
+          </button>
+          <h2 className="tour-generator-main-title">Tour Generator</h2>
+          <div style={{ width: "73px" }}></div>
+        </div>
+
+        <div className="tour-generator-landing">
+          <div className="tour-options-container">
+            <div 
+              className="tour-option-card"
+              onClick={() => {
+                setView("generate");
+                setTourResults(null);
+                setSelectedTour(null);
+              }}
+            >
+              <div className="tour-option-icon">➕</div>
+              <h3 className="tour-option-title">Generate New Tour</h3>
+              <p className="tour-option-description">
+                Create an optimized tour route based on your preferences
+              </p>
+            </div>
+          </div>
+
+          {savedTours.length > 0 && (
+            <div className="saved-tours-section">
+              <div className="saved-tours-header">
+                <h3 className="saved-tours-title">Recent Tours</h3>
+              </div>
+              <div className="saved-tours-list">
+                {savedTours.slice(0, 3).map(tour => (
+                  <div 
+                    key={tour.id}
+                    className="saved-tour-item"
+                    onClick={() => handleViewSavedTour(tour.id)}
+                  >
+                    <div className="saved-tour-info">
+                      <h4 className="saved-tour-name">{tour.name}</h4>
+                      <div className="saved-tour-details">
+                        <span className="saved-tour-detail">
+                          📅 {formatDate(tour.start_date)} - {formatDate(tour.end_date)}
+                        </span>
+                        <span className="saved-tour-detail">
+                          🎵 {tour.total_shows} shows
+                        </span>
+                        <span className="saved-tour-detail">
+                          🚗 {Math.round(tour.total_distance_km)} km
+                        </span>
+                      </div>
+                    </div>
+                    <div className="saved-tour-actions">
+                      <button 
+                        className="saved-tour-button delete"
+                        onClick={(e) => handleDeleteSavedTour(tour.id, e)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (generating) {
     return (
@@ -344,19 +554,38 @@ const TourGenerator = ({ bandId, onBack }) => {
       )}
       
       <div className="tour-generator-header">
-        <button className="tour-back-button" onClick={onBack}>
+        <button className="tour-back-button" onClick={() => setView("landing")}>
           <span className="tour-back-arrow">←</span>
           Back
         </button>
-        <h2 className="tour-generator-title">Tour Generator</h2>
-        {tourResults && (
-          <button 
-            className="tour-settings-button"
-            onClick={() => setShowSettings(!showSettings)}
-          >
-            {showSettings ? "Hide Settings" : "Show Settings"}
-          </button>
-        )}
+        <h2 className="tour-generator-title">
+          {selectedTour ? `Saved Tour: ${selectedTour.name}` : "Tour Generator"}
+        </h2>
+        <div className="tour-action-buttons">
+          {tourResults && (
+            <button 
+              className="tour-settings-button"
+              onClick={() => {
+                if (selectedTour) {
+                  // If editing a saved tour, pre-fill the name
+                  setTourName(selectedTour.name);
+                }
+                setShowSaveModal(true);
+              }}
+              style={{ marginRight: "12px" }}
+            >
+              {selectedTour ? "Save Changes" : "Save Tour"}
+            </button>
+          )}
+          {tourResults && (
+            <button 
+              className="tour-settings-button"
+              onClick={() => setShowSettings(!showSettings)}
+            >
+              {showSettings ? "Hide Settings" : "Show Settings"}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="tour-generator-content">
@@ -663,7 +892,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                 onClick={() => handleGenerateTour(false)}
                 disabled={generating || regenerating}
               >
-                {generating ? "Generating..." : "Generate Tour"}
+                {generating ? "Generating..." : selectedTour ? "Regenerate Tour" : "Generate Tour"}
               </button>
             </div>
           </div>
@@ -725,6 +954,40 @@ const TourGenerator = ({ bandId, onBack }) => {
           </div>
         )}
       </div>
+
+      {showSaveModal && (
+        <div className="tour-save-modal-overlay" onClick={() => setShowSaveModal(false)}>
+          <div className="tour-save-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="tour-save-modal-header">Save Tour</h3>
+            <input
+              type="text"
+              className="tour-save-modal-input"
+              placeholder="Enter tour name..."
+              value={tourName}
+              onChange={(e) => setTourName(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSaveTour()}
+            />
+            <div className="tour-save-modal-actions">
+              <button
+                className="tour-cancel-button"
+                onClick={() => {
+                  setShowSaveModal(false);
+                  setTourName("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="tour-save-button"
+                onClick={handleSaveTour}
+                disabled={!tourName.trim() || savingTour}
+              >
+                {savingTour ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

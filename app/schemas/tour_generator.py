@@ -4,10 +4,10 @@ Tour Generator Schemas
 Pydantic schemas for tour generation requests and responses.
 """
 
-from datetime import date
+from datetime import date, datetime
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class AlgorithmWeights(BaseModel):
@@ -166,6 +166,7 @@ class TourEventRecommendation(BaseModel):
     venue_location: str
     venue_capacity: Optional[int]
     distance_from_previous_km: float
+    distance_from_home_km: float
     travel_days_needed: int
     tour_score: float
     recommendation_score: Optional[float]
@@ -193,6 +194,7 @@ class TourVenueRecommendation(BaseModel):
     has_sound_provided: bool
     has_parking: bool
     distance_from_previous_km: float
+    distance_from_home_km: float
     travel_days_needed: int
     score: float
     availability_status: str
@@ -215,3 +217,68 @@ class TourGeneratorResponse(BaseModel):
     tour_summary: Dict
     availability_conflicts: List[Dict]
     routing_warnings: List[str]
+
+
+class SaveTourRequest(BaseModel):
+    """
+    Request schema for saving a generated tour.
+    """
+    
+    name: str = Field(..., min_length=1, max_length=255, description="Name for the saved tour")
+
+
+class SaveTourRequestWithData(BaseModel):
+    """
+    Combined request schema for saving a generated tour with tour data.
+    """
+    
+    save_request: SaveTourRequest
+    tour_data: TourGeneratorResponse
+
+
+class SavedTourBase(BaseModel):
+    """
+    Base schema for saved tours.
+    """
+    
+    name: str
+    start_date: date
+    end_date: date
+    tour_radius_km: float
+    starting_location: Optional[str]
+
+
+class SavedTourInDB(SavedTourBase):
+    """
+    Schema for saved tour as stored in database.
+    """
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: int
+    band_id: int
+    tour_data: Dict
+    tour_params: Dict
+    created_at: datetime
+    updated_at: datetime
+
+
+class SavedTourSummary(SavedTourBase):
+    """
+    Summary schema for listing saved tours.
+    """
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: int
+    created_at: datetime
+    total_shows: int
+    total_distance_km: float
+
+
+class SavedTourDetail(SavedTourInDB):
+    """
+    Detailed schema for retrieving a saved tour.
+    """
+    
+    tour_results: TourGeneratorResponse

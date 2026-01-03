@@ -20,6 +20,7 @@ from app.models.venue_favorite import VenueFavorite
 from app.models.stage_plot import StagePlot
 from app.models.setlist import Setlist
 from app.models.youtube_cache import YouTubeCache
+from app.models.saved_tour import SavedTour
 
 __all__ = [
     "User",
@@ -58,5 +59,6 @@ __all__ = [
     "RecurrenceFrequency",
     "YouTubeCache",
     "VenueFavorite",
+    "SavedTour",
 ]
 

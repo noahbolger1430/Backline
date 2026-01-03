@@ -16,6 +16,8 @@ class BandBase(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
     genre: Optional[str] = Field(None, min_length=1, max_length=100)
     location: Optional[str] = Field(None, min_length=1, max_length=255)
+    city: Optional[str] = Field(None, min_length=1, max_length=100)
+    state: Optional[str] = Field(None, min_length=1, max_length=100)
 
     @field_validator("name")
     @classmethod
@@ -37,13 +39,13 @@ class BandBase(BaseModel):
             return cleaned
         return v
 
-    @field_validator("location")
+    @field_validator("location", "city", "state")
     @classmethod
     def validate_location(cls, v: Optional[str]) -> Optional[str]:
         if v is not None:
             cleaned = " ".join(v.split())
             if not cleaned:
-                raise ValueError("Location cannot be empty or only whitespace")
+                raise ValueError("Field cannot be empty or only whitespace")
             return cleaned
         return v
 
@@ -66,6 +68,8 @@ class BandUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
     genre: Optional[str] = Field(None, min_length=1, max_length=100)
     location: Optional[str] = Field(None, min_length=1, max_length=255)
+    city: Optional[str] = Field(None, min_length=1, max_length=100)
+    state: Optional[str] = Field(None, min_length=1, max_length=100)
     instagram_url: Optional[str] = Field(None, max_length=500)
     facebook_url: Optional[str] = Field(None, max_length=500)
     spotify_url: Optional[str] = Field(None, max_length=500)
@@ -200,6 +204,8 @@ class BandSummary(BaseModel):
     name: str
     genre: Optional[str] = None
     location: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
 
 
 class BandMemberAdd(BaseModel):
@@ -271,4 +277,3 @@ class BandMemberSelfUpdate(BaseModel):
                 )
             return cleaned
         return v
-
