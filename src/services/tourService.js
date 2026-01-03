@@ -10,6 +10,56 @@ export const tourService = {
   },
 
   /**
+   * Convert algorithm weights from camelCase to snake_case for API.
+   * 
+   * @param {Object} weights - Algorithm weights in camelCase
+   * @returns {Object} Weights converted to snake_case
+   */
+  formatAlgorithmWeights(weights) {
+    if (!weights) {
+      return null;
+    }
+
+    return {
+      genre_match_weight: weights.genreMatchWeight,
+      capacity_match_weight: weights.capacityMatchWeight,
+      distance_weight: weights.distanceWeight,
+      weekend_preference_weight: weights.weekendPreferenceWeight,
+      recommendation_score_weight: weights.recommendationScoreWeight,
+    };
+  },
+
+  /**
+   * Format tour parameters for API request.
+   * 
+   * @param {Object} tourParams - Tour generation parameters from frontend
+   * @returns {Object} Formatted parameters for API
+   */
+  formatTourParams(tourParams) {
+    const formattedParams = {
+      start_date: tourParams.start_date,
+      end_date: tourParams.end_date,
+      tour_radius_km: tourParams.tour_radius_km,
+      starting_location: tourParams.starting_location,
+      min_days_between_shows: tourParams.min_days_between_shows,
+      max_days_between_shows: tourParams.max_days_between_shows,
+      max_drive_hours_per_day: tourParams.max_drive_hours_per_day,
+      prioritize_weekends: tourParams.prioritize_weekends,
+      preferred_genres: tourParams.preferred_genres,
+      preferred_venue_capacity_min: tourParams.preferred_venue_capacity_min,
+      preferred_venue_capacity_max: tourParams.preferred_venue_capacity_max,
+    };
+
+    if (tourParams.algorithm_weights) {
+      formattedParams.algorithm_weights = this.formatAlgorithmWeights(
+        tourParams.algorithm_weights
+      );
+    }
+
+    return formattedParams;
+  },
+
+  /**
    * Generate an optimized tour schedule for a band.
    * 
    * @param {number} bandId - The band ID
@@ -17,12 +67,14 @@ export const tourService = {
    * @returns {Promise<Object>} Tour generation results
    */
   async generateTour(bandId, tourParams) {
+    const formattedParams = this.formatTourParams(tourParams);
+
     const response = await fetch(
       `${API_BASE_URL}/tours/bands/${bandId}/generate-tour`,
       {
         method: "POST",
         headers: this.getAuthHeader(),
-        body: JSON.stringify(tourParams),
+        body: JSON.stringify(formattedParams),
       }
     );
 

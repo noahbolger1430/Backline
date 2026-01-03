@@ -4,15 +4,22 @@ from app.api.v1 import (
     auth,
     availability,
     bands,
+    equipment,
     event_applications,
     events,
     notifications,
+    physical_tickets,
     recommendations,
     rehearsals,
+    setlists,
+    stage_plots,
     tour_generator,
     users,
+    venue_availability,
+    venue_favorites,
     venue_recommendations,
     venues,
+    youtube,
 )
 
 api_router = APIRouter()
@@ -42,3 +49,17 @@ api_router.include_router(notifications.router, tags=["notifications"])
 api_router.include_router(event_applications.router, prefix="/event-applications", tags=["event-applications"])
 # Recommendations router - include with prefix to match frontend expectations
 api_router.include_router(recommendations.router, prefix="/recommendations", tags=["recommendations"])
+# Equipment router
+api_router.include_router(equipment.router, prefix="/equipment", tags=["equipment"])
+# Physical tickets router
+api_router.include_router(physical_tickets.router, prefix="/physical-tickets", tags=["physical-tickets"])
+# Setlists router
+api_router.include_router(setlists.router, prefix="/setlists", tags=["setlists"])
+# Stage plots router
+api_router.include_router(stage_plots.router, prefix="/stage-plots", tags=["stage-plots"])
+# Venue availability router - merge with venues router using /venues prefix
+api_router.include_router(venue_availability.router, prefix="/venues", tags=["venues"])
+# Venue favorites router routes already include full path, so include without additional prefix
+api_router.include_router(venue_favorites.router, tags=["venue-favorites"])
+# YouTube router
+api_router.include_router(youtube.router, prefix="/youtube", tags=["youtube"])

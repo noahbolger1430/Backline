@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { tourService } from "../../services/tourService";
 import { getImageUrl } from "../../utils/imageUtils";
 import "./TourGenerator.css";
@@ -15,14 +15,26 @@ const TourGenerator = ({ bandId, onBack }) => {
   const [maxDriveHours, setMaxDriveHours] = useState(8);
   const [prioritizeWeekends, setPrioritizeWeekends] = useState(true);
   const [preferredGenres, setPreferredGenres] = useState("");
-  const [minVenueCapacity, setMinVenueCapacity] = useState("");
-  const [maxVenueCapacity, setMaxVenueCapacity] = useState("");
+  const [minVenueCapacity, setMinVenueCapacity] = useState(100);
+  const [maxVenueCapacity, setMaxVenueCapacity] = useState(5000);
   
   const [generating, setGenerating] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState(null);
   const [tourResults, setTourResults] = useState(null);
   const [availabilitySummary, setAvailabilitySummary] = useState(null);
   const [showSettings, setShowSettings] = useState(true);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const [algorithmWeights, setAlgorithmWeights] = useState({
+    genreMatchWeight: 0.25,
+    capacityMatchWeight: 0.15,
+    distanceWeight: 0.20,
+    weekendPreferenceWeight: 0.15,
+    recommendationScoreWeight: 0.25,
+  });
+
+  const regenerateTimeoutRef = useRef(null);
 
   useEffect(() => {
     const today = new Date();
@@ -54,7 +66,7 @@ const TourGenerator = ({ bandId, onBack }) => {
     }
   };
 
-  const handleGenerateTour = async () => {
+  const handleGenerateTour = useCallback(async (isRegeneration = false) => {
     setError(null);
 
     if (!startDate || !endDate) {
@@ -74,7 +86,11 @@ const TourGenerator = ({ bandId, onBack }) => {
     }
 
     try {
-      setGenerating(true);
+      if (isRegeneration) {
+        setRegenerating(true);
+      } else {
+        setGenerating(true);
+      }
       
       const genreList = preferredGenres
         ? preferredGenres.split(",").map(g => g.trim()).filter(g => g)
@@ -90,24 +106,51 @@ const TourGenerator = ({ bandId, onBack }) => {
         max_drive_hours_per_day: maxDriveHours,
         prioritize_weekends: prioritizeWeekends,
         preferred_genres: genreList,
-        preferred_venue_capacity_min: minVenueCapacity ? parseInt(minVenueCapacity) : null,
-        preferred_venue_capacity_max: maxVenueCapacity ? parseInt(maxVenueCapacity) : null,
+        preferred_venue_capacity_min: minVenueCapacity,
+        preferred_venue_capacity_max: maxVenueCapacity,
+        algorithm_weights: algorithmWeights,
       };
 
       const results = await tourService.generateTour(bandId, tourParams);
       setTourResults(results);
-      setShowSettings(false);
+      if (!isRegeneration) {
+        setShowSettings(false);
+      }
     } catch (err) {
       console.error("Failed to generate tour:", err);
       setError(err.message || "Failed to generate tour");
     } finally {
       setGenerating(false);
+      setRegenerating(false);
     }
-  };
+  }, [startDate, endDate, tourRadius, startingLocation, minDaysBetweenShows, 
+      maxDaysBetweenShows, maxDriveHours, prioritizeWeekends, preferredGenres, 
+      minVenueCapacity, maxVenueCapacity, algorithmWeights, bandId]);
+
+  const handleWeightChange = useCallback((weightKey, value) => {
+    // Handle algorithm weight changes with automatic regeneration.
+    setAlgorithmWeights(prev => ({
+      ...prev,
+      [weightKey]: value
+    }));
+
+    if (tourResults) {
+      if (regenerateTimeoutRef.current) {
+        clearTimeout(regenerateTimeoutRef.current);
+      }
+      
+      regenerateTimeoutRef.current = setTimeout(() => {
+        handleGenerateTour(true);
+      }, 500);
+    }
+  }, [tourResults, handleGenerateTour]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
-    const date = new Date(dateString);
+    // Parse date string manually to avoid timezone issues
+    // Date strings from backend are in format "YYYY-MM-DD"
+    const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -117,7 +160,10 @@ const TourGenerator = ({ bandId, onBack }) => {
 
   const formatDayOfWeek = (dateString) => {
     if (!dateString) return "";
-    const date = new Date(dateString);
+    // Parse date string manually to avoid timezone issues
+    // Date strings from backend are in format "YYYY-MM-DD"
+    const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString("en-US", { weekday: "short" });
   };
 
@@ -132,6 +178,11 @@ const TourGenerator = ({ bandId, onBack }) => {
       default:
         return "#C5C6C7";
     }
+  };
+
+  const formatSliderValue = (value, suffix = "") => {
+    // Format slider values for display.
+    return `${value.toLocaleString()}${suffix}`;
   };
 
   const renderTourStop = (item, index, isEvent) => {
@@ -179,6 +230,9 @@ const TourGenerator = ({ bandId, onBack }) => {
                 <h3 className="tour-stop-name">{item.event_name}</h3>
                 <div className="tour-stop-venue">{item.venue_name}</div>
                 <div className="tour-stop-location">{item.venue_location}</div>
+                <div className="tour-stop-event-date">
+                  📅 {formatDate(item.event_date)} ({formatDayOfWeek(item.event_date)})
+                </div>
                 
                 <div className="tour-stop-tags">
                   {item.is_open_for_applications && (
@@ -195,7 +249,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                   </span>
                   {item.travel_days_needed > 0 && (
                     <span className="tour-metric">
-                      🚗 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
+                      🚐 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
                     </span>
                   )}
                   {item.recommendation_score && (
@@ -239,7 +293,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                 
                 <div className="tour-stop-tags">
                   <span className="tour-tag venue-booking">Direct Booking Opportunity</span>
-                  <span className="tour-tag day">{item.day_of_week}</span>
+                  <span className="tour-tag day">{formatDayOfWeek(item.suggested_date)}</span>
                 </div>
                 
                 <div className="tour-stop-metrics">
@@ -248,7 +302,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                   </span>
                   {item.travel_days_needed > 0 && (
                     <span className="tour-metric">
-                      🚗 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
+                      🚐 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
                     </span>
                   )}
                 </div>
@@ -280,6 +334,15 @@ const TourGenerator = ({ bandId, onBack }) => {
 
   return (
     <div className="tour-generator-container">
+      {regenerating && (
+        <div className="tour-regenerating-overlay">
+          <div className="tour-regenerating-content">
+            <div className="loading-spinner"></div>
+            <div className="tour-regenerating-text">Regenerating tour with new weights...</div>
+          </div>
+        </div>
+      )}
+      
       <div className="tour-generator-header">
         <button className="tour-back-button" onClick={onBack}>
           <span className="tour-back-arrow">←</span>
@@ -308,7 +371,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  disabled={generating}
+                  disabled={generating || regenerating}
                 />
               </div>
 
@@ -318,19 +381,24 @@ const TourGenerator = ({ bandId, onBack }) => {
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  disabled={generating}
+                  disabled={generating || regenerating}
                 />
               </div>
 
-              <div className="tour-form-group">
-                <label>Tour Radius (km) *</label>
+              <div className="tour-form-group tour-slider-group">
+                <div className="tour-slider-label">
+                  <span>Tour Radius *</span>
+                  <span className="tour-slider-value">{formatSliderValue(tourRadius, " km")}</span>
+                </div>
                 <input
-                  type="number"
+                  type="range"
+                  className="tour-slider"
                   value={tourRadius}
-                  onChange={(e) => setTourRadius(parseInt(e.target.value) || 1000)}
+                  onChange={(e) => setTourRadius(parseInt(e.target.value))}
                   min="100"
                   max="8000"
-                  disabled={generating}
+                  step="100"
+                  disabled={generating || regenerating}
                 />
               </div>
 
@@ -341,7 +409,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                   value={startingLocation}
                   onChange={(e) => setStartingLocation(e.target.value)}
                   placeholder="City, State"
-                  disabled={generating}
+                  disabled={generating || regenerating}
                 />
               </div>
 
@@ -353,7 +421,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                   onChange={(e) => setMinDaysBetweenShows(parseInt(e.target.value) || 0)}
                   min="0"
                   max="30"
-                  disabled={generating}
+                  disabled={generating || regenerating}
                 />
               </div>
 
@@ -365,19 +433,24 @@ const TourGenerator = ({ bandId, onBack }) => {
                   onChange={(e) => setMaxDaysBetweenShows(parseInt(e.target.value) || 7)}
                   min="1"
                   max="30"
-                  disabled={generating}
+                  disabled={generating || regenerating}
                 />
               </div>
 
-              <div className="tour-form-group">
-                <label>Max Driving Hours/Day</label>
+              <div className="tour-form-group tour-slider-group">
+                <div className="tour-slider-label">
+                  <span>Max Driving Hours/Day</span>
+                  <span className="tour-slider-value">{formatSliderValue(maxDriveHours, " hrs")}</span>
+                </div>
                 <input
-                  type="number"
+                  type="range"
+                  className="tour-slider"
                   value={maxDriveHours}
-                  onChange={(e) => setMaxDriveHours(parseInt(e.target.value) || 8)}
+                  onChange={(e) => setMaxDriveHours(parseInt(e.target.value))}
                   min="1"
                   max="24"
-                  disabled={generating}
+                  step="1"
+                  disabled={generating || regenerating}
                 />
               </div>
 
@@ -388,29 +461,41 @@ const TourGenerator = ({ bandId, onBack }) => {
                   value={preferredGenres}
                   onChange={(e) => setPreferredGenres(e.target.value)}
                   placeholder="rock, indie, alternative"
-                  disabled={generating}
+                  disabled={generating || regenerating}
                 />
               </div>
 
-              <div className="tour-form-group">
-                <label>Min Venue Capacity</label>
+              <div className="tour-form-group tour-slider-group">
+                <div className="tour-slider-label">
+                  <span>Min Venue Capacity</span>
+                  <span className="tour-slider-value">{formatSliderValue(minVenueCapacity)}</span>
+                </div>
                 <input
-                  type="number"
+                  type="range"
+                  className="tour-slider"
                   value={minVenueCapacity}
-                  onChange={(e) => setMinVenueCapacity(e.target.value)}
-                  placeholder="100"
-                  disabled={generating}
+                  onChange={(e) => setMinVenueCapacity(parseInt(e.target.value))}
+                  min="10"
+                  max="10000"
+                  step="50"
+                  disabled={generating || regenerating}
                 />
               </div>
 
-              <div className="tour-form-group">
-                <label>Max Venue Capacity</label>
+              <div className="tour-form-group tour-slider-group">
+                <div className="tour-slider-label">
+                  <span>Max Venue Capacity</span>
+                  <span className="tour-slider-value">{formatSliderValue(maxVenueCapacity)}</span>
+                </div>
                 <input
-                  type="number"
+                  type="range"
+                  className="tour-slider"
                   value={maxVenueCapacity}
-                  onChange={(e) => setMaxVenueCapacity(e.target.value)}
-                  placeholder="5000"
-                  disabled={generating}
+                  onChange={(e) => setMaxVenueCapacity(parseInt(e.target.value))}
+                  min="50"
+                  max="50000"
+                  step="100"
+                  disabled={generating || regenerating}
                 />
               </div>
 
@@ -420,11 +505,134 @@ const TourGenerator = ({ bandId, onBack }) => {
                     type="checkbox"
                     checked={prioritizeWeekends}
                     onChange={(e) => setPrioritizeWeekends(e.target.checked)}
-                    disabled={generating}
+                    disabled={generating || regenerating}
                   />
                   Prioritize Weekend Shows
                 </label>
               </div>
+            </div>
+
+            <div className="tour-advanced-section">
+              <div 
+                className="tour-advanced-header"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+              >
+                <div className="tour-advanced-title">
+                  <span>⚙️</span>
+                  <span>Advanced Algorithm Weights</span>
+                </div>
+                <span className={`tour-advanced-icon ${showAdvanced ? 'expanded' : ''}`}>▼</span>
+              </div>
+
+              {showAdvanced && (
+                <div className="tour-advanced-content">
+                  <div className="tour-weights-grid">
+                    <div className="tour-weight-group">
+                      <div className="tour-weight-header">Scoring Weights</div>
+                      
+                      <div className="tour-slider-group">
+                        <div className="tour-slider-label">
+                          <span>Genre Match Importance</span>
+                          <span className="tour-slider-value">{(algorithmWeights.genreMatchWeight * 100).toFixed(0)}%</span>
+                        </div>
+                        <div className="tour-weight-description">
+                          How much to prioritize events matching your preferred genres
+                        </div>
+                        <input
+                          type="range"
+                          className="tour-slider"
+                          value={algorithmWeights.genreMatchWeight}
+                          onChange={(e) => handleWeightChange('genreMatchWeight', parseFloat(e.target.value))}
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          disabled={generating || regenerating}
+                        />
+                      </div>
+
+                      <div className="tour-slider-group">
+                        <div className="tour-slider-label">
+                          <span>Capacity Match Importance</span>
+                          <span className="tour-slider-value">{(algorithmWeights.capacityMatchWeight * 100).toFixed(0)}%</span>
+                        </div>
+                        <div className="tour-weight-description">
+                          How much to prioritize venues matching your capacity preferences
+                        </div>
+                        <input
+                          type="range"
+                          className="tour-slider"
+                          value={algorithmWeights.capacityMatchWeight}
+                          onChange={(e) => handleWeightChange('capacityMatchWeight', parseFloat(e.target.value))}
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          disabled={generating || regenerating}
+                        />
+                      </div>
+
+                      <div className="tour-slider-group">
+                        <div className="tour-slider-label">
+                          <span>Distance Optimization</span>
+                          <span className="tour-slider-value">{(algorithmWeights.distanceWeight * 100).toFixed(0)}%</span>
+                        </div>
+                        <div className="tour-weight-description">
+                          How much to minimize travel distance between shows
+                        </div>
+                        <input
+                          type="range"
+                          className="tour-slider"
+                          value={algorithmWeights.distanceWeight}
+                          onChange={(e) => handleWeightChange('distanceWeight', parseFloat(e.target.value))}
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          disabled={generating || regenerating}
+                        />
+                      </div>
+
+                      <div className="tour-slider-group">
+                        <div className="tour-slider-label">
+                          <span>Weekend Preference</span>
+                          <span className="tour-slider-value">{(algorithmWeights.weekendPreferenceWeight * 100).toFixed(0)}%</span>
+                        </div>
+                        <div className="tour-weight-description">
+                          How much to prioritize weekend shows when enabled
+                        </div>
+                        <input
+                          type="range"
+                          className="tour-slider"
+                          value={algorithmWeights.weekendPreferenceWeight}
+                          onChange={(e) => handleWeightChange('weekendPreferenceWeight', parseFloat(e.target.value))}
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          disabled={generating || regenerating || !prioritizeWeekends}
+                        />
+                      </div>
+
+                      <div className="tour-slider-group">
+                        <div className="tour-slider-label">
+                          <span>Recommendation Score</span>
+                          <span className="tour-slider-value">{(algorithmWeights.recommendationScoreWeight * 100).toFixed(0)}%</span>
+                        </div>
+                        <div className="tour-weight-description">
+                          How much to rely on collaborative filtering and past success data
+                        </div>
+                        <input
+                          type="range"
+                          className="tour-slider"
+                          value={algorithmWeights.recommendationScoreWeight}
+                          onChange={(e) => handleWeightChange('recommendationScoreWeight', parseFloat(e.target.value))}
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          disabled={generating || regenerating}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {availabilitySummary && (
@@ -452,8 +660,8 @@ const TourGenerator = ({ bandId, onBack }) => {
             <div className="tour-form-actions">
               <button
                 className="tour-generate-button"
-                onClick={handleGenerateTour}
-                disabled={generating}
+                onClick={() => handleGenerateTour(false)}
+                disabled={generating || regenerating}
               >
                 {generating ? "Generating..." : "Generate Tour"}
               </button>
@@ -499,8 +707,14 @@ const TourGenerator = ({ bandId, onBack }) => {
               <div className="tour-stops">
                 {[...tourResults.recommended_events, ...tourResults.recommended_venues]
                   .sort((a, b) => {
-                    const dateA = new Date(a.event_date || a.suggested_date);
-                    const dateB = new Date(b.event_date || b.suggested_date);
+                    // Parse dates manually to avoid timezone issues
+                    const parseDate = (dateString) => {
+                      if (!dateString) return new Date(0);
+                      const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+                      return new Date(year, month - 1, day);
+                    };
+                    const dateA = parseDate(a.event_date || a.suggested_date);
+                    const dateB = parseDate(b.event_date || b.suggested_date);
                     return dateA - dateB;
                   })
                   .map((item, index) => 

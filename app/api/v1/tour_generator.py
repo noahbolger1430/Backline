@@ -4,7 +4,7 @@ Tour Generator API
 Endpoints for generating optimized tour schedules for bands.
 """
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -12,14 +12,17 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import check_band_permission, get_band_or_404, get_current_active_user
 from app.database import get_db
-from app.models import Band, BandRole, User
+from app.models import Band, BandAvailability, BandRole, User
 from app.schemas.tour_generator import (
+    AlgorithmWeights,
     TourGeneratorRequest,
     TourGeneratorResponse,
     TourEventRecommendation,
     TourVenueRecommendation,
 )
+from app.services.availability_service import AvailabilityService
 from app.services.tour_generator_service import (
+    AlgorithmWeightsConfig,
     TourGeneratorParams,
     TourGeneratorService,
 )
@@ -57,6 +60,7 @@ def generate_tour(
         - **preferred_venue_capacity_max**: Maximum venue capacity (optional)
         - **prioritize_weekends**: Prioritize weekend dates (default: true)
         - **avoid_venue_ids**: List of venue IDs to avoid (optional)
+        - **algorithm_weights**: Custom algorithm weights for scoring (optional)
     
     **Returns:**
     - **200 OK**: Tour generation results including:
@@ -78,11 +82,11 @@ def generate_tour(
     - Existing events vs direct bookings
     - Favorited venues
     - Collaborative filtering (similar bands' success)
+    - User-configured algorithm weights
     """
     band = get_band_or_404(band_id, db)
     check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN, BandRole.MEMBER])
     
-    # Validate date range
     if tour_request.end_date < tour_request.start_date:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -101,7 +105,16 @@ def generate_tour(
             detail="Tour start date cannot be in the past"
         )
     
-    # Create parameters for tour generation
+    algorithm_weights_config = None
+    if tour_request.algorithm_weights:
+        algorithm_weights_config = AlgorithmWeightsConfig(
+            genre_match_weight=tour_request.algorithm_weights.genre_match_weight,
+            capacity_match_weight=tour_request.algorithm_weights.capacity_match_weight,
+            distance_weight=tour_request.algorithm_weights.distance_weight,
+            weekend_preference_weight=tour_request.algorithm_weights.weekend_preference_weight,
+            recommendation_score_weight=tour_request.algorithm_weights.recommendation_score_weight,
+        )
+    
     params = TourGeneratorParams(
         band_id=band_id,
         start_date=tour_request.start_date,
@@ -117,12 +130,11 @@ def generate_tour(
         preferred_venue_capacity_max=tour_request.preferred_venue_capacity_max,
         prioritize_weekends=tour_request.prioritize_weekends,
         avoid_venue_ids=tour_request.avoid_venue_ids,
+        algorithm_weights=algorithm_weights_config,
     )
     
-    # Generate tour
     result = TourGeneratorService.generate_tour(db, params)
     
-    # Convert to response format
     event_recommendations = [
         TourEventRecommendation(**event_data)
         for event_data in result.recommended_events
@@ -203,11 +215,6 @@ def get_tour_availability_summary(
             detail="End date must be after start date"
         )
     
-    # Get availability map
-    from app.services.availability_service import AvailabilityService
-    from app.models import BandAvailability
-    from datetime import timedelta
-    
     current_date = start_date
     total_days = 0
     available_days = 0
@@ -238,7 +245,7 @@ def get_tour_availability_summary(
             unavailable_days += 1
         elif is_available:
             available_days += 1
-            if current_date.weekday() in [4, 5, 6]:  # Friday, Saturday, Sunday
+            if current_date.weekday() in [4, 5, 6]:
                 weekend_available += 1
         else:
             tentative_count = sum(

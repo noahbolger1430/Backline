@@ -10,6 +10,46 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
+class AlgorithmWeights(BaseModel):
+    """
+    Schema for algorithm weight configuration.
+    
+    All weights should be between 0.0 and 1.0, representing the relative
+    importance of each factor in tour generation scoring.
+    """
+    
+    genre_match_weight: float = Field(
+        0.25,
+        ge=0.0,
+        le=1.0,
+        description="Weight for genre matching importance"
+    )
+    capacity_match_weight: float = Field(
+        0.15,
+        ge=0.0,
+        le=1.0,
+        description="Weight for venue capacity matching"
+    )
+    distance_weight: float = Field(
+        0.20,
+        ge=0.0,
+        le=1.0,
+        description="Weight for minimizing travel distance"
+    )
+    weekend_preference_weight: float = Field(
+        0.15,
+        ge=0.0,
+        le=1.0,
+        description="Weight for weekend show preference"
+    )
+    recommendation_score_weight: float = Field(
+        0.25,
+        ge=0.0,
+        le=1.0,
+        description="Weight for collaborative filtering and past success"
+    )
+
+
 class TourGeneratorRequest(BaseModel):
     """
     Request schema for tour generation.
@@ -75,6 +115,10 @@ class TourGeneratorRequest(BaseModel):
         max_length=50,
         description="List of venue IDs to avoid"
     )
+    algorithm_weights: Optional[AlgorithmWeights] = Field(
+        None,
+        description="Custom algorithm weights for tour generation scoring"
+    )
     
     @field_validator("end_date")
     @classmethod
@@ -130,6 +174,7 @@ class TourEventRecommendation(BaseModel):
     is_open_for_applications: bool
     genre_tags: Optional[str]
     priority: str = Field(..., pattern="^(high|medium|low)$")
+    image_path: Optional[str] = None
 
 
 class TourVenueRecommendation(BaseModel):
@@ -154,6 +199,7 @@ class TourVenueRecommendation(BaseModel):
     reasoning: List[str]
     booking_priority: str = Field(..., pattern="^(high|medium|low)$")
     day_of_week: str
+    image_path: Optional[str] = None
 
 
 class TourGeneratorResponse(BaseModel):
