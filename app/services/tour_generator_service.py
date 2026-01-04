@@ -8,6 +8,7 @@ Generates optimized tour schedules for bands by analyzing:
 - Genre matching and venue compatibility
 - Event recommendation scores
 - User-configurable algorithm weights
+- Optionally including already-booked events
 """
 
 from datetime import date, datetime, timedelta
@@ -91,6 +92,7 @@ class TourStop:
     score: float
     score_breakdown: Dict[str, float]
     is_existing_event: bool
+    is_booked_event: bool
     availability_status: str
     reasoning: List[str]
     distance_from_home: float = 0.0
@@ -118,6 +120,7 @@ class TourGeneratorParams:
     preferred_venue_capacity_min: Optional[int] = None
     preferred_venue_capacity_max: Optional[int] = None
     prioritize_weekends: bool = True
+    include_booked_events: bool = False
     avoid_venue_ids: Optional[List[int]] = None
     algorithm_weights: Optional[AlgorithmWeightsConfig] = None
 
@@ -130,6 +133,7 @@ class TourGeneratorResult:
     
     recommended_events: List[Dict]
     recommended_venues: List[Dict]
+    booked_events: List[Dict]
     tour_stops: List[TourStop]
     total_distance_km: float
     total_travel_days: int
@@ -156,6 +160,7 @@ class TourGeneratorService:
     DEFAULT_WEIGHT_TRAVEL_EFFICIENCY = 20.0
     DEFAULT_WEIGHT_VENUE_QUALITY = 15.0
     DEFAULT_WEIGHT_EXISTING_EVENT = 20.0
+    DEFAULT_WEIGHT_BOOKED_EVENT = 200.0  # Very high weight to ensure booked events always appear and are prioritized
     DEFAULT_WEIGHT_ROUTING_CONTINUITY = 25.0
     DEFAULT_WEIGHT_AVAILABILITY = 40.0
     DEFAULT_WEIGHT_FAVORITED_VENUE = 10.0
@@ -195,6 +200,7 @@ class TourGeneratorService:
                 'travel_efficiency': cls.DEFAULT_WEIGHT_TRAVEL_EFFICIENCY,
                 'venue_quality': cls.DEFAULT_WEIGHT_VENUE_QUALITY,
                 'existing_event': cls.DEFAULT_WEIGHT_EXISTING_EVENT,
+                'booked_event': cls.DEFAULT_WEIGHT_BOOKED_EVENT,
                 'routing_continuity': cls.DEFAULT_WEIGHT_ROUTING_CONTINUITY,
                 'availability': cls.DEFAULT_WEIGHT_AVAILABILITY,
                 'favorited_venue': cls.DEFAULT_WEIGHT_FAVORITED_VENUE,
@@ -216,6 +222,7 @@ class TourGeneratorService:
             'travel_efficiency': algorithm_weights.distance_weight * base_scale * 0.20,
             'venue_quality': cls.DEFAULT_WEIGHT_VENUE_QUALITY,
             'existing_event': cls.DEFAULT_WEIGHT_EXISTING_EVENT,
+            'booked_event': cls.DEFAULT_WEIGHT_BOOKED_EVENT,
             'routing_continuity': algorithm_weights.distance_weight * base_scale * 0.25,
             'availability': cls.DEFAULT_WEIGHT_AVAILABILITY,
             'favorited_venue': cls.DEFAULT_WEIGHT_FAVORITED_VENUE,
@@ -238,9 +245,10 @@ class TourGeneratorService:
         Args:
             db: Database session
             params: Tour generation parameters including optional algorithm weights
+                   and include_booked_events flag
             
         Returns:
-            TourGeneratorResult containing recommended events and venues
+            TourGeneratorResult containing recommended events, venues, and booked events
         """
         band = db.query(Band).filter(Band.id == params.band_id).first()
         if not band:
@@ -256,7 +264,14 @@ class TourGeneratorService:
             availability_map, params.start_date, params.end_date
         )
         
-        if not available_dates:
+        # Fetch booked events if requested
+        booked_events = []
+        if params.include_booked_events:
+            booked_events = cls._find_booked_events(
+                db, band, params.start_date, params.end_date
+            )
+        
+        if not available_dates and not booked_events:
             return cls._empty_result("No available dates found in tour period")
         
         matching_events = cls._find_matching_events(
@@ -274,7 +289,7 @@ class TourGeneratorService:
         tour_stops = cls._generate_tour_stops(
             db, band, params, matching_events, potential_venues, 
             available_dates, availability_map, event_recommendations,
-            scaled_weights
+            scaled_weights, booked_events
         )
         
         optimized_tour = cls._optimize_routing_with_diversity(
@@ -297,6 +312,10 @@ class TourGeneratorService:
             optimized_tour, params
         )
         
+        formatted_booked_events = cls._format_booked_events(
+            optimized_tour, params
+        )
+        
         conflicts = cls._identify_availability_conflicts(
             availability_map, optimized_tour
         )
@@ -308,6 +327,7 @@ class TourGeneratorService:
         return TourGeneratorResult(
             recommended_events=recommended_events,
             recommended_venues=recommended_venues,
+            booked_events=formatted_booked_events,
             tour_stops=optimized_tour,
             total_distance_km=total_distance,
             total_travel_days=total_travel_days,
@@ -389,6 +409,43 @@ class TourGeneratorService:
         return sorted(available_dates)
 
     @classmethod
+    def _find_booked_events(
+        cls,
+        db: Session,
+        band: Band,
+        start_date: date,
+        end_date: date
+    ) -> List[Tuple[BandEvent, Event]]:
+        """
+        Find events that are already booked by the band in the date range.
+        
+        Returns:
+            List of tuples containing (BandEvent, Event)
+        """
+        # Query BandEvent and join Event - use relationship to access event
+        booked_band_events = (
+            db.query(BandEvent)
+            .join(Event, BandEvent.event_id == Event.id)
+            .filter(
+                BandEvent.band_id == band.id,
+                Event.event_date >= start_date,
+                Event.event_date <= end_date,
+                BandEvent.status.in_(["confirmed", "pending"])
+            )
+            .options(joinedload(BandEvent.event).joinedload(Event.venue))
+            .all()
+        )
+        
+        # Return as list of tuples (BandEvent, Event) for compatibility
+        # Filter out any where event is None (shouldn't happen, but safety check)
+        booked = [(be, be.event) for be in booked_band_events if be.event]
+        
+        if booked:
+            logger.info(f"Found {len(booked)} booked events for band {band.id} between {start_date} and {end_date}")
+        
+        return booked
+
+    @classmethod
     def _find_matching_events(
         cls,
         db: Session,
@@ -406,7 +463,7 @@ class TourGeneratorService:
         
         query = query.filter(
             Event.event_date.in_(available_dates),
-            Event.status == EventStatus.PENDING.value,
+            Event.status.in_([EventStatus.CONFIRMED.value, EventStatus.PENDING.value]),
             Event.is_open_for_applications == True
         )
         
@@ -672,14 +729,15 @@ class TourGeneratorService:
         available_dates: List[date],
         availability_map: Dict[date, Dict],
         event_recommendations: Dict[int, Tuple[float, List[Dict]]],
-        scaled_weights: Dict[str, float]
+        scaled_weights: Dict[str, float],
+        booked_events: List[Tuple[BandEvent, Event]]
     ) -> List[TourStop]:
         """
-        Generate potential tour stops from events and venues with venue diversity.
+        Generate potential tour stops from events, venues, and booked events.
         
-        Events (venues with open applications) are prioritized over direct venue
-        bookings. Venues without events are included as direct booking opportunities
-        but with lower scores to maintain proper priority ordering.
+        Booked events have the highest priority and are always included.
+        Events (venues with open applications) are prioritized over direct venue bookings.
+        Venues without events are included as direct booking opportunities.
         
         Returns:
             List of scored tour stops with diverse venue options
@@ -701,7 +759,67 @@ class TourGeneratorService:
         active_venue_query = db.query(Event.venue_id).distinct().all()
         active_venue_ids = {v[0] for v in active_venue_query}
         
-        # Process existing events
+        # Process booked events first (highest priority)
+        # Log if we have booked events to debug
+        if booked_events:
+            logger.info(f"Processing {len(booked_events)} booked events for tour generation")
+        
+        for band_event, event in booked_events:
+            score = 0.0
+            score_breakdown = {}
+            reasoning = []
+            
+            # Booked events get very high priority - ensure they always score higher than venues
+            # Start with a very high base score that guarantees they'll be included
+            booked_base_score = scaled_weights.get('booked_event', cls.DEFAULT_WEIGHT_BOOKED_EVENT)
+            score += booked_base_score
+            score_breakdown['booked_event'] = booked_base_score
+            reasoning.append('Already booked - confirmed show')
+            
+            # Add availability bonus to ensure they're always included
+            score += scaled_weights.get('availability', cls.DEFAULT_WEIGHT_AVAILABILITY)
+            score_breakdown['availability'] = scaled_weights.get('availability', cls.DEFAULT_WEIGHT_AVAILABILITY)
+            
+            # Add status-based reasoning
+            if band_event.status == "confirmed":
+                reasoning.append('Booking confirmed')
+            elif band_event.status == "pending":
+                reasoning.append('Booking pending confirmation')
+            
+            if event.venue and event.venue.id in favorited_venue_ids:
+                score += scaled_weights['favorited_venue']
+                score_breakdown['favorited_venue'] = scaled_weights['favorited_venue']
+                reasoning.append('Favorited venue')
+            
+            # Weekend bonus for booked events
+            if params.prioritize_weekends and is_weekend(event.event_date):
+                score += scaled_weights['weekend_bonus']
+                score_breakdown['weekend'] = scaled_weights['weekend_bonus']
+                reasoning.append('Weekend show (Fri/Sat)')
+            
+            tour_stops.append(TourStop(
+                date=event.event_date,
+                venue=event.venue,
+                event=event,
+                distance_from_previous=0.0,
+                distance_from_home=0.0,
+                travel_days_needed=0,
+                score=score,
+                score_breakdown=score_breakdown,
+                is_existing_event=False,
+                is_booked_event=True,
+                availability_status='booked',
+                reasoning=reasoning,
+                recommendation_score=None,
+                recommendation_reasons=None,
+                is_primary_venue_option=True
+            ))
+            
+            if event.venue:
+                suggested_venue_ids.add(event.venue.id)
+                venue_suggestion_counts[event.venue.id] = venue_suggestion_counts.get(event.venue.id, 0) + 1
+        
+        # Process existing events (open for applications)
         for event in events:
             if event.event_date not in available_dates:
                 continue
@@ -801,6 +919,7 @@ class TourGeneratorService:
                 score=score,
                 score_breakdown=score_breakdown,
                 is_existing_event=True,
+                is_booked_event=False,
                 availability_status=availability_status,
                 reasoning=reasoning,
                 recommendation_score=rec_score,
@@ -818,7 +937,7 @@ class TourGeneratorService:
         # Count how many venues with events we have
         venues_with_events_count = len([v for v in venues if v.id in active_venue_ids])
         dates_needing_venues = len([d for d in available_dates 
-                                    if not any(s.date == d and s.is_existing_event for s in tour_stops)])
+                                    if not any(s.date == d and (s.is_existing_event or s.is_booked_event) for s in tour_stops)])
 
         venue_limit = max(40, min(100, dates_needing_venues * 2, len(venues)))
 
@@ -995,6 +1114,7 @@ class TourGeneratorService:
                     score=best_option['score'],
                     score_breakdown=best_option['score_breakdown'],
                     is_existing_event=False,
+                    is_booked_event=False,
                     availability_status='available',
                     reasoning=best_option['reasoning'],
                     recommendation_score=None,
@@ -1023,6 +1143,7 @@ class TourGeneratorService:
         """
         Optimize the routing of tour stops while maintaining venue diversity.
         
+        Booked events are always included and have highest priority.
         Calculates distances from home location for user display, but uses
         venue-to-venue distances for consecutive shows when more efficient.
         
@@ -1032,9 +1153,8 @@ class TourGeneratorService:
         if not tour_stops:
             return []
         
-        # Sort by event priority first (events before venues), then by date
-        # This ensures events are processed before direct bookings
-        tour_stops.sort(key=lambda x: (not x.is_existing_event, x.date))
+        # Sort by priority: booked events first, then events, then venues; within each category by date
+        tour_stops.sort(key=lambda x: (not x.is_booked_event, not x.is_existing_event, x.date))
         
         selected_venue_ids = set()
         final_tour = []
@@ -1047,27 +1167,98 @@ class TourGeneratorService:
             home_location = band.location
         
         for stop in tour_stops:
-            # For duplicate venues: only filter out direct bookings, not events
-            # Events should always be included (they're prioritized)
+            # Booked events are always included
+            if stop.is_booked_event:
+                # Calculate distances for booked events
+                if final_tour and stop.venue:
+                    prev_stop = final_tour[-1]
+                    
+                    if home_location:
+                        distance_from_home = estimate_distance_from_location(
+                            home_location,
+                            build_location_string(venue=stop.venue)
+                        )
+                    else:
+                        distance_from_home = 0.0
+                    
+                    stop.distance_from_home = distance_from_home
+                    
+                    if prev_stop.venue:
+                        distance_from_prev_venue = calculate_distance_between_venues(
+                            prev_stop.venue,
+                            stop.venue
+                        )
+                        
+                        days_between = (stop.date - prev_stop.date).days
+                        
+                        if days_between <= 2:
+                            distance_home_and_back = prev_stop.distance_from_home + distance_from_home
+                            
+                            if distance_from_prev_venue < distance_home_and_back:
+                                stop.distance_from_previous = distance_from_prev_venue
+                                stop.reasoning.append('Direct travel from previous venue')
+                            else:
+                                stop.distance_from_previous = distance_from_home
+                                stop.reasoning.append('Travel from home location')
+                        else:
+                            stop.distance_from_previous = distance_from_home
+                            if days_between > 2:
+                                stop.reasoning.append('Travel from home location (sufficient time between shows)')
+                        
+                        distance = stop.distance_from_previous
+                    else:
+                        stop.distance_from_previous = distance_from_home
+                        distance = distance_from_home
+                    
+                    driving_hours = distance / cls.AVERAGE_DRIVING_SPEED_KMH
+                    stop.travel_days_needed = max(
+                        0,
+                        int(driving_hours / params.max_drive_hours_per_day)
+                    )
+                elif home_location and stop.venue:
+                    distance_from_home = estimate_distance_from_location(
+                        home_location,
+                        build_location_string(venue=stop.venue)
+                    )
+                    stop.distance_from_home = distance_from_home
+                    stop.distance_from_previous = distance_from_home
+                else:
+                    stop.distance_from_home = 0.0
+                    stop.distance_from_previous = 0.0
+                
+                final_tour.append(stop)
+                if stop.venue:
+                    selected_venue_ids.add(stop.venue.id)
+                last_date = stop.date
+                total_distance += stop.distance_from_previous
+                continue
+            
+            # For other events/venues, apply normal filtering
+            # For duplicate venues: only filter out direct bookings, not events or booked events
+            # Booked events and events should always be included (they're prioritized)
             if stop.venue and stop.venue.id in selected_venue_ids:
-                if not stop.is_existing_event:
+                if not stop.is_existing_event and not stop.is_booked_event:
                     # Skip direct bookings at venues that were already selected
+                    # But always include booked events and existing events
                     continue
-                # Events can have duplicate venues (same venue, different dates)
+                # Events and booked events can have duplicate venues (same venue, different dates)
                 # Only skip if it's the exact same event date
                 if any(s.venue.id == stop.venue.id and s.date == stop.date for s in final_tour):
                     continue
             
             if last_date:
                 days_gap = (stop.date - last_date).days
-                if days_gap < params.min_days_between_shows:
+                # Booked events bypass min_days_between_shows check - they're already confirmed
+                if not stop.is_booked_event and days_gap < params.min_days_between_shows:
                     continue
                 
                 # Very lenient thresholds to ensure events and venues appear regardless of genre matching
                 # Genre matching is now a scoring factor, not a filter, so lower thresholds ensure inclusion
-                score_threshold = 20 if stop.is_existing_event else 15
-                if days_gap > params.max_days_between_shows and stop.score < score_threshold:
-                    continue
+                # Booked events always pass this check regardless of gap or score
+                if not stop.is_booked_event:
+                    score_threshold = 20 if stop.is_existing_event else 15
+                    if days_gap > params.max_days_between_shows and stop.score < score_threshold:
+                        continue
             
             # Calculate distances
             if final_tour and stop.venue:
@@ -1159,11 +1350,16 @@ class TourGeneratorService:
                 stop.distance_from_previous = 0.0
             
             if total_distance + stop.distance_from_previous > params.tour_radius_km:
-                # Very lenient thresholds to ensure events and venues appear regardless of genre matching
-                # Genre matching is now a scoring factor, not a filter, so lower thresholds ensure inclusion
-                score_threshold = 20 if stop.is_existing_event else 15
-                if stop.score < score_threshold:
-                    continue
+                # Booked events always bypass radius check - they're already confirmed and must be included
+                if stop.is_booked_event:
+                    # Still add booked events even if they exceed radius
+                    pass
+                else:
+                    # Very lenient thresholds to ensure events and venues appear regardless of genre matching
+                    # Genre matching is now a scoring factor, not a filter, so lower thresholds ensure inclusion
+                    score_threshold = 20 if stop.is_existing_event else 15
+                    if stop.score < score_threshold:
+                        continue
             
             final_tour.append(stop)
             if stop.venue:
@@ -1171,11 +1367,16 @@ class TourGeneratorService:
             last_date = stop.date
             total_distance += stop.distance_from_previous
             
-            if len(final_tour) >= 20:
-                break
+            # Don't limit booked events - they must always be included
+            # Only limit non-booked stops
+            non_booked_count = len([s for s in final_tour if not s.is_booked_event])
+            if non_booked_count >= 20:
+                # Still allow booked events to be added even if we've hit the limit
+                if not stop.is_booked_event:
+                    break
         
-        # Final sort: events first (by date), then venues (by date)
-        final_tour.sort(key=lambda x: (not x.is_existing_event, x.date, -x.score))
+        # Final sort: booked events first, then events, then venues (all by date within category)
+        final_tour.sort(key=lambda x: (not x.is_booked_event, not x.is_existing_event, x.date, -x.score))
         
         # Fill gaps between events with direct bookings
         final_tour = cls._fill_gaps_with_venue_bookings(
@@ -1204,9 +1405,9 @@ class TourGeneratorService:
         if not tour_stops:
             return tour_stops
         
-        # Separate events and existing venue bookings
-        events = [s for s in tour_stops if s.is_existing_event]
-        existing_venue_bookings = {s.date for s in tour_stops if not s.is_existing_event}
+        # Separate events (including booked) and existing venue bookings
+        events = [s for s in tour_stops if s.is_existing_event or s.is_booked_event]
+        existing_venue_bookings = {s.date for s in tour_stops if not s.is_existing_event and not s.is_booked_event}
         selected_venue_ids = {s.venue.id for s in tour_stops if s.venue}
         
         if len(events) < 2:
@@ -1377,6 +1578,7 @@ class TourGeneratorService:
                                     score=score,
                                     score_breakdown={'gap_filler': score},
                                     is_existing_event=False,
+                                    is_booked_event=False,
                                     availability_status='available',
                                     reasoning=reasoning,
                                     recommendation_score=None,
@@ -1438,8 +1640,8 @@ class TourGeneratorService:
                         int(driving_hours / params.max_drive_hours_per_day)
                     )
 
-        # Final sort: events first, then by date
-        all_stops.sort(key=lambda x: (not x.is_existing_event, x.date, -x.score))
+        # Final sort: booked events first, then other events, then by date
+        all_stops.sort(key=lambda x: (not x.is_booked_event, not x.is_existing_event, x.date, -x.score))
         
         return all_stops[:20]  # Limit to 20 stops
 
@@ -1488,7 +1690,7 @@ class TourGeneratorService:
         params: TourGeneratorParams
     ) -> List[Dict]:
         """
-        Format tour stops with existing events as recommendations.
+        Format tour stops with existing events (not booked) as recommendations.
         
         Returns:
             List of event recommendations with details
@@ -1496,7 +1698,7 @@ class TourGeneratorService:
         recommendations = []
         
         for stop in tour_stops:
-            if stop.is_existing_event and stop.event:
+            if stop.is_existing_event and stop.event and not stop.is_booked_event:
                 recommendations.append({
                     'event_id': stop.event.id,
                     'event_name': stop.event.name,
@@ -1535,7 +1737,7 @@ class TourGeneratorService:
         recommendations = []
         
         for stop in tour_stops:
-            if not stop.is_existing_event:
+            if not stop.is_existing_event and not stop.is_booked_event:
                 recommendations.append({
                     'venue_id': stop.venue.id,
                     'venue_name': stop.venue.name,
@@ -1561,6 +1763,43 @@ class TourGeneratorService:
         return recommendations
 
     @classmethod
+    def _format_booked_events(
+        cls,
+        tour_stops: List[TourStop],
+        params: TourGeneratorParams
+    ) -> List[Dict]:
+        """
+        Format booked events that are included in the tour.
+        
+        Returns:
+            List of booked event details
+        """
+        booked = []
+        
+        for stop in tour_stops:
+            if stop.is_booked_event and stop.event:
+                booked.append({
+                    'event_id': stop.event.id,
+                    'event_name': stop.event.name,
+                    'event_date': stop.date.isoformat(),
+                    'venue_id': stop.venue.id,
+                    'venue_name': stop.venue.name,
+                    'venue_location': f"{stop.venue.city}, {stop.venue.state}",
+                    'venue_capacity': stop.venue.capacity,
+                    'distance_from_previous_km': round(stop.distance_from_previous, 1),
+                    'distance_from_home_km': round(stop.distance_from_home, 1),
+                    'travel_days_needed': stop.travel_days_needed,
+                    'tour_score': round(stop.score, 1),
+                    'availability_status': stop.availability_status,
+                    'reasoning': stop.reasoning,
+                    'genre_tags': stop.event.genre_tags,
+                    'image_path': stop.event.image_path,
+                    'is_booked': True,
+                })
+        
+        return booked
+
+    @classmethod
     def _identify_availability_conflicts(
         cls,
         availability_map: Dict[date, Dict],
@@ -1575,6 +1814,10 @@ class TourGeneratorService:
         conflicts = []
         
         for stop in tour_stops:
+            # Skip booked events - they're already committed
+            if stop.is_booked_event:
+                continue
+            
             availability = availability_map.get(stop.date, {})
             
             if not availability.get('is_available'):
@@ -1673,6 +1916,7 @@ class TourGeneratorService:
         return TourGeneratorResult(
             recommended_events=[],
             recommended_venues=[],
+            booked_events=[],
             tour_stops=[],
             total_distance_km=0.0,
             total_travel_days=0,

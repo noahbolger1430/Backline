@@ -1030,3 +1030,65 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+.tour-stop-card.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tour-stop-card.clickable:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(111, 34, 210, 0.3);
+  border-left-width: 6px;
+}
+
+.tour-stop-card.clickable:focus {
+  outline: 2px solid #6F22D2;
+  outline-offset: 2px;
+}
+
+.tour-stop-apply-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #6F22D2;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Application status badges in tour stops */
+.tour-tag.applied {
+  background-color: #1F2833;
+  color: #C5C6C7;
+  border: 1px solid #C5C6C7;
+}
+
+.tour-tag.applied.pending {
+  background-color: #2A2410;
+  color: #FFA500;
+  border-color: #FFA500;
+}
+
+.tour-tag.applied.reviewed {
+  background-color: #1A2A3A;
+  color: #4A9EFF;
+  border-color: #4A9EFF;
+}
+
+.tour-tag.applied.accepted {
+  background-color: #1A4D2E;
+  color: #4ADE80;
+  border-color: #4ADE80;
+}
+
+.tour-tag.applied.rejected {
+  background-color: #2A0F0F;
+  color: #FF4444;
+  border-color: #FF4444;
+}
+
+.tour-tag.applied.withdrawn {
+  background-color: #1F2833;
+  color: #888888;
+  border-color: #888888;
+}

@@ -133,6 +133,7 @@ def generate_tour(
         preferred_venue_capacity_min=tour_request.preferred_venue_capacity_min,
         preferred_venue_capacity_max=tour_request.preferred_venue_capacity_max,
         prioritize_weekends=tour_request.prioritize_weekends,
+        include_booked_events=tour_request.include_booked_events,
         avoid_venue_ids=tour_request.avoid_venue_ids,
         algorithm_weights=algorithm_weights_config,
     )
@@ -175,6 +176,7 @@ def generate_tour(
         recommended_venues=venue_recommendations,
         tour_summary=tour_summary,
         availability_conflicts=result.availability_conflicts,
+        booked_events=result.booked_events,
         routing_warnings=result.routing_warnings,
     )
 

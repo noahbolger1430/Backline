@@ -110,6 +110,10 @@ class TourGeneratorRequest(BaseModel):
         True,
         description="Whether to prioritize weekend dates"
     )
+    include_booked_events: bool = Field(
+        False,
+        description="Whether to include booked events in the tour"
+    )
     avoid_venue_ids: Optional[List[int]] = Field(
         None,
         max_length=50,
@@ -216,6 +220,7 @@ class TourGeneratorResponse(BaseModel):
     recommended_venues: List[TourVenueRecommendation]
     tour_summary: Dict
     availability_conflicts: List[Dict]
+    booked_events: List[Dict] = Field(default_factory=list, description="List of booked events (if any)")
     routing_warnings: List[str]
 
 

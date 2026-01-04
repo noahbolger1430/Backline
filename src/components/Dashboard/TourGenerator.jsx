@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { tourService } from "../../services/tourService";
+import { eventApplicationService } from "../../services/eventApplicationService";
 import { getImageUrl } from "../../utils/imageUtils";
+import GigApplicationModal from "./GigApplicationModal";
 import "./TourGenerator.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
@@ -14,6 +16,11 @@ const TourGenerator = ({ bandId, onBack }) => {
   const [tourName, setTourName] = useState("");
   const [savingTour, setSavingTour] = useState(false);
   
+  // Application modal state
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [appliedEventIds, setAppliedEventIds] = useState(new Set());
+  const [applicationStatuses, setApplicationStatuses] = useState({});
+  
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [tourRadius, setTourRadius] = useState(1000);
@@ -22,6 +29,7 @@ const TourGenerator = ({ bandId, onBack }) => {
   const [maxDaysBetweenShows, setMaxDaysBetweenShows] = useState(7);
   const [maxDriveHours, setMaxDriveHours] = useState(8);
   const [prioritizeWeekends, setPrioritizeWeekends] = useState(true);
+  const [includeBookedEvents, setIncludeBookedEvents] = useState(false);
   const [preferredGenres, setPreferredGenres] = useState("");
   const [minVenueCapacity, setMinVenueCapacity] = useState(100);
   const [maxVenueCapacity, setMaxVenueCapacity] = useState(5000);
@@ -66,6 +74,31 @@ const TourGenerator = ({ bandId, onBack }) => {
       fetchAvailabilitySummary();
     }
   }, [startDate, endDate, bandId, view]);
+
+  // Fetch band's existing applications when tour results are loaded
+  useEffect(() => {
+    if (tourResults && bandId) {
+      fetchBandApplications();
+    }
+  }, [tourResults, bandId]);
+
+  const fetchBandApplications = async () => {
+    try {
+      const applicationsResponse = await eventApplicationService.listBandApplications(bandId);
+      const appliedIds = new Set();
+      const statuses = {};
+      
+      (applicationsResponse.applications || []).forEach(app => {
+        appliedIds.add(app.event_id);
+        statuses[app.event_id] = app.status;
+      });
+      
+      setAppliedEventIds(appliedIds);
+      setApplicationStatuses(statuses);
+    } catch (err) {
+      console.warn("Could not fetch band applications:", err);
+    }
+  };
 
   const fetchSavedTours = async () => {
     try {
@@ -131,22 +164,21 @@ const TourGenerator = ({ bandId, onBack }) => {
         max_days_between_shows: maxDaysBetweenShows,
         max_drive_hours_per_day: maxDriveHours,
         prioritize_weekends: prioritizeWeekends,
+        include_booked_events: includeBookedEvents,
         preferred_genres: genreList,
         preferred_venue_capacity_min: minVenueCapacity,
         preferred_venue_capacity_max: maxVenueCapacity,
         algorithm_weights: algorithmWeights,
       };
 
+      console.log('Tour params being sent:', { ...tourParams, include_booked_events: includeBookedEvents });
       const results = await tourService.generateTour(bandId, tourParams);
       setTourResults(results);
       if (!isRegeneration) {
         setShowSettings(false);
-        // Keep selectedTour if editing a saved tour, otherwise clear it
-        // (clearing null is a no-op, so this is safe)
         if (!selectedTour) {
           setSelectedTour(null);
         }
-        // If selectedTour exists, we're editing a saved tour, so keep it set
       }
     } catch (err) {
       console.error("Failed to generate tour:", err);
@@ -156,11 +188,10 @@ const TourGenerator = ({ bandId, onBack }) => {
       setRegenerating(false);
     }
   }, [startDate, endDate, tourRadius, startingLocation, minDaysBetweenShows, 
-      maxDaysBetweenShows, maxDriveHours, prioritizeWeekends, preferredGenres, 
+      maxDaysBetweenShows, maxDriveHours, prioritizeWeekends, includeBookedEvents, preferredGenres, 
       minVenueCapacity, maxVenueCapacity, algorithmWeights, bandId, selectedTour]);
 
   const handleWeightChange = useCallback((weightKey, value) => {
-    // Handle algorithm weight changes with automatic regeneration.
     setAlgorithmWeights(prev => ({
       ...prev,
       [weightKey]: value
@@ -186,28 +217,22 @@ const TourGenerator = ({ bandId, onBack }) => {
       setSavingTour(true);
       
       if (selectedTour) {
-        // Update existing saved tour
         const updatedTour = await tourService.updateSavedTour(
           bandId, 
           selectedTour.id, 
           tourName.trim(), 
           tourResults
         );
-        // Update the selectedTour with the updated data
         setSelectedTour(updatedTour);
-        // Update tourResults with the updated tour data
         setTourResults(updatedTour.tour_results);
       } else {
-        // Create new saved tour
         const tempTourId = Date.now().toString();
         await tourService.saveTour(bandId, tempTourId, tourName.trim(), tourResults);
       }
       
       setShowSaveModal(false);
       setTourName("");
-      // Refresh saved tours list
       fetchSavedTours();
-      // Optionally show success message
       alert(selectedTour ? "Tour updated successfully!" : "Tour saved successfully!");
     } catch (err) {
       console.error("Failed to save tour:", err);
@@ -226,7 +251,6 @@ const TourGenerator = ({ bandId, onBack }) => {
       setShowSettings(true);
       setSelectedTour(tour);
       
-      // Populate form fields from saved tour parameters
       if (tour.tour_params) {
         if (tour.tour_params.start_date) {
           setStartDate(tour.tour_params.start_date);
@@ -239,6 +263,9 @@ const TourGenerator = ({ bandId, onBack }) => {
         }
         if (tour.tour_params.starting_location) {
           setStartingLocation(tour.tour_params.starting_location);
+        }
+        if (tour.tour_params.include_booked_events !== undefined) {
+          setIncludeBookedEvents(tour.tour_params.include_booked_events);
         }
       }
     } catch (err) {
@@ -265,10 +292,44 @@ const TourGenerator = ({ bandId, onBack }) => {
     }
   };
 
+  const handleEventClick = (event) => {
+    // Check if this event is open for applications and band hasn't applied yet
+    if (event.is_open_for_applications && !appliedEventIds.has(event.event_id)) {
+      // Convert tour event to modal-compatible format
+      setSelectedEvent({
+        id: event.event_id,
+        name: event.event_name,
+        description: event.description,
+        event_date: event.event_date,
+        doors_time: event.doors_time,
+        show_time: event.show_time,
+        is_ticketed: event.is_ticketed,
+        ticket_price: event.ticket_price,
+        is_age_restricted: event.is_age_restricted,
+        age_restriction: event.age_restriction,
+        image_path: event.image_path,
+        is_recurring: event.is_recurring,
+        recurring_frequency: event.recurring_frequency,
+        venue_id: event.venue_id,
+        venue_name: event.venue_name,
+        status: "pending",
+        is_open_for_applications: true,
+      });
+    }
+  };
+
+  const handleCloseApplicationModal = () => {
+    setSelectedEvent(null);
+  };
+
+  const handleApplicationSubmitted = () => {
+    setSelectedEvent(null);
+    // Refresh application statuses
+    fetchBandApplications();
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return "";
-    // Parse date string manually to avoid timezone issues
-    // Date strings from backend are in format "YYYY-MM-DD"
     const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
     const date = new Date(year, month - 1, day);
     return date.toLocaleDateString("en-US", {
@@ -280,8 +341,6 @@ const TourGenerator = ({ bandId, onBack }) => {
 
   const formatDayOfWeek = (dateString) => {
     if (!dateString) return "";
-    // Parse date string manually to avoid timezone issues
-    // Date strings from backend are in format "YYYY-MM-DD"
     const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
     const date = new Date(year, month - 1, day);
     return date.toLocaleDateString("en-US", { weekday: "short" });
@@ -301,13 +360,56 @@ const TourGenerator = ({ bandId, onBack }) => {
   };
 
   const formatSliderValue = (value, suffix = "") => {
-    // Format slider values for display.
     return `${value.toLocaleString()}${suffix}`;
+  };
+
+  const getApplicationStatusBadge = (eventId) => {
+    if (!eventId) return null;
+    
+    const hasApplied = appliedEventIds.has(eventId);
+    if (!hasApplied) return null;
+
+    const status = applicationStatuses[eventId];
+    let badgeClass = "applied";
+    let badgeText = "Applied";
+
+    switch (status) {
+      case "pending":
+        badgeClass = "applied pending";
+        badgeText = "Application Pending";
+        break;
+      case "reviewed":
+        badgeClass = "applied reviewed";
+        badgeText = "Under Review";
+        break;
+      case "accepted":
+        badgeClass = "applied accepted";
+        badgeText = "Accepted!";
+        break;
+      case "rejected":
+        badgeClass = "applied rejected";
+        badgeText = "Not Selected";
+        break;
+      case "withdrawn":
+        badgeClass = "applied withdrawn";
+        badgeText = "Withdrawn";
+        break;
+      default:
+        badgeText = "Applied";
+    }
+
+    return (
+      <span className={`tour-tag ${badgeClass}`}>
+        {badgeText}
+      </span>
+    );
   };
 
   const renderTourStop = (item, index, isEvent) => {
     const date = isEvent ? item.event_date : item.suggested_date;
     const priorityColor = getPriorityColor(item.priority || item.booking_priority);
+    const hasApplied = isEvent && appliedEventIds.has(item.event_id);
+    const canApply = isEvent && item.is_open_for_applications && !hasApplied;
     
     return (
       <div key={`stop-${index}`} className="tour-stop">
@@ -318,12 +420,24 @@ const TourGenerator = ({ bandId, onBack }) => {
         
         <div className="tour-timeline-connector">
           <div className="tour-timeline-dot" style={{ backgroundColor: priorityColor }}></div>
-          {index < (tourResults.recommended_events.length + tourResults.recommended_venues.length - 1) && (
+          {index < (tourResults.recommended_events.length + tourResults.recommended_venues.length + (tourResults.booked_events?.length || 0) - 1) && (
             <div className="tour-timeline-line"></div>
           )}
         </div>
 
-        <div className={`tour-stop-card ${isEvent ? "event" : "venue"}`}>
+        <div 
+          className={`tour-stop-card ${isEvent ? "event" : "venue"} ${canApply ? "clickable" : ""}`}
+          onClick={() => isEvent && canApply && handleEventClick(item)}
+          style={{ cursor: canApply ? "pointer" : "default" }}
+          role={canApply ? "button" : undefined}
+          tabIndex={canApply ? 0 : undefined}
+          onKeyDown={(e) => {
+            if (canApply && (e.key === 'Enter' || e.key === ' ')) {
+              e.preventDefault();
+              handleEventClick(item);
+            }
+          }}
+        >
           {isEvent ? (
             <>
               <div className="tour-stop-image">
@@ -355,9 +469,10 @@ const TourGenerator = ({ bandId, onBack }) => {
                 </div>
                 
                 <div className="tour-stop-tags">
-                  {item.is_open_for_applications && (
+                  {item.is_open_for_applications && !hasApplied && (
                     <span className="tour-tag accepting">Open for Applications</span>
                   )}
+                  {hasApplied && getApplicationStatusBadge(item.event_id)}
                   {item.genre_tags && (
                     <span className="tour-tag genre">{item.genre_tags.split(",")[0]}</span>
                   )}
@@ -384,6 +499,12 @@ const TourGenerator = ({ bandId, onBack }) => {
                     <span key={idx} className="tour-reason">{reason}</span>
                   ))}
                 </div>
+                
+                {canApply && (
+                  <div className="tour-stop-apply-hint">
+                    Click to apply →
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -478,7 +599,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                 setSelectedTour(null);
               }}
             >
-              <div className="tour-option-icon">➕</div>
+              <div className="tour-option-icon">✨</div>
               <h3 className="tour-option-title">Generate New Tour</h3>
               <p className="tour-option-description">
                 Create an optimized tour route based on your preferences
@@ -567,7 +688,6 @@ const TourGenerator = ({ bandId, onBack }) => {
               className="tour-settings-button"
               onClick={() => {
                 if (selectedTour) {
-                  // If editing a saved tour, pre-fill the name
                   setTourName(selectedTour.name);
                 }
                 setShowSaveModal(true);
@@ -737,6 +857,18 @@ const TourGenerator = ({ bandId, onBack }) => {
                     disabled={generating || regenerating}
                   />
                   Prioritize Weekend Shows
+                </label>
+              </div>
+
+              <div className="tour-form-group checkbox">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={includeBookedEvents}
+                    onChange={(e) => setIncludeBookedEvents(e.target.checked)}
+                    disabled={generating || regenerating}
+                  />
+                  Include Booked Events
                 </label>
               </div>
             </div>
@@ -934,9 +1066,8 @@ const TourGenerator = ({ bandId, onBack }) => {
             <div className="tour-timeline">
               <h3>Tour Route</h3>
               <div className="tour-stops">
-                {[...tourResults.recommended_events, ...tourResults.recommended_venues]
+                {[...(tourResults.booked_events || []), ...tourResults.recommended_events, ...tourResults.recommended_venues]
                   .sort((a, b) => {
-                    // Parse dates manually to avoid timezone issues
                     const parseDate = (dateString) => {
                       if (!dateString) return new Date(0);
                       const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
@@ -987,6 +1118,15 @@ const TourGenerator = ({ bandId, onBack }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {selectedEvent && (
+        <GigApplicationModal
+          event={selectedEvent}
+          bandId={bandId}
+          onClose={handleCloseApplicationModal}
+          onApplicationSubmitted={handleApplicationSubmitted}
+        />
       )}
     </div>
   );

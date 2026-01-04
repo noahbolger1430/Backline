@@ -45,6 +45,7 @@ export const tourService = {
       max_days_between_shows: tourParams.max_days_between_shows,
       max_drive_hours_per_day: tourParams.max_drive_hours_per_day,
       prioritize_weekends: tourParams.prioritize_weekends,
+      include_booked_events: tourParams.include_booked_events,
       preferred_genres: tourParams.preferred_genres,
       preferred_venue_capacity_min: tourParams.preferred_venue_capacity_min,
       preferred_venue_capacity_max: tourParams.preferred_venue_capacity_max,
