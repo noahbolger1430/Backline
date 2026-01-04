@@ -691,21 +691,25 @@
 .tour-date {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  min-width: 80px;
+  align-items: flex-end;
+  width: 100px;
+  min-width: 100px;
   padding-top: 8px;
+  flex-shrink: 0;
 }
 
 .tour-date-text {
   font-size: 16px;
   font-weight: 600;
   color: #FFFFFF;
+  white-space: nowrap;
 }
 
 .tour-day-text {
   font-size: 12px;
   color: #888888;
   margin-top: 4px;
+  white-space: nowrap;
 }
 
 .tour-timeline-connector {
@@ -713,7 +717,9 @@
   flex-direction: column;
   align-items: center;
   position: relative;
+  width: 24px;
   min-width: 24px;
+  flex-shrink: 0;
 }
 
 .tour-timeline-dot {
@@ -722,6 +728,7 @@
   border-radius: 50%;
   border: 3px solid #1F2833;
   z-index: 2;
+  flex-shrink: 0;
 }
 
 .tour-timeline-line {
@@ -1029,7 +1036,13 @@
   .tour-summary-stats {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  .tour-date {
+    width: 80px;
+    min-width: 80px;
+  }
 }
+
 .tour-stop-card.clickable {
   cursor: pointer;
   transition: all 0.2s ease;

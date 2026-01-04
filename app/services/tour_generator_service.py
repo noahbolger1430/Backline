@@ -143,9 +143,6 @@ class TourGeneratorResult:
     routing_warnings: List[str]
 
 
-# Utility classes moved to tour_generator_geocoding_utils.py and tour_generator_date_utils.py
-# AddressParser, GeocodingService, and date utilities are now imported
-
 class TourGeneratorService:
     """
     Service for generating optimized band tours.
@@ -231,7 +228,6 @@ class TourGeneratorService:
             'active_venue': cls.DEFAULT_WEIGHT_ACTIVE_VENUE,
         }
 
-    # Weekend utility methods moved to tour_generator_date_utils.py
 
     @classmethod
     def generate_tour(
@@ -245,7 +241,7 @@ class TourGeneratorService:
         Args:
             db: Database session
             params: Tour generation parameters including optional algorithm weights
-                   and include_booked_events flag
+                and include_booked_events flag
             
         Returns:
             TourGeneratorResult containing recommended events, venues, and booked events
@@ -320,8 +316,9 @@ class TourGeneratorService:
             availability_map, optimized_tour
         )
         
+        # Pass params to _generate_routing_warnings
         warnings = cls._generate_routing_warnings(
-            optimized_tour, total_distance
+            optimized_tour, total_distance, params
         )
         
         return TourGeneratorResult(
@@ -1399,6 +1396,12 @@ class TourGeneratorService:
         """
         Fill large gaps between events with direct venue bookings.
         
+        This includes gaps at the start of the tour (before first event),
+        between events, and at the end of the tour (after last event).
+        
+        When prioritize_weekends is enabled, the algorithm will strongly prefer
+        Friday and Saturday dates over weekdays/Sundays.
+        
         Returns:
             Tour stops with gaps filled by venue bookings
         """
@@ -1409,12 +1412,6 @@ class TourGeneratorService:
         events = [s for s in tour_stops if s.is_existing_event or s.is_booked_event]
         existing_venue_bookings = {s.date for s in tour_stops if not s.is_existing_event and not s.is_booked_event}
         selected_venue_ids = {s.venue.id for s in tour_stops if s.venue}
-        
-        if len(events) < 2:
-            return tour_stops  # Need at least 2 events to have gaps
-        
-        # Sort events by date
-        events.sort(key=lambda x: x.date)
         
         # Get favorited venues for scoring
         favorite_venues = (
@@ -1430,165 +1427,276 @@ class TourGeneratorService:
         
         gap_fillers = []
         
-        # Check gaps between consecutive events
+        # Sort events by date for gap analysis
+        events.sort(key=lambda x: x.date)
+        
+        # Build list of gaps to fill: (gap_start, gap_end, prev_venue, next_venue)
+        gaps_to_fill = []
+        
+        # Gap 1: From tour start date to first event
+        if events:
+            first_event = events[0]
+            gap_days = (first_event.date - params.start_date).days
+            if gap_days > params.max_days_between_shows:
+                gaps_to_fill.append({
+                    'gap_start': params.start_date,
+                    'gap_end': first_event.date - timedelta(days=1),
+                    'prev_venue': None,  # No previous venue, starting from home
+                    'next_venue': first_event.venue,
+                    'context': 'start_of_tour'
+                })
+        else:
+            # No events at all - entire tour period is a gap
+            gaps_to_fill.append({
+                'gap_start': params.start_date,
+                'gap_end': params.end_date,
+                'prev_venue': None,
+                'next_venue': None,
+                'context': 'entire_tour'
+            })
+        
+        # Gap 2: Between consecutive events
         for i in range(len(events) - 1):
             current_event = events[i]
             next_event = events[i + 1]
             gap_days = (next_event.date - current_event.date).days
             
-            # If gap is larger than max_days_between_shows, try to fill it
             if gap_days > params.max_days_between_shows:
-                # Calculate travel time needed
-                if current_event.venue and next_event.venue:
-                    distance = calculate_distance_between_venues(
-                        current_event.venue,
-                        next_event.venue
+                gaps_to_fill.append({
+                    'gap_start': current_event.date + timedelta(days=1),
+                    'gap_end': next_event.date - timedelta(days=1),
+                    'prev_venue': current_event.venue,
+                    'next_venue': next_event.venue,
+                    'context': 'between_events'
+                })
+        
+        # Gap 3: From last event to tour end date
+        if events:
+            last_event = events[-1]
+            gap_days = (params.end_date - last_event.date).days
+            if gap_days > params.max_days_between_shows:
+                gaps_to_fill.append({
+                    'gap_start': last_event.date + timedelta(days=1),
+                    'gap_end': params.end_date,
+                    'prev_venue': last_event.venue,
+                    'next_venue': None,  # No next venue, ending tour
+                    'context': 'end_of_tour'
+                })
+        
+        # Process each gap
+        for gap_info in gaps_to_fill:
+            gap_start = gap_info['gap_start']
+            gap_end = gap_info['gap_end']
+            prev_venue = gap_info['prev_venue']
+            next_venue = gap_info['next_venue']
+            context = gap_info['context']
+            
+            # Calculate how many venues we need to fill this gap
+            gap_days = (gap_end - gap_start).days + 1
+            target_fill_count = min(
+                3,  # Fill with up to 3 venues per gap
+                max(1, (gap_days - params.max_days_between_shows + params.max_days_between_shows - 1) // params.max_days_between_shows)
+            )
+            
+            # Calculate travel time from previous venue if applicable
+            if prev_venue:
+                # Estimate travel days from previous venue
+                travel_days_needed = 1  # Default minimum
+            else:
+                travel_days_needed = 0  # Starting from home
+            
+            # Adjust gap_start to account for travel time and min_days_between_shows
+            adjusted_gap_start = gap_start + timedelta(days=max(travel_days_needed, params.min_days_between_shows))
+            
+            # Find available dates in the gap, separated by weekend/weekday
+            weekend_dates_in_gap = []
+            weekday_dates_in_gap = []
+            current_date = adjusted_gap_start
+            while current_date <= gap_end:
+                if current_date not in existing_venue_bookings:
+                    availability = availability_map.get(current_date, {})
+                    if availability.get('is_available'):
+                        if is_weekend(current_date):
+                            weekend_dates_in_gap.append(current_date)
+                        else:
+                            weekday_dates_in_gap.append(current_date)
+                current_date += timedelta(days=1)
+            
+            # Determine which dates to consider based on weekend preference
+            if params.prioritize_weekends and weekend_dates_in_gap:
+                # When prioritizing weekends and weekend dates are available,
+                # ONLY consider weekend dates for gap filling
+                available_dates_in_gap = weekend_dates_in_gap
+            elif params.prioritize_weekends and not weekend_dates_in_gap:
+                # Weekends prioritized but none available - fall back to weekdays
+                # but log this situation for awareness
+                available_dates_in_gap = weekday_dates_in_gap
+                if weekday_dates_in_gap:
+                    logger.info(
+                        f"No weekend dates available in gap {gap_start} to {gap_end}, "
+                        f"falling back to weekday dates"
                     )
-                    travel_days_needed = max(
-                        0,
-                        int((distance / cls.AVERAGE_DRIVING_SPEED_KMH) / params.max_drive_hours_per_day)
+            else:
+                # No weekend preference - use all dates, but still sort weekends first
+                available_dates_in_gap = weekend_dates_in_gap + weekday_dates_in_gap
+            
+            # Limit the number of dates to consider
+            available_dates_in_gap = available_dates_in_gap[:target_fill_count * 3]
+            
+            # For each available date, find best venue booking
+            dates_filled = []
+            for fill_date in available_dates_in_gap:
+                # Check if we've filled enough for this gap
+                if len(dates_filled) >= target_fill_count:
+                    break
+                
+                # Ensure minimum days between shows within gap fillers
+                if dates_filled:
+                    last_filled = max(dates_filled)
+                    if (fill_date - last_filled).days < params.min_days_between_shows:
+                        continue
+                
+                best_venue_booking = None
+                best_score = -9999.0
+                
+                for venue in potential_venues[:50]:  # Check top 50 venues
+                    # Skip if venue already used
+                    if venue.id in selected_venue_ids:
+                        continue
+                    
+                    # Skip if venue has an event on this date
+                    existing_event = (
+                        db.query(Event)
+                        .filter(
+                            Event.venue_id == venue.id,
+                            Event.event_date == fill_date
+                        )
+                        .first()
                     )
-                else:
-                    travel_days_needed = 1
-                
-                # Try to fill gap with 1-2 venue bookings to reduce gap
-                target_fill_count = min(
-                    2,  # Fill with up to 2 venues
-                    max(1, gap_days - params.max_days_between_shows)  # At least reduce gap
-                )
-                
-                if target_fill_count > 0:
-                    # Find available dates in the gap
-                    gap_start = current_event.date + timedelta(days=max(travel_days_needed + 1, params.min_days_between_shows))
-                    gap_end = next_event.date - timedelta(days=1)
+                    if existing_event:
+                        continue
                     
-                    available_dates_in_gap = []
-                    current_date = gap_start
-                    while current_date <= gap_end and len(available_dates_in_gap) < target_fill_count * 2:  # Get more options
-                        if current_date not in existing_venue_bookings:
-                            availability = availability_map.get(current_date, {})
-                            if availability.get('is_available'):
-                                # Prioritize weekend dates when filling gaps
-                                if params.prioritize_weekends:
-                                    if is_weekend(current_date):
-                                        # Add weekend dates to the front of the list
-                                        available_dates_in_gap.insert(0, current_date)
-                                    else:
-                                        # Add weekday dates to the end
-                                        available_dates_in_gap.append(current_date)
-                                else:
-                                    available_dates_in_gap.append(current_date)
-                        current_date += timedelta(days=1)
+                    # Calculate score for this venue booking
+                    score = scaled_weights.get('venue_base', cls.DEFAULT_WEIGHT_VENUE_BASE)
                     
-                    # For each available date, find best venue booking
-                    for fill_date in available_dates_in_gap[:target_fill_count]:
-                        best_venue_booking = None
-                        best_score = -9999.0
-                        
-                        for venue in potential_venues[:50]:  # Check top 50 venues
-                            # Skip if venue already used
-                            if venue.id in selected_venue_ids:
-                                continue
-                            
-                            # Skip if venue has an event on this date
-                            existing_event = (
-                                db.query(Event)
-                                .filter(
-                                    Event.venue_id == venue.id,
-                                    Event.event_date == fill_date
-                                )
-                                .first()
+                    # Bonus for active venues
+                    if venue.id in active_venue_ids:
+                        score += scaled_weights.get('active_venue', cls.DEFAULT_WEIGHT_ACTIVE_VENUE)
+                    
+                    # Distance calculations based on context
+                    distance_from_prev = 0.0
+                    distance_to_next = 0.0
+                    
+                    if prev_venue:
+                        distance_from_prev = calculate_distance_between_venues(prev_venue, venue)
+                    else:
+                        # Starting from home - use home location if available
+                        home_location = params.starting_location or (band.location if band.location else None)
+                        if home_location:
+                            distance_from_prev = estimate_distance_from_location(
+                                home_location,
+                                build_location_string(venue=venue)
                             )
-                            if existing_event:
-                                continue
-                            
-                            # Calculate score for this venue booking
-                            # Start with base score to ensure all venues can qualify
-                            score = scaled_weights.get('venue_base', cls.DEFAULT_WEIGHT_VENUE_BASE)
-                            
-                            # Bonus for active venues
-                            if venue.id in active_venue_ids:
-                                score += scaled_weights.get('active_venue', cls.DEFAULT_WEIGHT_ACTIVE_VENUE)
-                            
-                            # Distance from previous event
-                            if current_event.venue:
-                                distance_from_prev = calculate_distance_between_venues(
-                                    current_event.venue,
-                                    venue
-                                )
-                            else:
-                                distance_from_prev = 320.0  # Default
-                            
-                            # Distance to next event
-                            if next_event.venue:
-                                distance_to_next = calculate_distance_between_venues(
-                                    venue,
-                                    next_event.venue
-                                )
-                            else:
-                                distance_to_next = 320.0  # Default
-                            
-                            # Prefer venues that minimize total routing distance
-                            total_distance = distance_from_prev + distance_to_next
-                            if total_distance < 640:  # Good routing
-                                score += scaled_weights.get('travel_efficiency', 20.0)
-                            elif total_distance > 1600:  # Poor routing
-                                score -= scaled_weights.get('travel_efficiency', 20.0) * 0.5
-                            
-                            # Favorited venue bonus
-                            if venue.id in favorited_venue_ids:
-                                score += scaled_weights.get('favorited_venue', 10.0) * 1.5
-                            
-                            # Weekend bonus/penalty for gap fillers
-                            if is_weekend(fill_date) and params.prioritize_weekends:
-                                score += scaled_weights.get('weekend_bonus', 10.0) * 1.5
-                            elif not is_weekend(fill_date) and params.prioritize_weekends:
-                                # Stronger penalty for weekdays/Sundays to match other scoring
-                                score -= scaled_weights.get('weekend_bonus', 10.0) * 0.6
-                            
-                            # Availability bonus
-                            score += scaled_weights.get('availability', 40.0)
-                            
-                            if score > best_score:
-                                best_score = score
-                                
-                                # Calculate travel days
-                                travel_days = max(
-                                    0,
-                                    int((distance_from_prev / cls.AVERAGE_DRIVING_SPEED_KMH) / params.max_drive_hours_per_day)
-                                )
-                                
-                                reasoning = ['Fills gap between events']
-                                if venue.id in favorited_venue_ids:
-                                    reasoning.append('Favorited venue')
-                                if is_weekend(fill_date):
-                                    reasoning.append('Weekend date (Fri/Sat)')
-                                if venue.id in active_venue_ids:
-                                    reasoning.append('Venue has hosted events')
-                                else:
-                                    reasoning.append('New venue (no event history)')
-                                
-                                best_venue_booking = TourStop(
-                                    date=fill_date,
-                                    venue=venue,
-                                    event=None,
-                                    distance_from_previous=distance_from_prev,
-                                    distance_from_home=0.0,
-                                    travel_days_needed=travel_days,
-                                    score=score,
-                                    score_breakdown={'gap_filler': score},
-                                    is_existing_event=False,
-                                    is_booked_event=False,
-                                    availability_status='available',
-                                    reasoning=reasoning,
-                                    recommendation_score=None,
-                                    recommendation_reasons=None,
-                                    is_primary_venue_option=True
-                                )
+                        else:
+                            distance_from_prev = 320.0  # Default
+                    
+                    if next_venue:
+                        distance_to_next = calculate_distance_between_venues(venue, next_venue)
+                    else:
+                        # Ending tour - distance back home or to ending location
+                        end_location = params.ending_location or params.starting_location or (band.location if band.location else None)
+                        if end_location:
+                            distance_to_next = estimate_distance_from_location(
+                                end_location,
+                                build_location_string(venue=venue)
+                            )
+                        else:
+                            distance_to_next = 320.0  # Default
+                    
+                    # Prefer venues that minimize total routing distance
+                    total_distance = distance_from_prev + distance_to_next
+                    if total_distance < 640:  # Good routing
+                        score += scaled_weights.get('travel_efficiency', 20.0)
+                    elif total_distance > 1600:  # Poor routing
+                        score -= scaled_weights.get('travel_efficiency', 20.0) * 0.5
+                    
+                    # Favorited venue bonus
+                    if venue.id in favorited_venue_ids:
+                        score += scaled_weights.get('favorited_venue', 10.0) * 1.5
+                    
+                    # Weekend bonus/penalty for gap fillers
+                    # Apply the standard weekend scoring from date utils
+                    weekend_adjustment = calculate_weekend_penalty(
+                        scaled_weights, 
+                        is_weekend(fill_date), 
+                        params.prioritize_weekends
+                    )
+                    score += weekend_adjustment
+                    
+                    # Availability bonus
+                    score += scaled_weights.get('availability', 40.0)
+                    
+                    # Context-specific bonuses
+                    if context == 'start_of_tour':
+                        # Slight bonus for venues that make a good tour start
+                        score += 5.0
+                    elif context == 'end_of_tour':
+                        # Slight bonus for venues that make a good tour end
+                        score += 5.0
+                    
+                    if score > best_score:
+                        best_score = score
                         
-                        if best_venue_booking and best_score > 0:
-                            gap_fillers.append(best_venue_booking)
-                            selected_venue_ids.add(best_venue_booking.venue.id)
+                        # Calculate travel days
+                        travel_days = max(
+                            0,
+                            int((distance_from_prev / cls.AVERAGE_DRIVING_SPEED_KMH) / params.max_drive_hours_per_day)
+                        )
+                        
+                        reasoning = []
+                        if context == 'start_of_tour':
+                            reasoning.append('Fills gap at start of tour')
+                        elif context == 'end_of_tour':
+                            reasoning.append('Fills gap at end of tour')
+                        elif context == 'entire_tour':
+                            reasoning.append('Direct venue booking for tour')
+                        else:
+                            reasoning.append('Fills gap between events')
+                        
+                        if venue.id in favorited_venue_ids:
+                            reasoning.append('Favorited venue')
+                        if is_weekend(fill_date):
+                            reasoning.append('Weekend date (Fri/Sat)')
+                        if venue.id in active_venue_ids:
+                            reasoning.append('Venue has hosted events')
+                        else:
+                            reasoning.append('New venue (no event history)')
+                        
+                        best_venue_booking = TourStop(
+                            date=fill_date,
+                            venue=venue,
+                            event=None,
+                            distance_from_previous=distance_from_prev,
+                            distance_from_home=0.0,
+                            travel_days_needed=travel_days,
+                            score=score,
+                            score_breakdown={'gap_filler': score},
+                            is_existing_event=False,
+                            is_booked_event=False,
+                            availability_status='available',
+                            reasoning=reasoning,
+                            recommendation_score=None,
+                            recommendation_reasons=None,
+                            is_primary_venue_option=True
+                        )
+                
+                if best_venue_booking and best_score > 0:
+                    gap_fillers.append(best_venue_booking)
+                    selected_venue_ids.add(best_venue_booking.venue.id)
+                    dates_filled.append(fill_date)
+                    
+                    # Update prev_venue for next iteration within same gap
+                    prev_venue = best_venue_booking.venue
         
         # Combine events, gap fillers, and existing venue bookings
         all_stops = tour_stops + gap_fillers
@@ -1599,7 +1707,6 @@ class TourGeneratorService:
         # Determine home location
         home_location = params.starting_location
         if not home_location:
-            # Try to get from band profile if available
             home_location = band.location if band.location else None
 
         # Recalculate distances for all stops
@@ -1623,7 +1730,6 @@ class TourGeneratorService:
                     
                     days_between = (all_stops[i].date - all_stops[i-1].date).days
                     
-                    # Use same logic as in _optimize_routing_with_diversity
                     if days_between <= 2:
                         distance_home_and_back = (all_stops[i-1].distance_from_home + 
                                                 all_stops[i].distance_from_home)
@@ -1853,10 +1959,16 @@ class TourGeneratorService:
     def _generate_routing_warnings(
         cls,
         tour_stops: List[TourStop],
-        total_distance: float
+        total_distance: float,
+        params: TourGeneratorParams
     ) -> List[str]:
         """
         Generate warnings about routing issues.
+        
+        Args:
+            tour_stops: List of tour stops
+            total_distance: Total tour distance
+            params: Tour generation parameters for max_days_between_shows
         
         Returns:
             List of warning messages
@@ -1876,9 +1988,10 @@ class TourGeneratorService:
         # Sort by date to check consecutive shows chronologically
         sorted_stops = sorted(tour_stops, key=lambda x: x.date)
         
+        # Use params.max_days_between_shows instead of hard-coded value
         for i in range(1, len(sorted_stops)):
             days_gap = (sorted_stops[i].date - sorted_stops[i-1].date).days
-            if days_gap > 7:
+            if days_gap > params.max_days_between_shows:
                 warnings.append(
                     f"Large gap ({days_gap} days) between shows on "
                     f"{sorted_stops[i-1].date.isoformat()} and {sorted_stops[i].date.isoformat()}"
