@@ -1105,3 +1105,371 @@
   color: #888888;
   border-color: #888888;
 }
+/* Venue Swap Modal */
+.venue-swap-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.venue-swap-modal {
+  background-color: #1F2833;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.venue-swap-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #333333;
+}
+
+.venue-swap-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.venue-swap-modal-subtitle {
+  font-size: 13px;
+  color: #888888;
+  margin-top: 4px;
+}
+
+.venue-swap-close-button {
+  background: transparent;
+  border: none;
+  color: #888888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.venue-swap-close-button:hover {
+  background-color: #0B0C10;
+  color: #FFFFFF;
+}
+
+.venue-swap-modal-search {
+  padding: 16px 24px;
+  border-bottom: 1px solid #333333;
+}
+
+.venue-swap-search-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  background-color: #0B0C10;
+  border: 1px solid #333333;
+  border-radius: 6px;
+  color: #FFFFFF;
+  transition: border-color 0.2s;
+}
+
+.venue-swap-search-input:focus {
+  outline: none;
+  border-color: #6F22D2;
+}
+
+.venue-swap-search-input::placeholder {
+  color: #666666;
+}
+
+.venue-swap-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+}
+
+.venue-swap-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+}
+
+.venue-swap-loading-text {
+  color: #888888;
+  font-size: 14px;
+}
+
+.venue-swap-empty {
+  text-align: center;
+  padding: 40px;
+  color: #888888;
+  font-size: 14px;
+}
+
+.venue-swap-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.venue-swap-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background-color: #0B0C10;
+  border: 2px solid #333333;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.venue-swap-item:hover {
+  border-color: #6F22D2;
+  transform: translateX(4px);
+}
+
+.venue-swap-item.selected {
+  border-color: #6F22D2;
+  background-color: rgba(111, 34, 210, 0.1);
+}
+
+.venue-swap-item-image {
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+  background-color: #1F2833;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.venue-swap-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.venue-swap-item-icon {
+  font-size: 32px;
+  color: #FFA500;
+}
+
+.venue-swap-item-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.venue-swap-item-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.venue-swap-item-location {
+  font-size: 13px;
+  color: #888888;
+  margin-bottom: 8px;
+}
+
+.venue-swap-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.venue-swap-item-tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background-color: #1F2833;
+  color: #C5C6C7;
+}
+
+.venue-swap-item-tag.capacity {
+  color: #6F22D2;
+  border: 1px solid #6F22D2;
+  background-color: transparent;
+}
+
+.venue-swap-item-tag.distance {
+  color: #FFA500;
+  border: 1px solid #FFA500;
+  background-color: transparent;
+}
+
+.venue-swap-item-tag.favorited {
+  color: #4ADE80;
+  border: 1px solid #4ADE80;
+  background-color: transparent;
+}
+
+.venue-swap-item-contact {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #888888;
+}
+
+.venue-swap-item-select {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #333333;
+  color: transparent;
+  transition: all 0.2s;
+}
+
+.venue-swap-item.selected .venue-swap-item-select {
+  background-color: #6F22D2;
+  border-color: #6F22D2;
+  color: #FFFFFF;
+}
+
+.venue-swap-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-top: 1px solid #333333;
+  background-color: #1A1E24;
+  border-radius: 0 0 12px 12px;
+}
+
+.venue-swap-current-info {
+  font-size: 13px;
+  color: #888888;
+}
+
+.venue-swap-current-info strong {
+  color: #FFFFFF;
+}
+
+.venue-swap-modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.venue-swap-cancel-button {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: transparent;
+  color: #C5C6C7;
+  border: 1px solid #C5C6C7;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.venue-swap-cancel-button:hover {
+  background-color: #0B0C10;
+  border-color: #FFFFFF;
+  color: #FFFFFF;
+}
+
+.venue-swap-confirm-button {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: #6F22D2;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.venue-swap-confirm-button:hover:not(:disabled) {
+  background-color: #8B2FE8;
+}
+
+.venue-swap-confirm-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Make venue cards in timeline clickable */
+.tour-stop-card.venue.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tour-stop-card.venue.clickable:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(255, 165, 0, 0.3);
+  border-left-width: 6px;
+}
+
+.tour-stop-card.venue.clickable:focus {
+  outline: 2px solid #FFA500;
+  outline-offset: 2px;
+}
+
+.tour-stop-swap-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #FFA500;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .venue-swap-modal {
+    max-height: 90vh;
+    margin: 10px;
+  }
+  
+  .venue-swap-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .venue-swap-item-image {
+    width: 100%;
+    height: 120px;
+  }
+  
+  .venue-swap-item-select {
+    align-self: flex-end;
+  }
+  
+  .venue-swap-modal-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .venue-swap-modal-actions {
+    width: 100%;
+  }
+  
+  .venue-swap-cancel-button,
+  .venue-swap-confirm-button {
+    flex: 1;
+  }
+}

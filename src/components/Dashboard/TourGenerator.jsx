@@ -3,6 +3,7 @@ import { tourService } from "../../services/tourService";
 import { eventApplicationService } from "../../services/eventApplicationService";
 import { getImageUrl } from "../../utils/imageUtils";
 import GigApplicationModal from "./GigApplicationModal";
+import VenueSwapModal from "./VenueSwapModal";
 import "./TourGenerator.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
@@ -20,6 +21,10 @@ const TourGenerator = ({ bandId, onBack }) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [appliedEventIds, setAppliedEventIds] = useState(new Set());
   const [applicationStatuses, setApplicationStatuses] = useState({});
+  
+  // Venue swap modal state
+  const [venueToSwap, setVenueToSwap] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -174,6 +179,7 @@ const TourGenerator = ({ bandId, onBack }) => {
       console.log('Tour params being sent:', { ...tourParams, include_booked_events: includeBookedEvents });
       const results = await tourService.generateTour(bandId, tourParams);
       setTourResults(results);
+      setHasUnsavedChanges(false);
       if (!isRegeneration) {
         setShowSettings(false);
         if (!selectedTour) {
@@ -232,6 +238,7 @@ const TourGenerator = ({ bandId, onBack }) => {
       
       setShowSaveModal(false);
       setTourName("");
+      setHasUnsavedChanges(false);
       fetchSavedTours();
       alert(selectedTour ? "Tour updated successfully!" : "Tour saved successfully!");
     } catch (err) {
@@ -250,6 +257,7 @@ const TourGenerator = ({ bandId, onBack }) => {
       setView("generate");
       setShowSettings(true);
       setSelectedTour(tour);
+      setHasUnsavedChanges(false);
       
       if (tour.tour_params) {
         if (tour.tour_params.start_date) {
@@ -316,6 +324,71 @@ const TourGenerator = ({ bandId, onBack }) => {
         is_open_for_applications: true,
       });
     }
+  };
+
+  const handleVenueClick = (venue) => {
+    setVenueToSwap(venue);
+  };
+
+  const handleVenueSwap = (currentVenue, newVenue, suggestedDate) => {
+    if (!tourResults) return;
+  
+    // Calculate day of week from suggested date
+    const getDayOfWeek = (dateString) => {
+      if (!dateString) return "Unknown";
+      const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+      return date.toLocaleDateString("en-US", { weekday: "long" });
+    };
+  
+    // Create the new venue recommendation object with ALL required fields
+    const newVenueRecommendation = {
+      venue_id: newVenue.id,
+      venue_name: newVenue.name,
+      venue_location: [newVenue.city, newVenue.state].filter(Boolean).join(", ") || "Location not specified",
+      venue_capacity: newVenue.capacity || null,
+      has_sound_provided: newVenue.has_sound_provided || false,
+      has_parking: newVenue.has_parking || false,
+      venue_contact_name: newVenue.contact_name || null,
+      venue_contact_email: newVenue.contact_email || null,
+      venue_contact_phone: newVenue.contact_phone || null,
+      suggested_date: suggestedDate,
+      day_of_week: getDayOfWeek(suggestedDate),
+      booking_priority: currentVenue.booking_priority || "medium",
+      distance_from_previous_km: currentVenue.distance_from_previous_km || 0,
+      distance_from_home_km: currentVenue.distance_from_home_km || 0,
+      travel_days_needed: currentVenue.travel_days_needed || 0,
+      score: currentVenue.score || 50, // Default score for manually selected venues
+      availability_status: "unknown", // We don't know availability for swapped venues
+      reasoning: [
+        "Manually selected as replacement venue",
+        newVenue.capacity ? `Venue capacity: ${newVenue.capacity}` : null,
+        newVenue.is_favorited ? "Favorited venue" : null,
+        newVenue.has_sound_provided ? "Sound system provided" : null,
+        newVenue.has_parking ? "Parking available" : null,
+      ].filter(Boolean),
+      image_path: newVenue.image_path || null,
+    };
+  
+    // Update the tour results with the swapped venue
+    const updatedVenues = tourResults.recommended_venues.map((v) => {
+      if (v.venue_id === currentVenue.venue_id && v.suggested_date === suggestedDate) {
+        return newVenueRecommendation;
+      }
+      return v;
+    });
+  
+    setTourResults({
+      ...tourResults,
+      recommended_venues: updatedVenues,
+    });
+  
+    setVenueToSwap(null);
+    setHasUnsavedChanges(true);
+  };
+
+  const handleCloseVenueSwapModal = () => {
+    setVenueToSwap(null);
   };
 
   const handleCloseApplicationModal = () => {
@@ -405,6 +478,12 @@ const TourGenerator = ({ bandId, onBack }) => {
     );
   };
 
+  // Get current tour params for the venue swap modal
+  const getCurrentTourParams = () => ({
+    preferred_venue_capacity_min: minVenueCapacity,
+    preferred_venue_capacity_max: maxVenueCapacity,
+  });
+
   const renderTourStop = (item, index, isEvent) => {
     const date = isEvent ? item.event_date : item.suggested_date;
     const priorityColor = getPriorityColor(item.priority || item.booking_priority);
@@ -425,154 +504,167 @@ const TourGenerator = ({ bandId, onBack }) => {
           )}
         </div>
 
-        <div 
-          className={`tour-stop-card ${isEvent ? "event" : "venue"} ${canApply ? "clickable" : ""}`}
-          onClick={() => isEvent && canApply && handleEventClick(item)}
-          style={{ cursor: canApply ? "pointer" : "default" }}
-          role={canApply ? "button" : undefined}
-          tabIndex={canApply ? 0 : undefined}
-          onKeyDown={(e) => {
-            if (canApply && (e.key === 'Enter' || e.key === ' ')) {
-              e.preventDefault();
-              handleEventClick(item);
-            }
-          }}
-        >
-          {isEvent ? (
-            <>
-              <div className="tour-stop-image">
-                {item.image_path ? (
-                  <img
-                    src={getImageUrl(item.image_path, API_BASE_URL)}
-                    alt={item.event_name}
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                      const icon = e.target.parentElement.querySelector(".tour-stop-image-icon");
-                      if (icon) icon.style.display = "flex";
-                    }}
-                  />
-                ) : null}
-                <span 
-                  className="tour-stop-image-icon" 
-                  style={{ display: item.image_path ? "none" : "flex" }}
-                >
-                  🎵
-                </span>
+        {isEvent ? (
+          <div 
+            className={`tour-stop-card event ${canApply ? "clickable" : ""}`}
+            onClick={() => canApply && handleEventClick(item)}
+            style={{ cursor: canApply ? "pointer" : "default" }}
+            role={canApply ? "button" : undefined}
+            tabIndex={canApply ? 0 : undefined}
+            onKeyDown={(e) => {
+              if (canApply && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                handleEventClick(item);
+              }
+            }}
+          >
+            <div className="tour-stop-image">
+              {item.image_path ? (
+                <img
+                  src={getImageUrl(item.image_path, API_BASE_URL)}
+                  alt={item.event_name}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                    const icon = e.target.parentElement.querySelector(".tour-stop-image-icon");
+                    if (icon) icon.style.display = "flex";
+                  }}
+                />
+              ) : null}
+              <span 
+                className="tour-stop-image-icon" 
+                style={{ display: item.image_path ? "none" : "flex" }}
+              >
+                🎵
+              </span>
+            </div>
+            
+            <div className="tour-stop-details">
+              <h3 className="tour-stop-name">{item.event_name}</h3>
+              <div className="tour-stop-venue">{item.venue_name}</div>
+              <div className="tour-stop-location">{item.venue_location}</div>
+              <div className="tour-stop-event-date">
+                📅 {formatDate(item.event_date)} ({formatDayOfWeek(item.event_date)})
               </div>
               
-              <div className="tour-stop-details">
-                <h3 className="tour-stop-name">{item.event_name}</h3>
-                <div className="tour-stop-venue">{item.venue_name}</div>
-                <div className="tour-stop-location">{item.venue_location}</div>
-                <div className="tour-stop-event-date">
-                  📅 {formatDate(item.event_date)} ({formatDayOfWeek(item.event_date)})
-                </div>
-                
-                <div className="tour-stop-tags">
-                  {item.is_open_for_applications && !hasApplied && (
-                    <span className="tour-tag accepting">Open for Applications</span>
-                  )}
-                  {hasApplied && getApplicationStatusBadge(item.event_id)}
-                  {item.genre_tags && (
-                    <span className="tour-tag genre">{item.genre_tags.split(",")[0]}</span>
-                  )}
-                </div>
-                
-                <div className="tour-stop-metrics">
-                  <span className="tour-metric">
-                    📍 {item.distance_from_previous_km} km
-                  </span>
-                  {item.travel_days_needed > 0 && (
-                    <span className="tour-metric">
-                      🚗 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
-                    </span>
-                  )}
-                  {item.recommendation_score && (
-                    <span className="tour-metric">
-                      ⭐ Score: {item.recommendation_score.toFixed(0)}
-                    </span>
-                  )}
-                </div>
-                
-                <div className="tour-stop-reasons">
-                  {item.reasoning.slice(0, 3).map((reason, idx) => (
-                    <span key={idx} className="tour-reason">{reason}</span>
-                  ))}
-                </div>
-                
-                {canApply && (
-                  <div className="tour-stop-apply-hint">
-                    Click to apply →
-                  </div>
+              <div className="tour-stop-tags">
+                {item.is_open_for_applications && !hasApplied && (
+                  <span className="tour-tag accepting">Open for Applications</span>
                 )}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="tour-stop-image venue">
-                {item.image_path ? (
-                  <img
-                    src={getImageUrl(item.image_path, API_BASE_URL)}
-                    alt={item.venue_name}
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                      const icon = e.target.parentElement.querySelector(".tour-stop-image-icon");
-                      if (icon) icon.style.display = "flex";
-                    }}
-                  />
-                ) : null}
-                <span 
-                  className="tour-stop-image-icon" 
-                  style={{ display: item.image_path ? "none" : "flex" }}
-                >
-                  🏛️
-                </span>
+                {hasApplied && getApplicationStatusBadge(item.event_id)}
+                {item.genre_tags && (
+                  <span className="tour-tag genre">{item.genre_tags.split(",")[0]}</span>
+                )}
               </div>
               
-              <div className="tour-stop-details">
-                <h3 className="tour-stop-name">{item.venue_name}</h3>
-                <div className="tour-stop-location">{item.venue_location}</div>
-                
-                {(item.venue_contact_name || item.venue_contact_email || item.venue_contact_phone) && (
-                  <div className="tour-venue-contact">
-                    <div className="contact-header">Contact for Direct Booking:</div>
-                    {item.venue_contact_name && (
-                      <div className="contact-item">👤 {item.venue_contact_name}</div>
-                    )}
-                    {item.venue_contact_email && (
-                      <div className="contact-item">✉️ {item.venue_contact_email}</div>
-                    )}
-                    {item.venue_contact_phone && (
-                      <div className="contact-item">📱 {item.venue_contact_phone}</div>
-                    )}
-                  </div>
-                )}
-                
-                <div className="tour-stop-tags">
-                  <span className="tour-tag venue-booking">Direct Booking Opportunity</span>
-                  <span className="tour-tag day">{formatDayOfWeek(item.suggested_date)}</span>
-                </div>
-                
-                <div className="tour-stop-metrics">
+              <div className="tour-stop-metrics">
+                <span className="tour-metric">
+                  📍 {item.distance_from_previous_km} km
+                </span>
+                {item.travel_days_needed > 0 && (
                   <span className="tour-metric">
-                    📍 {item.distance_from_previous_km} km
+                    🚗 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
                   </span>
-                  {item.travel_days_needed > 0 && (
-                    <span className="tour-metric">
-                      🚗 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
-                    </span>
+                )}
+                {item.recommendation_score && (
+                  <span className="tour-metric">
+                    ⭐ Score: {item.recommendation_score.toFixed(0)}
+                  </span>
+                )}
+              </div>
+              
+              <div className="tour-stop-reasons">
+                {item.reasoning.slice(0, 3).map((reason, idx) => (
+                  <span key={idx} className="tour-reason">{reason}</span>
+                ))}
+              </div>
+              
+              {canApply && (
+                <div className="tour-stop-apply-hint">
+                  Click to apply →
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div 
+            className="tour-stop-card venue clickable"
+            onClick={() => handleVenueClick(item)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleVenueClick(item);
+              }
+            }}
+          >
+            <div className="tour-stop-image venue">
+              {item.image_path ? (
+                <img
+                  src={getImageUrl(item.image_path, API_BASE_URL)}
+                  alt={item.venue_name}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                    const icon = e.target.parentElement.querySelector(".tour-stop-image-icon");
+                    if (icon) icon.style.display = "flex";
+                  }}
+                />
+              ) : null}
+              <span 
+                className="tour-stop-image-icon" 
+                style={{ display: item.image_path ? "none" : "flex" }}
+              >
+                🏛️
+              </span>
+            </div>
+            
+            <div className="tour-stop-details">
+              <h3 className="tour-stop-name">{item.venue_name}</h3>
+              <div className="tour-stop-location">{item.venue_location}</div>
+              
+              {(item.venue_contact_name || item.venue_contact_email || item.venue_contact_phone) && (
+                <div className="tour-venue-contact">
+                  <div className="contact-header">Contact for Direct Booking:</div>
+                  {item.venue_contact_name && (
+                    <div className="contact-item">👤 {item.venue_contact_name}</div>
+                  )}
+                  {item.venue_contact_email && (
+                    <div className="contact-item">✉️ {item.venue_contact_email}</div>
+                  )}
+                  {item.venue_contact_phone && (
+                    <div className="contact-item">📱 {item.venue_contact_phone}</div>
                   )}
                 </div>
-                
-                <div className="tour-stop-reasons">
-                  {item.reasoning.slice(0, 3).map((reason, idx) => (
-                    <span key={idx} className="tour-reason">{reason}</span>
-                  ))}
-                </div>
+              )}
+              
+              <div className="tour-stop-tags">
+                <span className="tour-tag venue-booking">Direct Booking Opportunity</span>
+                <span className="tour-tag day">{formatDayOfWeek(item.suggested_date)}</span>
               </div>
-            </>
-          )}
-        </div>
+              
+              <div className="tour-stop-metrics">
+                <span className="tour-metric">
+                  📍 {item.distance_from_previous_km} km
+                </span>
+                {item.travel_days_needed > 0 && (
+                  <span className="tour-metric">
+                    🚗 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
+              
+              <div className="tour-stop-reasons">
+                {item.reasoning.slice(0, 3).map((reason, idx) => (
+                  <span key={idx} className="tour-reason">{reason}</span>
+                ))}
+              </div>
+
+              <div className="tour-stop-swap-hint">
+                Click to swap venue →
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -597,6 +689,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                 setView("generate");
                 setTourResults(null);
                 setSelectedTour(null);
+                setHasUnsavedChanges(false);
               }}
             >
               <div className="tour-option-icon">✨</div>
@@ -681,6 +774,7 @@ const TourGenerator = ({ bandId, onBack }) => {
         </button>
         <h2 className="tour-generator-title">
           {selectedTour ? `Saved Tour: ${selectedTour.name}` : "Tour Generator"}
+          {hasUnsavedChanges && <span style={{ color: '#FFA500', marginLeft: '8px' }}>*</span>}
         </h2>
         <div className="tour-action-buttons">
           {tourResults && (
@@ -694,7 +788,7 @@ const TourGenerator = ({ bandId, onBack }) => {
               }}
               style={{ marginRight: "12px" }}
             >
-              {selectedTour ? "Save Changes" : "Save Tour"}
+              {selectedTour ? (hasUnsavedChanges ? "Save Changes*" : "Save Changes") : "Save Tour"}
             </button>
           )}
           {tourResults && (
@@ -1126,6 +1220,17 @@ const TourGenerator = ({ bandId, onBack }) => {
           bandId={bandId}
           onClose={handleCloseApplicationModal}
           onApplicationSubmitted={handleApplicationSubmitted}
+        />
+      )}
+
+      {venueToSwap && (
+        <VenueSwapModal
+          currentVenue={venueToSwap}
+          suggestedDate={venueToSwap.suggested_date}
+          bandId={bandId}
+          onClose={handleCloseVenueSwapModal}
+          onSwap={handleVenueSwap}
+          tourParams={getCurrentTourParams()}
         />
       )}
     </div>
