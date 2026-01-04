@@ -10,9 +10,9 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import check_band_permission, get_band_or_404, get_current_active_user
+from app.api.deps import check_band_permission, get_band_or_404, get_current_active_user, get_venue_or_404
 from app.database import get_db
-from app.models import Band, BandAvailability, BandRole, User, SavedTour
+from app.models import Band, BandAvailability, BandRole, User, SavedTour, Venue
 from app.schemas.tour_generator import (
     AlgorithmWeights,
     TourGeneratorRequest,
@@ -23,12 +23,20 @@ from app.schemas.tour_generator import (
     SaveTourRequestWithData,
     SavedTourSummary,
     SavedTourDetail,
+    VenueSwapDistanceRequest,
+    VenueSwapDistanceResponse,
 )
+
 from app.services.availability_service import AvailabilityService
 from app.services.tour_generator_service import (
     AlgorithmWeightsConfig,
     TourGeneratorParams,
     TourGeneratorService,
+)
+from app.services.tour_generator_geocoding_utils import (
+    build_location_string,
+    estimate_distance_from_location,
+    calculate_distance_between_venues,
 )
 
 router = APIRouter()
@@ -570,3 +578,143 @@ def get_tour_availability_summary(
             ),
         }
     }
+
+@router.post("/calculate-venue-swap-distance", response_model=VenueSwapDistanceResponse)
+def calculate_venue_swap_distance(
+    request: VenueSwapDistanceRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> VenueSwapDistanceResponse:
+    """
+    Calculate distances for a venue swap in a tour.
+    
+    This endpoint calculates the appropriate distances when swapping a venue
+    in a generated tour, following the same logic as the tour generator:
+    
+    - **distance_from_home_km**: Distance from band's home location to the new venue
+    - **distance_from_previous_km**: The effective travel distance, which is:
+        - If previous show is 2 days or less before: min(venue-to-venue, home-and-back)
+        - If previous show is more than 2 days before: distance from home
+    - **distance_to_next_km**: Distance to the next venue (for tour summary updates)
+    - **travel_days_needed**: Estimated travel days based on distance
+    
+    **Parameters:**
+    - **band_id**: ID of the band (to get home location)
+    - **new_venue_id**: ID of the venue being swapped in
+    - **suggested_date**: Date of the tour stop
+    - **previous_stop_venue_id**: ID of the previous stop's venue (optional)
+    - **previous_stop_date**: Date of the previous stop (optional)
+    - **next_stop_venue_id**: ID of the next stop's venue (optional)
+    - **next_stop_date**: Date of the next stop (optional)
+    
+    **Returns:**
+    - Distance calculations and routing notes
+    
+    **Permissions:**
+    - Any authenticated user can calculate distances
+    """
+    # Get the band to find home location
+    band = get_band_or_404(request.band_id, db)
+    check_band_permission(band, current_user, [BandRole.OWNER, BandRole.ADMIN, BandRole.MEMBER])
+    
+    # Get the new venue
+    new_venue = get_venue_or_404(request.new_venue_id, db)
+    new_venue_location = build_location_string(venue=new_venue)
+    
+    # Determine home location (band location or city/state)
+    home_location = None
+    if band.location:
+        home_location = band.location
+    elif band.city and band.state:
+        home_location = f"{band.city}, {band.state}"
+    elif band.city:
+        home_location = band.city
+    
+    # Constants from tour generator service
+    AVERAGE_DRIVING_SPEED_KMH = 80.0
+    MAX_DRIVE_HOURS_PER_DAY = 8.0  # Default, could be parameterized
+    
+    # Calculate distance from home
+    distance_from_home = 0.0
+    if home_location:
+        distance_from_home = estimate_distance_from_location(
+            home_location,
+            new_venue_location
+        )
+    
+    # Calculate distance from previous stop
+    distance_from_previous = distance_from_home  # Default to home distance
+    routing_note = "Travel from home location"
+    
+    if request.previous_stop_venue_id and request.previous_stop_date:
+        previous_venue = db.query(Venue).filter(Venue.id == request.previous_stop_venue_id).first()
+        
+        if previous_venue:
+            # Calculate days between shows
+            days_between = (request.suggested_date - request.previous_stop_date).days
+            
+            # Calculate venue-to-venue distance
+            distance_from_prev_venue = calculate_distance_between_venues(
+                previous_venue,
+                new_venue
+            )
+            
+            # Calculate distance from previous venue to home
+            prev_venue_to_home = 0.0
+            if home_location:
+                prev_venue_location = build_location_string(venue=previous_venue)
+                prev_venue_to_home = estimate_distance_from_location(
+                    prev_venue_location,
+                    home_location
+                )
+            
+            # Apply the same logic as tour generator:
+            # For consecutive shows (1-2 days apart), use venue-to-venue if shorter than round-trip home
+            # For shows 3+ days apart, assume band goes home between shows
+            if days_between <= 2:
+                # Consecutive shows - compare distances
+                distance_home_and_back = prev_venue_to_home + distance_from_home
+                
+                if distance_from_prev_venue < distance_home_and_back:
+                    # More efficient to go directly between venues
+                    distance_from_previous = distance_from_prev_venue
+                    routing_note = f"Direct travel from previous venue ({days_between} day{'s' if days_between != 1 else ''} between shows)"
+                else:
+                    # More efficient to go home between shows
+                    distance_from_previous = distance_from_home
+                    routing_note = f"Travel from home location (shorter than direct route)"
+            else:
+                # Shows are far apart - assume band goes home
+                distance_from_previous = distance_from_home
+                routing_note = f"Travel from home location ({days_between} days between shows)"
+    
+    # Calculate distance to next stop (for tour summary updates)
+    distance_to_next = 0.0
+    if request.next_stop_venue_id:
+        next_venue = db.query(Venue).filter(Venue.id == request.next_stop_venue_id).first()
+        if next_venue:
+            # Calculate days to next show
+            if request.next_stop_date:
+                days_to_next = (request.next_stop_date - request.suggested_date).days
+                
+                if days_to_next <= 2:
+                    # Consecutive shows - use venue-to-venue
+                    distance_to_next = calculate_distance_between_venues(new_venue, next_venue)
+                else:
+                    # Band goes home - next stop's distance_from_previous will be recalculated from home
+                    # Return 0 to indicate this doesn't affect immediate routing
+                    distance_to_next = 0.0
+            else:
+                distance_to_next = calculate_distance_between_venues(new_venue, next_venue)
+    
+    # Calculate travel days needed
+    driving_hours = distance_from_previous / AVERAGE_DRIVING_SPEED_KMH
+    travel_days_needed = max(0, int(driving_hours / MAX_DRIVE_HOURS_PER_DAY))
+    
+    return VenueSwapDistanceResponse(
+        distance_from_home_km=round(distance_from_home, 1),
+        distance_from_previous_km=round(distance_from_previous, 1),
+        distance_to_next_km=round(distance_to_next, 1),
+        travel_days_needed=travel_days_needed,
+        routing_note=routing_note
+    )

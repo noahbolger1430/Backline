@@ -330,61 +330,241 @@ const TourGenerator = ({ bandId, onBack }) => {
     setVenueToSwap(venue);
   };
 
-  const handleVenueSwap = (currentVenue, newVenue, suggestedDate) => {
-    if (!tourResults) return;
+  const handleVenueSwap = async (currentVenue, newVenue, suggestedDate) => {
+    if (!tourResults) {
+      console.error("handleVenueSwap: No tourResults available");
+      return;
+    }
   
-    // Calculate day of week from suggested date
-    const getDayOfWeek = (dateString) => {
-      if (!dateString) return "Unknown";
-      const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
-      const date = new Date(year, month - 1, day);
-      return date.toLocaleDateString("en-US", { weekday: "long" });
-    };
+    console.log("handleVenueSwap called with:", {
+      currentVenue,
+      newVenue,
+      suggestedDate,
+      bandId,
+      hasRecommendedVenues: tourResults.recommended_venues?.length
+    });
   
-    // Create the new venue recommendation object with ALL required fields
-    const newVenueRecommendation = {
-      venue_id: newVenue.id,
-      venue_name: newVenue.name,
-      venue_location: [newVenue.city, newVenue.state].filter(Boolean).join(", ") || "Location not specified",
-      venue_capacity: newVenue.capacity || null,
-      has_sound_provided: newVenue.has_sound_provided || false,
-      has_parking: newVenue.has_parking || false,
-      venue_contact_name: newVenue.contact_name || null,
-      venue_contact_email: newVenue.contact_email || null,
-      venue_contact_phone: newVenue.contact_phone || null,
-      suggested_date: suggestedDate,
-      day_of_week: getDayOfWeek(suggestedDate),
-      booking_priority: currentVenue.booking_priority || "medium",
-      distance_from_previous_km: currentVenue.distance_from_previous_km || 0,
-      distance_from_home_km: currentVenue.distance_from_home_km || 0,
-      travel_days_needed: currentVenue.travel_days_needed || 0,
-      score: currentVenue.score || 50, // Default score for manually selected venues
-      availability_status: "unknown", // We don't know availability for swapped venues
-      reasoning: [
-        "Manually selected as replacement venue",
-        newVenue.capacity ? `Venue capacity: ${newVenue.capacity}` : null,
-        newVenue.is_favorited ? "Favorited venue" : null,
-        newVenue.has_sound_provided ? "Sound system provided" : null,
-        newVenue.has_parking ? "Parking available" : null,
-      ].filter(Boolean),
-      image_path: newVenue.image_path || null,
-    };
+    try {
+      // Show a loading indicator while calculating
+      setRegenerating(true);
   
-    // Update the tour results with the swapped venue
-    const updatedVenues = tourResults.recommended_venues.map((v) => {
-      if (v.venue_id === currentVenue.venue_id && v.suggested_date === suggestedDate) {
-        return newVenueRecommendation;
+      // Sort all stops by date to find previous and next stops
+      const allStops = [
+        ...(tourResults.booked_events || []),
+        ...tourResults.recommended_events,
+        ...tourResults.recommended_venues
+      ].sort((a, b) => {
+        const parseDate = (dateString) => {
+          if (!dateString) return new Date(0);
+          const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+          return new Date(year, month - 1, day);
+        };
+        return parseDate(a.event_date || a.suggested_date) - parseDate(b.event_date || b.suggested_date);
+      });
+  
+      console.log("All stops sorted:", allStops.map(s => ({
+        venue_id: s.venue_id,
+        date: s.event_date || s.suggested_date,
+        venue_name: s.venue_name
+      })));
+  
+      // Find the current stop's index - handle both date formats
+      const normalizeDate = (dateStr) => {
+        if (!dateStr) return null;
+        return dateStr.split('T')[0];
+      };
+  
+      const targetDate = normalizeDate(suggestedDate);
+      const currentStopIndex = allStops.findIndex(stop => {
+        const stopDate = normalizeDate(stop.suggested_date || stop.event_date);
+        return stop.venue_id === currentVenue.venue_id && stopDate === targetDate;
+      });
+  
+      console.log("Current stop index:", currentStopIndex, "Target date:", targetDate);
+  
+      // Get previous and next stops
+      const previousStop = currentStopIndex > 0 ? allStops[currentStopIndex - 1] : null;
+      const nextStop = currentStopIndex < allStops.length - 1 ? allStops[currentStopIndex + 1] : null;
+  
+      console.log("Previous stop:", previousStop?.venue_name, "Next stop:", nextStop?.venue_name);
+  
+      // Build the request for the API
+      const distanceRequest = {
+        band_id: bandId,
+        new_venue_id: newVenue.id,
+        suggested_date: targetDate,
+      };
+  
+      // Add previous stop info if available
+      if (previousStop) {
+        distanceRequest.previous_stop_venue_id = previousStop.venue_id;
+        distanceRequest.previous_stop_date = normalizeDate(previousStop.event_date || previousStop.suggested_date);
       }
-      return v;
-    });
   
-    setTourResults({
-      ...tourResults,
-      recommended_venues: updatedVenues,
-    });
+      // Add next stop info if available
+      if (nextStop) {
+        distanceRequest.next_stop_venue_id = nextStop.venue_id;
+        distanceRequest.next_stop_date = normalizeDate(nextStop.event_date || nextStop.suggested_date);
+      }
   
-    setVenueToSwap(null);
-    setHasUnsavedChanges(true);
+      console.log("Distance request:", distanceRequest);
+  
+      // Call the API to calculate distances
+      let distanceResult;
+      try {
+        distanceResult = await tourService.calculateVenueSwapDistance(distanceRequest);
+        console.log("Distance result from API:", distanceResult);
+        
+        // Validate that we got valid distance data
+        if (!distanceResult) {
+          console.error("Empty distance result from API");
+          throw new Error("Empty distance calculation result");
+        }
+        
+        if (distanceResult.distance_from_previous_km === undefined || 
+            distanceResult.distance_from_home_km === undefined) {
+          console.error("Invalid distance result from API - missing fields:", distanceResult);
+          throw new Error("Invalid distance calculation result - missing required fields");
+        }
+        
+        // Ensure numeric values
+        distanceResult.distance_from_previous_km = Number(distanceResult.distance_from_previous_km) || 0;
+        distanceResult.distance_from_home_km = Number(distanceResult.distance_from_home_km) || 0;
+        distanceResult.travel_days_needed = Number(distanceResult.travel_days_needed) || 0;
+        
+        console.log("Validated distance result:", distanceResult);
+      } catch (err) {
+        console.error("Error calculating distances from API:", err);
+        console.error("Error details:", {
+          message: err.message,
+          status: err.status,
+          response: err.response
+        });
+        
+        // Last resort: use old venue distances but warn the user
+        console.warn("Using fallback distances from current venue");
+        distanceResult = {
+          distance_from_home_km: currentVenue.distance_from_home_km || 0,
+          distance_from_previous_km: currentVenue.distance_from_previous_km || 0,
+          travel_days_needed: currentVenue.travel_days_needed || 0,
+          routing_note: "Distance calculation unavailable - showing previous values. Please try again."
+        };
+        // Don't show alert as it's disruptive - the fallback values will be used
+      }
+  
+      // Calculate day of week from suggested date
+      const getDayOfWeek = (dateString) => {
+        if (!dateString) return "Unknown";
+        const datePart = dateString.split('T')[0];
+        const [year, month, day] = datePart.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString("en-US", { weekday: "long" });
+      };
+  
+      // Build reasoning array
+      const reasoning = [
+        "Manually selected as replacement venue",
+        distanceResult.routing_note,
+      ];
+      if (newVenue.capacity) {
+        reasoning.push(`Venue capacity: ${newVenue.capacity}`);
+      }
+      if (newVenue.is_favorited) {
+        reasoning.push("Favorited venue");
+      }
+      if (newVenue.has_sound_provided) {
+        reasoning.push("Sound system provided");
+      }
+      if (newVenue.has_parking) {
+        reasoning.push("Parking available");
+      }
+  
+      // Create the new venue recommendation object with calculated distances
+      const newVenueRecommendation = {
+        venue_id: newVenue.id,
+        venue_name: newVenue.name,
+        venue_location: [newVenue.city, newVenue.state].filter(Boolean).join(", ") || "Location not specified",
+        venue_capacity: newVenue.capacity || null,
+        has_sound_provided: newVenue.has_sound_provided || false,
+        has_parking: newVenue.has_parking || false,
+        venue_contact_name: newVenue.contact_name || null,
+        venue_contact_email: newVenue.contact_email || null,
+        venue_contact_phone: newVenue.contact_phone || null,
+        suggested_date: targetDate, // Use normalized date
+        day_of_week: getDayOfWeek(targetDate),
+        booking_priority: currentVenue.booking_priority || "medium",
+        distance_from_previous_km: distanceResult.distance_from_previous_km,
+        distance_from_home_km: distanceResult.distance_from_home_km,
+        travel_days_needed: distanceResult.travel_days_needed,
+        score: currentVenue.score || 50,
+        availability_status: "unknown",
+        reasoning: reasoning.filter(Boolean),
+        image_path: newVenue.image_path || null,
+      };
+  
+      console.log("New venue recommendation:", newVenueRecommendation);
+  
+      // Update the tour results with the swapped venue
+      // Create a completely new array to ensure React detects the change
+      const updatedVenues = tourResults.recommended_venues.map((v) => {
+        const vDate = normalizeDate(v.suggested_date);
+        if (v.venue_id === currentVenue.venue_id && vDate === targetDate) {
+          console.log("Found venue to replace:", v.venue_name, "->", newVenue.name);
+          return { ...newVenueRecommendation }; // Spread to create new object
+        }
+        return { ...v }; // Spread to create new object for each venue
+      });
+  
+      console.log("Updated venues count:", updatedVenues.length);
+      console.log("Updated venues:", updatedVenues.map(v => ({
+        venue_id: v.venue_id,
+        venue_name: v.venue_name,
+        distance_from_previous_km: v.distance_from_previous_km
+      })));
+  
+      // Calculate the distance difference for tour summary update
+      const oldDistanceFromPrevious = currentVenue.distance_from_previous_km || 0;
+      const newDistanceFromPrevious = distanceResult.distance_from_previous_km;
+      const distanceDiff = newDistanceFromPrevious - oldDistanceFromPrevious;
+  
+      console.log("Distance diff:", distanceDiff, "(old:", oldDistanceFromPrevious, "new:", newDistanceFromPrevious, ")");
+  
+      // Update total distance in tour summary
+      const newTotalDistance = Math.max(0, 
+        Math.round((tourResults.tour_summary.total_distance_km + distanceDiff) * 10) / 10
+      );
+  
+      // Recalculate average
+      const newAverage = tourResults.tour_summary.total_show_days > 0
+        ? Math.round((newTotalDistance / tourResults.tour_summary.total_show_days) * 10) / 10
+        : 0;
+  
+      // Create a completely new tourResults object to ensure React re-renders
+      const newTourResults = {
+        ...tourResults,
+        recommended_venues: updatedVenues,
+        recommended_events: [...tourResults.recommended_events], // New array reference
+        booked_events: tourResults.booked_events ? [...tourResults.booked_events] : [],
+        tour_summary: {
+          ...tourResults.tour_summary,
+          total_distance_km: newTotalDistance,
+          average_km_between_shows: newAverage,
+        }
+      };
+  
+      console.log("Setting new tour results, total_distance_km:", newTotalDistance);
+  
+      setTourResults(newTourResults);
+      setVenueToSwap(null);
+      setHasUnsavedChanges(true);
+  
+      console.log("Venue swap completed successfully");
+    } catch (err) {
+      console.error("Error swapping venue:", err);
+      alert("Failed to swap venue: " + err.message);
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   const handleCloseVenueSwapModal = () => {

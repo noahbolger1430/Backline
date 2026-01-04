@@ -287,3 +287,22 @@ class SavedTourDetail(SavedTourInDB):
     """
     
     tour_results: TourGeneratorResponse
+
+class VenueSwapDistanceRequest(BaseModel):
+    """Request schema for calculating venue swap distances."""
+    band_id: int
+    new_venue_id: int
+    suggested_date: date
+    previous_stop_venue_id: Optional[int] = None
+    previous_stop_date: Optional[date] = None
+    next_stop_venue_id: Optional[int] = None
+    next_stop_date: Optional[date] = None
+
+
+class VenueSwapDistanceResponse(BaseModel):
+    """Response schema for venue swap distance calculations."""
+    distance_from_home_km: float
+    distance_from_previous_km: float
+    distance_to_next_km: float
+    travel_days_needed: int
+    routing_note: str

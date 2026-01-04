@@ -319,4 +319,45 @@ export const tourService = {
 
     return await response.json();
   },
+
+  /**
+   * Calculate distances for a venue swap in a tour.
+   * 
+   * @param {Object} params - Distance calculation parameters
+   * @param {number} params.band_id - Band ID
+   * @param {number} params.new_venue_id - New venue ID
+   * @param {string} params.suggested_date - Date of the tour stop (YYYY-MM-DD)
+   * @param {number} params.previous_stop_venue_id - Previous stop's venue ID (optional)
+   * @param {string} params.previous_stop_date - Previous stop's date (optional)
+   * @param {number} params.next_stop_venue_id - Next stop's venue ID (optional)
+   * @param {string} params.next_stop_date - Next stop's date (optional)
+   * @returns {Promise<Object>} Distance calculation result
+   */
+  async calculateVenueSwapDistance(params) {
+    const response = await fetch(
+      `${API_BASE_URL}/tours/calculate-venue-swap-distance`,
+      {
+        method: "POST",
+        headers: this.getAuthHeader(),
+        body: JSON.stringify(params),
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = "Failed to calculate distance";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === "string"
+          ? error.detail
+          : error.detail?.message || JSON.stringify(error.detail) || errorMessage;
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return await response.json();
+  },
 };
