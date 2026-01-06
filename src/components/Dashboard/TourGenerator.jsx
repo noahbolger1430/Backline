@@ -3,6 +3,7 @@ import { tourService } from "../../services/tourService";
 import { eventApplicationService } from "../../services/eventApplicationService";
 import { getImageUrl } from "../../utils/imageUtils";
 import GigApplicationModal from "./GigApplicationModal";
+import TourAddStopModal from "./TourAddStopModal";
 import VenueSwapModal from "./VenueSwapModal";
 import "./TourGenerator.css";
 
@@ -25,6 +26,8 @@ const TourGenerator = ({ bandId, onBack }) => {
   // Venue swap modal state
   const [venueToSwap, setVenueToSwap] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  const [showAddStopModal, setShowAddStopModal] = useState(false);
   
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -515,13 +518,6 @@ const TourGenerator = ({ bandId, onBack }) => {
         return { ...v }; // Spread to create new object for each venue
       });
   
-      console.log("Updated venues count:", updatedVenues.length);
-      console.log("Updated venues:", updatedVenues.map(v => ({
-        venue_id: v.venue_id,
-        venue_name: v.venue_name,
-        distance_from_previous_km: v.distance_from_previous_km
-      })));
-  
       // Calculate the distance difference for tour summary update
       const oldDistanceFromPrevious = currentVenue.distance_from_previous_km || 0;
       const newDistanceFromPrevious = distanceResult.distance_from_previous_km;
@@ -591,6 +587,70 @@ const TourGenerator = ({ bandId, onBack }) => {
       year: "numeric",
     });
   };
+
+  const handleAddStopClick = () => {
+    setShowAddStopModal(true);
+  };
+  
+  const handleAddStopTypeSelected = (type) => {
+    // TODO: Implement the actual functionality to add events
+    console.log(`Selected to add ${type}`);
+    // This is where you'll implement the event selection logic
+    // For now, we're just logging the selection
+  };
+  
+  const handleAddVenueToTour = (venue, date) => {
+    // Create a venue recommendation object that matches the tour stop format
+    const newVenueStop = {
+      venue_id: venue.id,
+      venue_name: venue.name,
+      venue_location: formatLocation(venue),
+      venue_contact_name: venue.contact_name,
+      venue_contact_email: venue.contact_email,
+      venue_contact_phone: venue.contact_phone,
+      suggested_date: date,
+      distance_from_previous_km: 0, // Will be calculated if needed
+      travel_days_needed: 0,
+      booking_priority: "manual",
+      reasoning: ["Manually added to tour"],
+      image_path: venue.image_path,
+      capacity: venue.capacity,
+    };
+  
+    // Add the venue to the tour results
+    setTourResults(prev => ({
+      ...prev,
+      recommended_venues: [...prev.recommended_venues, newVenueStop]
+    }));
+  
+    // Close the modal
+    setShowAddStopModal(false);
+  };
+
+  // Helper function to format location
+  const formatLocation = (venue) => {
+    const parts = [];
+    if (venue.city) parts.push(venue.city);
+    if (venue.state) parts.push(venue.state);
+    return parts.join(", ") || "Location not specified";
+  };
+
+  // Update the modal component props
+  {showAddStopModal && (
+    <TourAddStopModal
+      isOpen={showAddStopModal}
+      onClose={() => setShowAddStopModal(false)}
+      onSelectType={handleAddStopTypeSelected}
+      bandId={bandId}
+      tourParams={{
+        preferred_venue_capacity_min: minVenueCapacity,
+        preferred_venue_capacity_max: maxVenueCapacity,
+      }}
+      onAddVenue={handleAddVenueToTour}
+      startDate={startDate}
+      endDate={endDate}
+    />
+  )}
 
   const formatDayOfWeek = (dateString) => {
     if (!dateString) return "";
@@ -1355,6 +1415,17 @@ const TourGenerator = ({ bandId, onBack }) => {
                     renderTourStop(item, index, item.event_date !== undefined)
                   )}
               </div>
+              <div className="tour-new-stop-container">
+                <div className="tour-new-stop-spacer"></div>
+                <div className="tour-new-stop-connector"></div>
+                <button
+                  className="tour-new-stop-button"
+                  onClick={handleAddStopClick}
+                >
+                  <span className="tour-new-stop-icon">+</span>
+                  <span>Add Tour Stop</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1411,6 +1482,21 @@ const TourGenerator = ({ bandId, onBack }) => {
           onClose={handleCloseVenueSwapModal}
           onSwap={handleVenueSwap}
           tourParams={getCurrentTourParams()}
+        />
+      )}
+      {showAddStopModal && (
+        <TourAddStopModal
+          isOpen={showAddStopModal}
+          onClose={() => setShowAddStopModal(false)}
+          onSelectType={handleAddStopTypeSelected}
+          bandId={bandId}
+          tourParams={{
+            preferred_venue_capacity_min: minVenueCapacity,
+            preferred_venue_capacity_max: maxVenueCapacity,
+          }}
+          onAddVenue={handleAddVenueToTour}
+          startDate={startDate}
+          endDate={endDate}
         />
       )}
     </div>

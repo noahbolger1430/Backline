@@ -1473,3 +1473,421 @@
     flex: 1;
   }
 }
+/* New Stop Button */
+.tour-new-stop-container {
+  display: flex;
+  gap: 20px;
+  position: relative;
+  margin-top: 24px;
+}
+
+.tour-new-stop-spacer {
+  width: 100px;
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.tour-new-stop-connector {
+  width: 24px;
+  min-width: 24px;
+  flex-shrink: 0;
+}
+
+.tour-new-stop-button {
+  width: 50%;
+  flex: none;
+  min-height: 100px;
+  background-color: transparent;
+  border: 2px dashed #6F22D2;
+  border-radius: 8px;
+  padding: 20px;
+  color: #6F22D2;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tour-new-stop-button:hover {
+  background-color: rgba(111, 34, 210, 0.1);
+  border-color: #8B2FE8;
+  color: #8B2FE8;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(111, 34, 210, 0.3);
+}
+
+.tour-new-stop-button:active {
+  transform: translateX(0);
+}
+
+.tour-new-stop-icon {
+  font-size: 24px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .tour-new-stop-spacer {
+    width: 80px;
+    min-width: 80px;
+  }
+
+  .tour-new-stop-button {
+    width: 100%;
+  }
+}
+
+/* Add Stop Modal */
+.tour-add-stop-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.tour-add-stop-modal {
+  background-color: #1F2833;
+  border-radius: 8px;
+  padding: 32px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.tour-add-stop-modal-header {
+  font-size: 20px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+.tour-add-stop-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.tour-add-stop-option {
+  background-color: #0B0C10;
+  border: 2px solid #333333;
+  border-radius: 8px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.tour-add-stop-option:hover {
+  border-color: #6F22D2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(111, 34, 210, 0.2);
+}
+
+.tour-add-stop-option-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.tour-add-stop-option.event .tour-add-stop-option-icon {
+  color: #6F22D2;
+}
+
+.tour-add-stop-option.venue .tour-add-stop-option-icon {
+  color: #FFA500;
+}
+
+.tour-add-stop-option-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0 0 8px 0;
+}
+
+.tour-add-stop-option-description {
+  font-size: 14px;
+  color: #888888;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.tour-add-stop-modal-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.tour-add-stop-cancel-button {
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: transparent;
+  color: #C5C6C7;
+  border: 1px solid #C5C6C7;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tour-add-stop-cancel-button:hover {
+  background-color: #0B0C10;
+  border-color: #FFFFFF;
+  color: #FFFFFF;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .tour-new-stop-button {
+    margin-left: 0;
+    max-width: 100%;
+  }
+
+  .tour-add-stop-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Add Stop Modal - Venue Selection View */
+.tour-add-stop-venue-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tour-add-stop-venue-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.tour-add-stop-back-button {
+  padding: 8px;
+  background-color: transparent;
+  border: 1px solid #333333;
+  border-radius: 4px;
+  color: #C5C6C7;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tour-add-stop-back-button:hover {
+  background-color: #0B0C10;
+  border-color: #6F22D2;
+  color: #6F22D2;
+}
+
+.tour-add-stop-search {
+  margin-bottom: 20px;
+}
+
+.tour-add-stop-search-input {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #0B0C10;
+  border: 1px solid #333333;
+  border-radius: 4px;
+  color: #FFFFFF;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.tour-add-stop-search-input:focus {
+  outline: none;
+  border-color: #6F22D2;
+}
+
+.tour-add-stop-search-input::placeholder {
+  color: #888888;
+}
+
+.tour-add-stop-venue-list {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0 -20px 20px;
+  padding: 0 20px;
+  max-height: 400px;
+}
+
+.tour-add-stop-venue-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background-color: #0B0C10;
+  border: 1px solid #333333;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tour-add-stop-venue-item:hover {
+  border-color: #6F22D2;
+  transform: translateX(4px);
+}
+
+.tour-add-stop-venue-item.selected {
+  border-color: #6F22D2;
+  background-color: rgba(111, 34, 210, 0.1);
+}
+
+.tour-add-stop-venue-image {
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  background-color: #1F2833;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.tour-add-stop-venue-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tour-add-stop-venue-icon {
+  font-size: 24px;
+  color: #FFA500;
+}
+
+.tour-add-stop-venue-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.tour-add-stop-venue-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tour-add-stop-venue-location {
+  font-size: 14px;
+  color: #C5C6C7;
+  margin: 0 0 8px 0;
+}
+
+.tour-add-stop-venue-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tour-add-stop-venue-tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  background-color: #1F2833;
+  color: #C5C6C7;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.tour-add-stop-venue-tag.favorited {
+  background-color: rgba(111, 34, 210, 0.2);
+  color: #8B2FE8;
+}
+
+.tour-add-stop-venue-select {
+  font-size: 20px;
+  color: #6F22D2;
+}
+
+.tour-add-stop-date-section {
+  border-top: 1px solid #333333;
+  padding-top: 20px;
+  margin-top: 20px;
+}
+
+.tour-add-stop-date-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 8px;
+}
+
+.tour-add-stop-date-input {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #0B0C10;
+  border: 1px solid #333333;
+  border-radius: 4px;
+  color: #FFFFFF;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.tour-add-stop-date-input:focus {
+  outline: none;
+  border-color: #6F22D2;
+}
+
+.tour-add-stop-date-help {
+  font-size: 12px;
+  color: #888888;
+  margin: 0;
+}
+
+.tour-add-stop-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.tour-add-stop-submit-button {
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: #6F22D2;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tour-add-stop-submit-button:hover:not(:disabled) {
+  background-color: #8B2FE8;
+}
+
+.tour-add-stop-submit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tour-add-stop-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+}
+
+.tour-add-stop-empty {
+  text-align: center;
+  padding: 40px;
+  color: #888888;
+  font-size: 14px;
+}
