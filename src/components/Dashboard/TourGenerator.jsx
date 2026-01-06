@@ -28,7 +28,9 @@ const TourGenerator = ({ bandId, onBack }) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const [showAddStopModal, setShowAddStopModal] = useState(false);
-  
+  const [deleteConfirmStop, setDeleteConfirmStop] = useState(null);
+  const [warningsDismissed, setWarningsDismissed] = useState(false);
+
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [tourRadius, setTourRadius] = useState(1000);
@@ -89,6 +91,14 @@ const TourGenerator = ({ bandId, onBack }) => {
       fetchBandApplications();
     }
   }, [tourResults, bandId]);
+
+  useEffect(() => {
+    /**
+     * Reset the warnings dismissed state when tour results change.
+     * This ensures warnings are shown on initial load or when the tour is regenerated.
+     */
+    setWarningsDismissed(false);
+  }, [tourResults?.tour_summary?.total_show_days, tourResults?.tour_summary?.total_distance_km]);
 
   const fetchBandApplications = async () => {
     try {
@@ -577,6 +587,223 @@ const TourGenerator = ({ bandId, onBack }) => {
     fetchBandApplications();
   };
 
+  const handleDeleteStopClick = (item, isEvent, e) => {
+    /**
+     * Handle click on the delete button for a tour stop.
+     * Sets the stop to show the delete confirmation overlay.
+     * Stops event propagation to prevent triggering the card click handler.
+     */
+    e.stopPropagation();
+    
+    const stopKey = isEvent 
+      ? `event-${item.event_id}-${item.event_date}`
+      : `venue-${item.venue_id}-${item.suggested_date}`;
+    
+    setDeleteConfirmStop(stopKey);
+  };
+  
+  const handleCancelDelete = (e) => {
+    /**
+     * Cancel the delete operation and hide the confirmation overlay.
+     */
+    e.stopPropagation();
+    setDeleteConfirmStop(null);
+  };
+  
+  const handleConfirmDelete = async (item, isEvent, e) => {
+    /**
+     * Confirm and execute the deletion of a tour stop.
+     * 
+     * This function removes the stop from the tour, recalculates distances for
+     * the stop that comes after the deleted one (since its "previous" stop changes),
+     * and updates all tour summary statistics including total shows, total distance,
+     * travel days, and average distance between shows.
+     */
+    e.stopPropagation();
+    setDeleteConfirmStop(null);
+    setRegenerating(true);
+  
+    try {
+      const normalizeDate = (dateStr) => {
+        if (!dateStr) return null;
+        return dateStr.split('T')[0];
+      };
+  
+      const deletedDate = normalizeDate(isEvent ? item.event_date : item.suggested_date);
+      const deletedVenueId = item.venue_id;
+      const deletedDistanceFromPrevious = item.distance_from_previous_km || 0;
+      const deletedTravelDays = item.travel_days_needed || 0;
+  
+      const allStops = [
+        ...(tourResults.booked_events || []).map(s => ({ ...s, _type: 'booked' })),
+        ...tourResults.recommended_events.map(s => ({ ...s, _type: 'event' })),
+        ...tourResults.recommended_venues.map(s => ({ ...s, _type: 'venue' }))
+      ].sort((a, b) => {
+        const parseDate = (dateString) => {
+          if (!dateString) return new Date(0);
+          const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+          return new Date(year, month - 1, day);
+        };
+        return parseDate(a.event_date || a.suggested_date) - parseDate(b.event_date || b.suggested_date);
+      });
+  
+      const deletedIndex = allStops.findIndex(stop => {
+        const stopDate = normalizeDate(stop.event_date || stop.suggested_date);
+        return stop.venue_id === deletedVenueId && stopDate === deletedDate;
+      });
+  
+      let nextStop = null;
+      let previousStop = null;
+      
+      if (deletedIndex > 0) {
+        previousStop = allStops[deletedIndex - 1];
+      }
+      if (deletedIndex >= 0 && deletedIndex < allStops.length - 1) {
+        nextStop = allStops[deletedIndex + 1];
+      }
+  
+      let nextStopNewDistance = 0;
+      let nextStopNewTravelDays = 0;
+      let nextStopOldDistance = 0;
+      let nextStopOldTravelDays = 0;
+  
+      if (nextStop) {
+        nextStopOldDistance = nextStop.distance_from_previous_km || 0;
+        nextStopOldTravelDays = nextStop.travel_days_needed || 0;
+  
+        const nextStopDate = normalizeDate(nextStop.event_date || nextStop.suggested_date);
+        
+        const distanceRequest = {
+          band_id: bandId,
+          new_venue_id: nextStop.venue_id,
+          suggested_date: nextStopDate,
+        };
+  
+        if (previousStop) {
+          distanceRequest.previous_stop_venue_id = previousStop.venue_id;
+          distanceRequest.previous_stop_date = normalizeDate(previousStop.event_date || previousStop.suggested_date);
+        }
+  
+        try {
+          const distanceResult = await tourService.calculateVenueSwapDistance(distanceRequest);
+          nextStopNewDistance = Number(distanceResult.distance_from_previous_km) || 0;
+          nextStopNewTravelDays = Number(distanceResult.travel_days_needed) || 0;
+        } catch (err) {
+          console.error("Error recalculating distance for next stop:", err);
+          nextStopNewDistance = nextStopOldDistance;
+          nextStopNewTravelDays = nextStopOldTravelDays;
+        }
+      }
+  
+      setTourResults(prev => {
+        let newBookedEvents = prev.booked_events || [];
+        let newRecommendedEvents = prev.recommended_events;
+        let newRecommendedVenues = prev.recommended_venues;
+  
+        if (isEvent) {
+          if (item.is_booked) {
+            newBookedEvents = newBookedEvents.filter(e => {
+              const eDate = normalizeDate(e.event_date);
+              return !(e.event_id === item.event_id && eDate === deletedDate);
+            });
+          } else {
+            newRecommendedEvents = newRecommendedEvents.filter(e => {
+              const eDate = normalizeDate(e.event_date);
+              return !(e.event_id === item.event_id && eDate === deletedDate);
+            });
+          }
+        } else {
+          newRecommendedVenues = newRecommendedVenues.filter(v => {
+            const vDate = normalizeDate(v.suggested_date);
+            return !(v.venue_id === item.venue_id && vDate === deletedDate);
+          });
+        }
+  
+        if (nextStop) {
+          const nextStopDate = normalizeDate(nextStop.event_date || nextStop.suggested_date);
+          
+          if (nextStop._type === 'booked') {
+            newBookedEvents = newBookedEvents.map(e => {
+              const eDate = normalizeDate(e.event_date);
+              if (e.venue_id === nextStop.venue_id && eDate === nextStopDate) {
+                return {
+                  ...e,
+                  distance_from_previous_km: nextStopNewDistance,
+                  travel_days_needed: nextStopNewTravelDays,
+                };
+              }
+              return e;
+            });
+          } else if (nextStop._type === 'event') {
+            newRecommendedEvents = newRecommendedEvents.map(e => {
+              const eDate = normalizeDate(e.event_date);
+              if (e.venue_id === nextStop.venue_id && eDate === nextStopDate) {
+                return {
+                  ...e,
+                  distance_from_previous_km: nextStopNewDistance,
+                  travel_days_needed: nextStopNewTravelDays,
+                };
+              }
+              return e;
+            });
+          } else if (nextStop._type === 'venue') {
+            newRecommendedVenues = newRecommendedVenues.map(v => {
+              const vDate = normalizeDate(v.suggested_date);
+              if (v.venue_id === nextStop.venue_id && vDate === nextStopDate) {
+                return {
+                  ...v,
+                  distance_from_previous_km: nextStopNewDistance,
+                  travel_days_needed: nextStopNewTravelDays,
+                };
+              }
+              return v;
+            });
+          }
+        }
+  
+        const totalShowDays = 
+          newBookedEvents.length + 
+          newRecommendedEvents.length + 
+          newRecommendedVenues.length;
+  
+        const distanceChange = -deletedDistanceFromPrevious + (nextStopNewDistance - nextStopOldDistance);
+        const newTotalDistance = Math.max(0, 
+          Math.round((prev.tour_summary.total_distance_km + distanceChange) * 10) / 10
+        );
+  
+        const travelDaysChange = -deletedTravelDays + (nextStopNewTravelDays - nextStopOldTravelDays);
+        const newTotalTravelDays = Math.max(0, prev.tour_summary.total_travel_days + travelDaysChange);
+  
+        const averageKmBetweenShows = totalShowDays > 0 
+          ? Math.round((newTotalDistance / totalShowDays) * 10) / 10
+          : 0;
+  
+        return {
+          ...prev,
+          booked_events: newBookedEvents,
+          recommended_events: newRecommendedEvents,
+          recommended_venues: newRecommendedVenues,
+          tour_summary: {
+            ...prev.tour_summary,
+            total_show_days: totalShowDays,
+            total_distance_km: newTotalDistance,
+            total_travel_days: newTotalTravelDays,
+            recommended_events_count: newRecommendedEvents.length,
+            recommended_venues_count: newRecommendedVenues.length,
+            average_km_between_shows: averageKmBetweenShows,
+          }
+        };
+      });
+  
+      setHasUnsavedChanges(true);
+    } catch (err) {
+      console.error("Error deleting tour stop:", err);
+      alert("Failed to delete tour stop: " + err.message);
+    } finally {
+      setRegenerating(false);
+    }
+  };  
+
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
@@ -649,121 +876,373 @@ const TourGenerator = ({ bandId, onBack }) => {
     return dates;
   };
   
-  const handleAddVenueToTour = (venue, date) => {
-    // Create a venue recommendation object that matches the tour stop format
-    const newVenueStop = {
-      venue_id: venue.id,
-      venue_name: venue.name,
-      venue_location: formatLocation(venue),
-      venue_contact_name: venue.contact_name,
-      venue_contact_email: venue.contact_email,
-      venue_contact_phone: venue.contact_phone,
-      suggested_date: date,
-      distance_from_previous_km: 0, // Will be calculated if needed
-      distance_from_home_km: 0,
-      travel_days_needed: 0,
-      booking_priority: "manual",
-      reasoning: ["Manually added to tour"],
-      image_path: venue.image_path,
-      capacity: venue.capacity,
-      score: 50,
-      availability_status: "available",
-      day_of_week: new Date(date).toLocaleDateString("en-US", { weekday: "long" }),
-      has_sound_provided: venue.has_sound_provided || false,
-      has_parking: venue.has_parking || false,
-    };
+  const handleAddVenueToTour = async (venue, date) => {
+    /**
+     * Add a venue to the tour as a direct booking opportunity, calculating distances
+     * and updating the tour summary.
+     * 
+     * This function creates a venue recommendation object, calculates the distance
+     * from the band's home location or previous stop using the backend API, and
+     * updates all tour summary statistics including total shows, total distance,
+     * and average distance between shows.
+     */
+    setRegenerating(true);
   
-    // Add the venue to the tour results and update the summary
-    setTourResults(prev => {
-      const newRecommendedVenues = [...prev.recommended_venues, newVenueStop];
-      
-      // Calculate new total show days
-      const totalShowDays = 
-        (prev.booked_events?.length || 0) + 
-        (prev.recommended_events?.length || 0) + 
-        newRecommendedVenues.length;
-      
-      // Recalculate average km between shows
-      const averageKmBetweenShows = totalShowDays > 0 
-        ? Math.round((prev.tour_summary.total_distance_km / totalShowDays) * 10) / 10
-        : 0;
-      
-      return {
-        ...prev,
-        recommended_venues: newRecommendedVenues,
-        tour_summary: {
-          ...prev.tour_summary,
-          total_show_days: totalShowDays,
-          recommended_venues_count: newRecommendedVenues.length,
-          average_km_between_shows: averageKmBetweenShows,
-        }
+    try {
+      const distanceInfo = await calculateStopDistance(date, venue.id);
+  
+      const newVenueStop = {
+        venue_id: venue.id,
+        venue_name: venue.name,
+        venue_location: formatLocation(venue),
+        venue_contact_name: venue.contact_name,
+        venue_contact_email: venue.contact_email,
+        venue_contact_phone: venue.contact_phone,
+        suggested_date: date,
+        distance_from_previous_km: distanceInfo.distance_from_previous_km,
+        distance_from_home_km: distanceInfo.distance_from_home_km,
+        travel_days_needed: distanceInfo.travel_days_needed,
+        booking_priority: "manual",
+        reasoning: ["Manually added to tour"],
+        image_path: venue.image_path,
+        venue_capacity: venue.capacity,
+        score: 50,
+        availability_status: "available",
+        day_of_week: new Date(date).toLocaleDateString("en-US", { weekday: "long" }),
+        has_sound_provided: venue.has_sound_provided || false,
+        has_parking: venue.has_parking || false,
       };
-    });
   
-    // Mark as having unsaved changes
-    setHasUnsavedChanges(true);
+      setTourResults(prev => {
+        const newRecommendedVenues = [...prev.recommended_venues, newVenueStop];
+        
+        const totalShowDays = 
+          (prev.booked_events?.length || 0) + 
+          (prev.recommended_events?.length || 0) + 
+          newRecommendedVenues.length;
+        
+        const newTotalDistance = Math.round(
+          (prev.tour_summary.total_distance_km + distanceInfo.distance_from_previous_km) * 10
+        ) / 10;
+        
+        const averageKmBetweenShows = totalShowDays > 0 
+          ? Math.round((newTotalDistance / totalShowDays) * 10) / 10
+          : 0;
+        
+        const newTotalTravelDays = prev.tour_summary.total_travel_days + distanceInfo.travel_days_needed;
+        
+        return {
+          ...prev,
+          recommended_venues: newRecommendedVenues,
+          tour_summary: {
+            ...prev.tour_summary,
+            total_show_days: totalShowDays,
+            total_distance_km: newTotalDistance,
+            total_travel_days: newTotalTravelDays,
+            recommended_venues_count: newRecommendedVenues.length,
+            average_km_between_shows: averageKmBetweenShows,
+          }
+        };
+      });
   
-    // Close the modal
-    setShowAddStopModal(false);
+      setHasUnsavedChanges(true);
+      setShowAddStopModal(false);
+    } catch (err) {
+      console.error("Error adding venue to tour:", err);
+      alert("Failed to add venue to tour: " + err.message);
+    } finally {
+      setRegenerating(false);
+    }
   };
 
-  const handleAddEventToTour = (event) => {
-    // Create an event recommendation object that matches the tour stop format
-    const newEventStop = {
-      event_id: event.id,
-      event_name: event.name,
-      event_date: event.event_date,
-      venue_id: event.venue_id,
-      venue_name: event.venue_name,
-      venue_location: formatEventLocation(event),
-      venue_capacity: event.venue_capacity || null,
-      distance_from_previous_km: 0, // Will be calculated if needed
-      distance_from_home_km: 0,
-      travel_days_needed: 0,
-      tour_score: 50,
-      recommendation_score: null,
-      availability_status: "available",
-      reasoning: ["Manually added to tour"],
-      is_open_for_applications: event.is_open_for_applications,
-      genre_tags: event.genre_tags,
-      priority: "medium",
-      image_path: event.image_path,
-    };
+  const handleAddEventToTour = async (event) => {
+    /**
+     * Add an event to the tour, calculating distances and updating the tour summary.
+     * 
+     * This function creates an event recommendation object, calculates the distance
+     * from the band's home location or previous stop using the backend API, and
+     * updates all tour summary statistics including total shows, total distance,
+     * and average distance between shows.
+     */
+    setRegenerating(true);
   
-    // Add the event to the tour results and update the summary
-    setTourResults(prev => {
-      const newRecommendedEvents = [...prev.recommended_events, newEventStop];
-      
-      // Calculate new total show days
-      const totalShowDays = 
-        (prev.booked_events?.length || 0) + 
-        newRecommendedEvents.length + 
-        (prev.recommended_venues?.length || 0);
-      
-      // Recalculate average km between shows
-      const averageKmBetweenShows = totalShowDays > 0 
-        ? Math.round((prev.tour_summary.total_distance_km / totalShowDays) * 10) / 10
-        : 0;
-      
-      return {
-        ...prev,
-        recommended_events: newRecommendedEvents,
-        tour_summary: {
-          ...prev.tour_summary,
-          total_show_days: totalShowDays,
-          recommended_events_count: newRecommendedEvents.length,
-          average_km_between_shows: averageKmBetweenShows,
-        }
+    try {
+      const distanceInfo = await calculateStopDistance(event.event_date, event.venue_id);
+  
+      const newEventStop = {
+        event_id: event.id,
+        event_name: event.name,
+        event_date: event.event_date,
+        venue_id: event.venue_id,
+        venue_name: event.venue_name,
+        venue_location: formatEventLocation(event),
+        venue_capacity: event.venue_capacity || null,
+        distance_from_previous_km: distanceInfo.distance_from_previous_km,
+        distance_from_home_km: distanceInfo.distance_from_home_km,
+        travel_days_needed: distanceInfo.travel_days_needed,
+        tour_score: 50,
+        recommendation_score: null,
+        availability_status: "available",
+        reasoning: ["Manually added to tour"],
+        is_open_for_applications: event.is_open_for_applications,
+        genre_tags: event.genre_tags,
+        priority: "medium",
+        image_path: event.image_path,
       };
-    });
   
-    // Mark as having unsaved changes
-    setHasUnsavedChanges(true);
+      setTourResults(prev => {
+        const newRecommendedEvents = [...prev.recommended_events, newEventStop];
+        
+        const totalShowDays = 
+          (prev.booked_events?.length || 0) + 
+          newRecommendedEvents.length + 
+          (prev.recommended_venues?.length || 0);
+        
+        const newTotalDistance = Math.round(
+          (prev.tour_summary.total_distance_km + distanceInfo.distance_from_previous_km) * 10
+        ) / 10;
+        
+        const averageKmBetweenShows = totalShowDays > 0 
+          ? Math.round((newTotalDistance / totalShowDays) * 10) / 10
+          : 0;
+        
+        const newTotalTravelDays = prev.tour_summary.total_travel_days + distanceInfo.travel_days_needed;
+        
+        return {
+          ...prev,
+          recommended_events: newRecommendedEvents,
+          tour_summary: {
+            ...prev.tour_summary,
+            total_show_days: totalShowDays,
+            total_distance_km: newTotalDistance,
+            total_travel_days: newTotalTravelDays,
+            recommended_events_count: newRecommendedEvents.length,
+            average_km_between_shows: averageKmBetweenShows,
+          }
+        };
+      });
   
-    // Close the modal
-    setShowAddStopModal(false);
+      setHasUnsavedChanges(true);
+      setShowAddStopModal(false);
+    } catch (err) {
+      console.error("Error adding event to tour:", err);
+      alert("Failed to add event to tour: " + err.message);
+    } finally {
+      setRegenerating(false);
+    }
   };
 
+  const handleDeleteStop = async (stopToDelete, isEvent) => {
+    /**
+     * Delete a stop from the tour and recalculate all distances and summary statistics.
+     * 
+     * This function removes the specified stop, recalculates distances for all subsequent
+     * stops, updates the tour summary including total distance and travel days, and
+     * ensures the timeline remains properly sorted.
+     */
+    setRegenerating(true);
+  
+    try {
+      const normalizeDate = (dateStr) => {
+        if (!dateStr) return null;
+        return dateStr.split('T')[0];
+      };
+  
+      const stopDate = normalizeDate(isEvent ? stopToDelete.event_date : stopToDelete.suggested_date);
+      const stopVenueId = isEvent ? stopToDelete.venue_id : stopToDelete.venue_id;
+  
+      setTourResults(prev => {
+        let newRecommendedEvents = [...prev.recommended_events];
+        let newRecommendedVenues = [...prev.recommended_venues];
+        let deletedStopDistance = 0;
+  
+        if (isEvent) {
+          const indexToDelete = newRecommendedEvents.findIndex(
+            e => e.event_id === stopToDelete.event_id && normalizeDate(e.event_date) === stopDate
+          );
+          if (indexToDelete !== -1) {
+            deletedStopDistance = newRecommendedEvents[indexToDelete].distance_from_previous_km || 0;
+            newRecommendedEvents.splice(indexToDelete, 1);
+          }
+        } else {
+          const indexToDelete = newRecommendedVenues.findIndex(
+            v => v.venue_id === stopToDelete.venue_id && normalizeDate(v.suggested_date) === stopDate
+          );
+          if (indexToDelete !== -1) {
+            deletedStopDistance = newRecommendedVenues[indexToDelete].distance_from_previous_km || 0;
+            newRecommendedVenues.splice(indexToDelete, 1);
+          }
+        }
+  
+        const allStops = [
+          ...(prev.booked_events || []),
+          ...newRecommendedEvents,
+          ...newRecommendedVenues
+        ].sort((a, b) => {
+          const parseDate = (dateString) => {
+            if (!dateString) return new Date(0);
+            const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+            return new Date(year, month - 1, day);
+          };
+          return parseDate(a.event_date || a.suggested_date) - parseDate(b.event_date || b.suggested_date);
+        });
+  
+        const stopIndex = allStops.findIndex(stop => {
+          const currentStopDate = normalizeDate(stop.event_date || stop.suggested_date);
+          return currentStopDate > stopDate;
+        });
+  
+        const needsRecalculation = stopIndex !== -1 && stopIndex < allStops.length;
+  
+        const totalShowDays = 
+          (prev.booked_events?.length || 0) + 
+          newRecommendedEvents.length + 
+          newRecommendedVenues.length;
+  
+        let newTotalDistance = prev.tour_summary.total_distance_km - deletedStopDistance;
+        newTotalDistance = Math.max(0, Math.round(newTotalDistance * 10) / 10);
+  
+        const averageKmBetweenShows = totalShowDays > 0 
+          ? Math.round((newTotalDistance / totalShowDays) * 10) / 10
+          : 0;
+  
+        return {
+          ...prev,
+          recommended_events: newRecommendedEvents,
+          recommended_venues: newRecommendedVenues,
+          tour_summary: {
+            ...prev.tour_summary,
+            total_show_days: totalShowDays,
+            total_distance_km: newTotalDistance,
+            recommended_events_count: newRecommendedEvents.length,
+            recommended_venues_count: newRecommendedVenues.length,
+            average_km_between_shows: averageKmBetweenShows,
+          }
+        };
+      });
+  
+      const allStops = [
+        ...(tourResults.booked_events || []),
+        ...tourResults.recommended_events,
+        ...tourResults.recommended_venues
+      ].sort((a, b) => {
+        const parseDate = (dateString) => {
+          if (!dateString) return new Date(0);
+          const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+          return new Date(year, month - 1, day);
+        };
+        return parseDate(a.event_date || a.suggested_date) - parseDate(b.event_date || b.suggested_date);
+      });
+  
+      const nextStopAfterDeleted = allStops.find(stop => {
+        const currentStopDate = normalizeDate(stop.event_date || stop.suggested_date);
+        return currentStopDate > stopDate && 
+          !(stop.venue_id === stopVenueId && currentStopDate === stopDate);
+      });
+  
+      if (nextStopAfterDeleted) {
+        const nextStopDate = normalizeDate(nextStopAfterDeleted.event_date || nextStopAfterDeleted.suggested_date);
+        const nextStopVenueId = nextStopAfterDeleted.venue_id;
+  
+        const distanceInfo = await calculateStopDistance(
+          nextStopDate,
+          nextStopVenueId
+        );
+  
+        setTourResults(prev => {
+          const isNextStopEvent = nextStopAfterDeleted.event_date !== undefined;
+          
+          if (isNextStopEvent) {
+            const updatedEvents = prev.recommended_events.map(e => {
+              if (e.event_id === nextStopAfterDeleted.event_id && 
+                  normalizeDate(e.event_date) === nextStopDate) {
+                const oldDistance = e.distance_from_previous_km || 0;
+                const distanceDiff = distanceInfo.distance_from_previous_km - oldDistance;
+                
+                return {
+                  ...e,
+                  distance_from_previous_km: distanceInfo.distance_from_previous_km,
+                  distance_from_home_km: distanceInfo.distance_from_home_km,
+                  travel_days_needed: distanceInfo.travel_days_needed,
+                };
+              }
+              return e;
+            });
+  
+            const eventToUpdate = prev.recommended_events.find(e => 
+              e.event_id === nextStopAfterDeleted.event_id && 
+              normalizeDate(e.event_date) === nextStopDate
+            );
+            const oldDistance = eventToUpdate?.distance_from_previous_km || 0;
+            const distanceDiff = distanceInfo.distance_from_previous_km - oldDistance;
+  
+            const newTotalDistance = Math.max(0, 
+              Math.round((prev.tour_summary.total_distance_km + distanceDiff) * 10) / 10
+            );
+  
+            return {
+              ...prev,
+              recommended_events: updatedEvents,
+              tour_summary: {
+                ...prev.tour_summary,
+                total_distance_km: newTotalDistance,
+                average_km_between_shows: prev.tour_summary.total_show_days > 0
+                  ? Math.round((newTotalDistance / prev.tour_summary.total_show_days) * 10) / 10
+                  : 0,
+              }
+            };
+          } else {
+            const updatedVenues = prev.recommended_venues.map(v => {
+              if (v.venue_id === nextStopVenueId && 
+                  normalizeDate(v.suggested_date) === nextStopDate) {
+                const oldDistance = v.distance_from_previous_km || 0;
+                const distanceDiff = distanceInfo.distance_from_previous_km - oldDistance;
+                
+                return {
+                  ...v,
+                  distance_from_previous_km: distanceInfo.distance_from_previous_km,
+                  distance_from_home_km: distanceInfo.distance_from_home_km,
+                  travel_days_needed: distanceInfo.travel_days_needed,
+                };
+              }
+              return v;
+            });
+  
+            const venueToUpdate = prev.recommended_venues.find(v => 
+              v.venue_id === nextStopVenueId && 
+              normalizeDate(v.suggested_date) === nextStopDate
+            );
+            const oldDistance = venueToUpdate?.distance_from_previous_km || 0;
+            const distanceDiff = distanceInfo.distance_from_previous_km - oldDistance;
+  
+            const newTotalDistance = Math.max(0, 
+              Math.round((prev.tour_summary.total_distance_km + distanceDiff) * 10) / 10
+            );
+  
+            return {
+              ...prev,
+              recommended_venues: updatedVenues,
+              tour_summary: {
+                ...prev.tour_summary,
+                total_distance_km: newTotalDistance,
+                average_km_between_shows: prev.tour_summary.total_show_days > 0
+                  ? Math.round((newTotalDistance / prev.tour_summary.total_show_days) * 10) / 10
+                  : 0,
+              }
+            };
+          }
+        });
+      }
+  
+      setHasUnsavedChanges(true);
+    } catch (err) {
+      console.error("Error deleting stop:", err);
+      alert("Failed to delete stop: " + err.message);
+    } finally {
+      setRegenerating(false);
+    }
+  };
+  
   const formatDayOfWeek = (dateString) => {
     if (!dateString) return "";
     const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
@@ -830,6 +1309,89 @@ const TourGenerator = ({ bandId, onBack }) => {
     );
   };
 
+  const calculateStopDistance = async (newStopDate, newVenueId) => {
+    /**
+     * Calculate distances for a new tour stop by finding the previous and next stops
+     * and calling the backend API to compute proper routing distances.
+     * 
+     * Returns an object with distance_from_previous_km, distance_from_home_km,
+     * and travel_days_needed.
+     */
+    if (!tourResults) {
+      return {
+        distance_from_previous_km: 0,
+        distance_from_home_km: 0,
+        travel_days_needed: 0,
+      };
+    }
+  
+    const normalizeDate = (dateStr) => {
+      if (!dateStr) return null;
+      return dateStr.split('T')[0];
+    };
+  
+    const targetDate = normalizeDate(newStopDate);
+  
+    const allStops = [
+      ...(tourResults.booked_events || []),
+      ...tourResults.recommended_events,
+      ...tourResults.recommended_venues
+    ].sort((a, b) => {
+      const parseDate = (dateString) => {
+        if (!dateString) return new Date(0);
+        const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+        return new Date(year, month - 1, day);
+      };
+      return parseDate(a.event_date || a.suggested_date) - parseDate(b.event_date || b.suggested_date);
+    });
+  
+    let previousStop = null;
+    let nextStop = null;
+  
+    for (let i = 0; i < allStops.length; i++) {
+      const stopDate = normalizeDate(allStops[i].event_date || allStops[i].suggested_date);
+      if (stopDate && targetDate && stopDate < targetDate) {
+        previousStop = allStops[i];
+      } else if (stopDate && targetDate && stopDate > targetDate && !nextStop) {
+        nextStop = allStops[i];
+        break;
+      }
+    }
+  
+    const distanceRequest = {
+      band_id: bandId,
+      new_venue_id: newVenueId,
+      suggested_date: targetDate,
+    };
+  
+    if (previousStop) {
+      distanceRequest.previous_stop_venue_id = previousStop.venue_id;
+      distanceRequest.previous_stop_date = normalizeDate(previousStop.event_date || previousStop.suggested_date);
+    }
+  
+    if (nextStop) {
+      distanceRequest.next_stop_venue_id = nextStop.venue_id;
+      distanceRequest.next_stop_date = normalizeDate(nextStop.event_date || nextStop.suggested_date);
+    }
+  
+    try {
+      const distanceResult = await tourService.calculateVenueSwapDistance(distanceRequest);
+      
+      return {
+        distance_from_previous_km: Number(distanceResult.distance_from_previous_km) || 0,
+        distance_from_home_km: Number(distanceResult.distance_from_home_km) || 0,
+        travel_days_needed: Number(distanceResult.travel_days_needed) || 0,
+      };
+    } catch (err) {
+      console.error("Error calculating distance for new stop:", err);
+      return {
+        distance_from_previous_km: 0,
+        distance_from_home_km: 0,
+        travel_days_needed: 0,
+      };
+    }
+  };
+
   // Get current tour params for the venue swap modal
   const getCurrentTourParams = () => ({
     preferred_venue_capacity_min: minVenueCapacity,
@@ -837,10 +1399,24 @@ const TourGenerator = ({ bandId, onBack }) => {
   });
 
   const renderTourStop = (item, index, isEvent) => {
+    /**
+     * Render a single tour stop card with event or venue details.
+     * 
+     * Includes delete button that appears on hover and a confirmation overlay
+     * when delete is initiated. Handles click events for applying to events
+     * or swapping venues.
+     */
     const date = isEvent ? item.event_date : item.suggested_date;
     const priorityColor = getPriorityColor(item.priority || item.booking_priority);
     const hasApplied = isEvent && appliedEventIds.has(item.event_id);
     const canApply = isEvent && item.is_open_for_applications && !hasApplied;
+    
+    const stopKey = isEvent 
+      ? `event-${item.event_id}-${item.event_date}`
+      : `venue-${item.venue_id}-${item.suggested_date}`;
+    const showDeleteConfirm = deleteConfirmStop === stopKey;
+    
+    const isBookedEvent = isEvent && item.is_booked;
     
     return (
       <div key={`stop-${index}`} className="tour-stop">
@@ -855,7 +1431,7 @@ const TourGenerator = ({ bandId, onBack }) => {
             <div className="tour-timeline-line"></div>
           )}
         </div>
-
+  
         {isEvent ? (
           <div 
             className={`tour-stop-card event ${canApply ? "clickable" : ""}`}
@@ -870,6 +1446,39 @@ const TourGenerator = ({ bandId, onBack }) => {
               }
             }}
           >
+            {showDeleteConfirm && (
+              <div className="tour-stop-delete-overlay">
+                <div className="tour-stop-delete-message">
+                  Remove "{item.event_name}" from tour?
+                </div>
+                <div className="tour-stop-delete-actions">
+                  <button
+                    className="tour-stop-delete-cancel"
+                    onClick={handleCancelDelete}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="tour-stop-delete-confirm"
+                    onClick={(e) => handleConfirmDelete(item, true, e)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {!showDeleteConfirm && (
+              <button
+                className="tour-stop-delete-button"
+                onClick={(e) => handleDeleteStopClick(item, true, e)}
+                title="Remove from tour"
+                aria-label="Remove event from tour"
+              >
+                🗑️
+              </button>
+            )}
+            
             <div className="tour-stop-image">
               {item.image_path ? (
                 <img
@@ -899,7 +1508,10 @@ const TourGenerator = ({ bandId, onBack }) => {
               </div>
               
               <div className="tour-stop-tags">
-                {item.is_open_for_applications && !hasApplied && (
+                {isBookedEvent && (
+                  <span className="tour-tag applied accepted">Booked</span>
+                )}
+                {item.is_open_for_applications && !hasApplied && !isBookedEvent && (
                   <span className="tour-tag accepting">Open for Applications</span>
                 )}
                 {hasApplied && getApplicationStatusBadge(item.event_id)}
@@ -950,6 +1562,39 @@ const TourGenerator = ({ bandId, onBack }) => {
               }
             }}
           >
+            {showDeleteConfirm && (
+              <div className="tour-stop-delete-overlay">
+                <div className="tour-stop-delete-message">
+                  Remove "{item.venue_name}" from tour?
+                </div>
+                <div className="tour-stop-delete-actions">
+                  <button
+                    className="tour-stop-delete-cancel"
+                    onClick={handleCancelDelete}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="tour-stop-delete-confirm"
+                    onClick={(e) => handleConfirmDelete(item, false, e)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {!showDeleteConfirm && (
+              <button
+                className="tour-stop-delete-button"
+                onClick={(e) => handleDeleteStopClick(item, false, e)}
+                title="Remove from tour"
+                aria-label="Remove venue from tour"
+              >
+                🗑️
+              </button>
+            )}
+            
             <div className="tour-stop-image venue">
               {item.image_path ? (
                 <img
@@ -1010,7 +1655,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                   <span key={idx} className="tour-reason">{reason}</span>
                 ))}
               </div>
-
+  
               <div className="tour-stop-swap-hint">
                 Click to swap venue →
               </div>
@@ -1500,9 +2145,19 @@ const TourGenerator = ({ bandId, onBack }) => {
               </div>
             </div>
 
-            {tourResults.routing_warnings && tourResults.routing_warnings.length > 0 && (
+            {tourResults.routing_warnings && tourResults.routing_warnings.length > 0 && !warningsDismissed && (
               <div className="tour-warnings">
-                <h3>⚠️ Routing Warnings</h3>
+                <div className="tour-warnings-header">
+                  <h3 className="tour-warnings-title">⚠️ Routing Warnings</h3>
+                  <button
+                    className="tour-warnings-dismiss"
+                    onClick={() => setWarningsDismissed(true)}
+                    title="Dismiss warnings"
+                    aria-label="Dismiss routing warnings"
+                  >
+                    ✕
+                  </button>
+                </div>
                 {tourResults.routing_warnings.map((warning, idx) => (
                   <div key={idx} className="tour-warning">{warning}</div>
                 ))}

@@ -401,7 +401,7 @@ const TourAddStopModal = ({
                 Select Venue
               </h3>
             </div>
-
+  
             <div className="tour-add-stop-search">
               <input
                 type="text"
@@ -412,7 +412,7 @@ const TourAddStopModal = ({
                 autoFocus
               />
             </div>
-
+  
             {loading ? (
               <div className="tour-add-stop-loading">
                 <div className="loading-spinner"></div>
@@ -424,121 +424,123 @@ const TourAddStopModal = ({
               </div>
             ) : (
               <>
-                <div className="tour-add-stop-venue-list">
-                  {filteredVenues.length === 0 ? (
-                    <div className="tour-add-stop-empty">
-                      {searchQuery ? (
-                        <p>No venues match your search criteria</p>
-                      ) : (
-                        <p>No venues available</p>
-                      )}
-                    </div>
-                  ) : (
-                    filteredVenues.map((venue) => (
-                      <div
-                        key={venue.id}
-                        className={`tour-add-stop-venue-item ${
-                          selectedVenue?.id === venue.id ? "selected" : ""
-                        }`}
-                        onClick={() => handleVenueSelect(venue)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            handleVenueSelect(venue);
-                          }
-                        }}
-                      >
-                        <div className="tour-add-stop-venue-image">
-                          {venue.image_path ? (
-                            <img
-                              src={getImageUrl(venue.image_path, API_BASE_URL)}
-                              alt={venue.name}
-                              onError={(e) => {
-                                e.target.style.display = "none";
-                                const icon = e.target.parentElement.querySelector(
-                                  ".tour-add-stop-venue-icon"
-                                );
-                                if (icon) icon.style.display = "flex";
-                              }}
-                            />
-                          ) : null}
-                          <span
-                            className="tour-add-stop-venue-icon"
-                            style={{ display: venue.image_path ? "none" : "flex" }}
-                          >
-                            🏛️
-                          </span>
-                        </div>
-
-                        <div className="tour-add-stop-venue-details">
-                          <h4 className="tour-add-stop-venue-name">{venue.name}</h4>
-                          <p className="tour-add-stop-venue-location">
-                            {formatLocation(venue)}
-                          </p>
-
-                          <div className="tour-add-stop-venue-tags">
-                            {venue.capacity && (
-                              <span className="tour-add-stop-venue-tag">
-                                👥 {venue.capacity.toLocaleString()} capacity
-                              </span>
-                            )}
-                            {venue.is_favorited && (
-                              <span className="tour-add-stop-venue-tag favorited">
-                                ⭐ Favorited
-                              </span>
-                            )}
-                            {hasContactInfo(venue) && (
-                              <span className="tour-add-stop-venue-tag">
-                                📇 Has Contact
-                              </span>
-                            )}
+                {filteredVenues.length === 0 ? (
+                  <div className="tour-add-stop-empty">
+                    {searchQuery ? (
+                      <p>No venues match your search criteria</p>
+                    ) : (
+                      <p>No venues available</p>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <div className="tour-add-stop-venue-list">
+                      {filteredVenues.map((venue) => (
+                        <div
+                          key={venue.id}
+                          className={`tour-add-stop-venue-item ${
+                            selectedVenue?.id === venue.id ? "selected" : ""
+                          }`}
+                          onClick={() => handleVenueSelect(venue)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handleVenueSelect(venue);
+                            }
+                          }}
+                        >
+                          <div className="tour-add-stop-venue-image">
+                            {venue.image_path ? (
+                              <img
+                                src={getImageUrl(venue.image_path, API_BASE_URL)}
+                                alt={venue.name}
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                  const icon = e.target.parentElement.querySelector(
+                                    ".tour-add-stop-venue-icon"
+                                  );
+                                  if (icon) icon.style.display = "flex";
+                                }}
+                              />
+                            ) : null}
+                            <span
+                              className="tour-add-stop-venue-icon"
+                              style={{ display: venue.image_path ? "none" : "flex" }}
+                            >
+                              🏛️
+                            </span>
+                          </div>
+  
+                          <div className="tour-add-stop-venue-details">
+                            <h4 className="tour-add-stop-venue-name">{venue.name}</h4>
+                            <p className="tour-add-stop-venue-location">
+                              {formatLocation(venue)}
+                            </p>
+  
+                            <div className="tour-add-stop-venue-tags">
+                              {venue.capacity && (
+                                <span className="tour-add-stop-venue-tag">
+                                  👥 {venue.capacity.toLocaleString()} capacity
+                                </span>
+                              )}
+                              {venue.is_favorited && (
+                                <span className="tour-add-stop-venue-tag favorited">
+                                  ⭐ Favorited
+                                </span>
+                              )}
+                              {hasContactInfo(venue) && (
+                                <span className="tour-add-stop-venue-tag">
+                                  📇 Has Contact
+                                </span>
+                              )}
+                            </div>
+                          </div>
+  
+                          <div className="tour-add-stop-venue-select">
+                            {selectedVenue?.id === venue.id ? "✓" : ""}
                           </div>
                         </div>
-
-                        <div className="tour-add-stop-venue-select">
-                          {selectedVenue?.id === venue.id ? "✓" : ""}
-                        </div>
+                      ))}
+                    </div>
+  
+                    {selectedVenue && (
+                      <div className="tour-add-stop-date-section">
+                        <label className="tour-add-stop-date-label">
+                          Select Date for This Stop
+                        </label>
+                        <input
+                          type="date"
+                          className="tour-add-stop-date-input"
+                          value={selectedDate}
+                          onChange={(e) => setSelectedDate(e.target.value)}
+                          min={startDate}
+                          max={endDate}
+                        />
+                        <p className="tour-add-stop-date-help">
+                          Choose a date within your tour dates ({startDate} to {endDate})
+                        </p>
                       </div>
-                    ))
-                  )}
-                </div>
-
-                {selectedVenue && (
-                  <div className="tour-add-stop-date-section">
-                    <label className="tour-add-stop-date-label">
-                      Select Date for This Stop
-                    </label>
-                    <input
-                      type="date"
-                      className="tour-add-stop-date-input"
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      min={startDate}
-                      max={endDate}
-                    />
-                    <p className="tour-add-stop-date-help">
-                      Choose a date within your tour dates ({startDate} to {endDate})
-                    </p>
-                  </div>
+                    )}
+  
+                    <div className="tour-add-stop-actions">
+                      <button
+                        className="tour-add-stop-cancel-button"
+                        onClick={onClose}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="tour-add-stop-submit-button"
+                        onClick={handleVenueSubmit}
+                        disabled={!selectedVenue || !selectedDate}
+                      >
+                        Add Venue to Tour
+                      </button>
+                    </div>
+                  </>
                 )}
-
-                <div className="tour-add-stop-actions">
-                  <button
-                    className="tour-add-stop-cancel-button"
-                    onClick={onClose}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="tour-add-stop-submit-button"
-                    onClick={handleVenueSubmit}
-                    disabled={!selectedVenue || !selectedDate}
-                  >
-                    Add Venue to Tour
-                  </button>
-                </div>
               </>
             )}
           </div>
