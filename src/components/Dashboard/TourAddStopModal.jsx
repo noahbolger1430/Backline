@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { venueService } from "../../services/venueService";
+import { eventService } from "../../services/eventService";
 import { getImageUrl } from "../../utils/imageUtils";
 import "./TourGenerator.css";
 
@@ -12,20 +13,26 @@ const TourAddStopModal = ({
   bandId,
   tourParams,
   onAddVenue,
+  onAddEvent,
   startDate,
-  endDate
+  endDate,
+  existingStopDates = []
 }) => {
-  const [view, setView] = useState("selection"); // "selection" or "venue"
+  const [view, setView] = useState("selection"); // "selection", "venue", or "event"
   const [venues, setVenues] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVenue, setSelectedVenue] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedDate, setSelectedDate] = useState("");
 
   useEffect(() => {
     if (view === "venue") {
       fetchVenues();
+    } else if (view === "event") {
+      fetchEvents();
     }
   }, [view, bandId]);
 
@@ -44,6 +51,80 @@ const TourAddStopModal = ({
       setLoading(false);
     }
   };
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const params = {
+        is_open_for_applications: true,
+        start_date: startDate,
+        end_date: endDate,
+      };
+      
+      const response = await eventService.listEvents(params);
+      setEvents(response.events || []);
+    } catch (err) {
+      console.error("Error fetching events:", err);
+      setError(err.message || "Failed to load events");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Convert existing stop dates to a Set for efficient lookup
+  const existingDatesSet = useMemo(() => {
+    return new Set(existingStopDates.map(d => {
+      // Normalize dates to YYYY-MM-DD format
+      if (typeof d === 'string') {
+        return d.split('T')[0];
+      }
+      return d;
+    }));
+  }, [existingStopDates]);
+
+  // Filter events based on search, tour params, and existing stop dates
+  const filteredEvents = useMemo(() => {
+    let filtered = events;
+
+    // Filter out events on dates that already have tour stops
+    filtered = filtered.filter((event) => {
+      const eventDate = event.event_date?.split('T')[0];
+      return !existingDatesSet.has(eventDate);
+    });
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((event) => {
+        const nameMatch = event.name?.toLowerCase().includes(query);
+        const venueMatch = event.venue_name?.toLowerCase().includes(query);
+        const cityMatch = event.venue_city?.toLowerCase().includes(query);
+        const stateMatch = event.venue_state?.toLowerCase().includes(query);
+        return nameMatch || venueMatch || cityMatch || stateMatch;
+      });
+    }
+
+    // Filter by capacity if tour params exist
+    if (tourParams?.preferred_venue_capacity_min) {
+      filtered = filtered.filter(
+        (e) => !e.venue_capacity || e.venue_capacity >= tourParams.preferred_venue_capacity_min
+      );
+    }
+    if (tourParams?.preferred_venue_capacity_max) {
+      filtered = filtered.filter(
+        (e) => !e.venue_capacity || e.venue_capacity <= tourParams.preferred_venue_capacity_max
+      );
+    }
+
+    // Sort by event date chronologically
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.event_date);
+      const dateB = new Date(b.event_date);
+      return dateA - dateB;
+    });
+  }, [events, searchQuery, tourParams, existingDatesSet]);
 
   // Filter venues based on search and tour params
   const filteredVenues = useMemo(() => {
@@ -87,6 +168,40 @@ const TourAddStopModal = ({
     return parts.join(", ") || "Location not specified";
   };
 
+  const formatEventLocation = (event) => {
+    const parts = [];
+    if (event.venue_city) parts.push(event.venue_city);
+    if (event.venue_state) parts.push(event.venue_state);
+    return parts.join(", ") || "Location not specified";
+  };
+
+  const formatEventDate = (dateString) => {
+    if (!dateString) return "";
+    const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatDayOfWeek = (dateString) => {
+    if (!dateString) return "";
+    const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString("en-US", { weekday: "long" });
+  };
+
+  const isWeekend = (dateString) => {
+    if (!dateString) return false;
+    const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    const dayOfWeek = date.getDay();
+    return dayOfWeek === 5 || dayOfWeek === 6; // Friday or Saturday
+  };
+
   const hasContactInfo = (venue) => {
     return !!(venue.contact_name || venue.contact_email || venue.contact_phone);
   };
@@ -95,9 +210,20 @@ const TourAddStopModal = ({
     setSelectedVenue(venue.id === selectedVenue?.id ? null : venue);
   };
 
-  const handleSubmit = () => {
+  const handleEventSelect = (event) => {
+    setSelectedEvent(event.id === selectedEvent?.id ? null : event);
+  };
+
+  const handleVenueSubmit = () => {
     if (selectedVenue && selectedDate) {
       onAddVenue(selectedVenue, selectedDate);
+      onClose();
+    }
+  };
+
+  const handleEventSubmit = () => {
+    if (selectedEvent) {
+      onAddEvent(selectedEvent);
       onClose();
     }
   };
@@ -105,11 +231,161 @@ const TourAddStopModal = ({
   const handleBack = () => {
     setView("selection");
     setSelectedVenue(null);
+    setSelectedEvent(null);
     setSelectedDate("");
     setSearchQuery("");
   };
 
   if (!isOpen) return null;
+
+  // Render event selection view
+  if (view === "event") {
+    return (
+      <div className="tour-add-stop-modal-overlay" onClick={onClose}>
+        <div className="tour-add-stop-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="tour-add-stop-venue-view">
+            <div className="tour-add-stop-venue-header">
+              <button className="tour-add-stop-back-button" onClick={handleBack}>
+                ←
+              </button>
+              <h3 className="tour-add-stop-modal-header" style={{ margin: 0 }}>
+                Select Event
+              </h3>
+            </div>
+
+            <div className="tour-add-stop-search">
+              <input
+                type="text"
+                className="tour-add-stop-search-input"
+                placeholder="Search events by name, venue, or location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+              />
+            </div>
+
+            {loading ? (
+              <div className="tour-add-stop-loading">
+                <div className="loading-spinner"></div>
+                <span>Loading events...</span>
+              </div>
+            ) : error ? (
+              <div className="tour-add-stop-empty">
+                <p>Error loading events: {error}</p>
+              </div>
+            ) : (
+              <>
+                <div className="tour-add-stop-venue-list">
+                  {filteredEvents.length === 0 ? (
+                    <div className="tour-add-stop-empty">
+                      {searchQuery ? (
+                        <p>No events match your search criteria</p>
+                      ) : events.length > 0 ? (
+                        <p>All available events fall on existing tour dates</p>
+                      ) : (
+                        <p>No events available for applications in this date range</p>
+                      )}
+                    </div>
+                  ) : (
+                    filteredEvents.map((event) => (
+                      <div
+                        key={event.id}
+                        className={`tour-add-stop-venue-item ${
+                          selectedEvent?.id === event.id ? "selected" : ""
+                        }`}
+                        onClick={() => handleEventSelect(event)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleEventSelect(event);
+                          }
+                        }}
+                      >
+                        <div className="tour-add-stop-venue-image">
+                          {event.image_path ? (
+                            <img
+                              src={getImageUrl(event.image_path, API_BASE_URL)}
+                              alt={event.name}
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                                const icon = e.target.parentElement.querySelector(
+                                  ".tour-add-stop-venue-icon"
+                                );
+                                if (icon) icon.style.display = "flex";
+                              }}
+                            />
+                          ) : null}
+                          <span
+                            className="tour-add-stop-venue-icon tour-add-stop-event-icon"
+                            style={{ display: event.image_path ? "none" : "flex" }}
+                          >
+                            🎵
+                          </span>
+                        </div>
+
+                        <div className="tour-add-stop-venue-details">
+                          <h4 className="tour-add-stop-venue-name">{event.name}</h4>
+                          <p className="tour-add-stop-event-venue-name">
+                            {event.venue_name}
+                          </p>
+                          <p className="tour-add-stop-venue-location">
+                            {formatEventLocation(event)}
+                          </p>
+
+                          <div className="tour-add-stop-venue-tags">
+                            <span className="tour-add-stop-venue-tag tour-add-stop-date-tag">
+                              📅 {formatEventDate(event.event_date)}
+                            </span>
+                            {isWeekend(event.event_date) && (
+                              <span className="tour-add-stop-venue-tag weekend">
+                                🎉 Weekend
+                              </span>
+                            )}
+                            {event.is_open_for_applications && (
+                              <span className="tour-add-stop-venue-tag accepting">
+                                ✓ Open for Applications
+                              </span>
+                            )}
+                            {event.genre_tags && (
+                              <span className="tour-add-stop-venue-tag genre">
+                                🎸 {event.genre_tags.split(",")[0]}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="tour-add-stop-venue-select">
+                          {selectedEvent?.id === event.id ? "✓" : ""}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="tour-add-stop-actions">
+                  <button
+                    className="tour-add-stop-cancel-button"
+                    onClick={onClose}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="tour-add-stop-submit-button"
+                    onClick={handleEventSubmit}
+                    disabled={!selectedEvent}
+                  >
+                    Add Event to Tour
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Render venue selection view
   if (view === "venue") {
@@ -215,7 +491,7 @@ const TourAddStopModal = ({
                             )}
                             {hasContactInfo(venue) && (
                               <span className="tour-add-stop-venue-tag">
-                                📞 Has Contact
+                                📇 Has Contact
                               </span>
                             )}
                           </div>
@@ -257,7 +533,7 @@ const TourAddStopModal = ({
                   </button>
                   <button
                     className="tour-add-stop-submit-button"
-                    onClick={handleSubmit}
+                    onClick={handleVenueSubmit}
                     disabled={!selectedVenue || !selectedDate}
                   >
                     Add Venue to Tour
@@ -280,13 +556,13 @@ const TourAddStopModal = ({
         <div className="tour-add-stop-options">
           <div
             className="tour-add-stop-option event"
-            onClick={() => onSelectType("event")}
+            onClick={() => setView("event")}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                onSelectType("event");
+                setView("event");
               }
             }}
           >

@@ -1891,3 +1891,35 @@
   color: #888888;
   font-size: 14px;
 }
+.tour-add-stop-event-icon {
+  color: #6F22D2 !important;
+}
+
+.tour-add-stop-event-venue-name {
+  font-size: 14px;
+  color: #6F22D2;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+}
+
+.tour-add-stop-date-tag {
+  background-color: #1F2833 !important;
+  color: #FFFFFF !important;
+  font-weight: 600;
+}
+
+.tour-add-stop-venue-tag.weekend {
+  background-color: rgba(111, 34, 210, 0.2);
+  color: #8B2FE8;
+}
+
+.tour-add-stop-venue-tag.accepting {
+  background-color: #1A4D2E;
+  color: #4ADE80;
+}
+
+.tour-add-stop-venue-tag.genre {
+  background-color: #1F2833;
+  color: #6F22D2;
+  border: 1px solid #6F22D2;
+}

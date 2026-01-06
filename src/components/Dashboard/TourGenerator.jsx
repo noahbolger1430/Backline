@@ -92,7 +92,7 @@ const TourGenerator = ({ bandId, onBack }) => {
 
   const fetchBandApplications = async () => {
     try {
-      const applicationsResponse = await eventApplicationService.listBandApplications(bandId);
+      const applicationsResponse = await eventApplicationService.listBandApplication(bandId);
       const appliedIds = new Set();
       const statuses = {};
       
@@ -593,10 +593,60 @@ const TourGenerator = ({ bandId, onBack }) => {
   };
   
   const handleAddStopTypeSelected = (type) => {
-    // TODO: Implement the actual functionality to add events
+    // This function is no longer needed as the modal handles view switching internally
     console.log(`Selected to add ${type}`);
-    // This is where you'll implement the event selection logic
-    // For now, we're just logging the selection
+  };
+
+  // Helper function to format location for venues
+  const formatLocation = (venue) => {
+    const parts = [];
+    if (venue.city) parts.push(venue.city);
+    if (venue.state) parts.push(venue.state);
+    return parts.join(", ") || "Location not specified";
+  };
+
+  // Helper function to format event location
+  const formatEventLocation = (event) => {
+    const parts = [];
+    if (event.venue_city) parts.push(event.venue_city);
+    if (event.venue_state) parts.push(event.venue_state);
+    return parts.join(", ") || "Location not specified";
+  };
+
+  // Get existing tour stop dates for filtering events
+  const getExistingStopDates = () => {
+    if (!tourResults) return [];
+    
+    const dates = [];
+    
+    // Add booked event dates
+    if (tourResults.booked_events) {
+      tourResults.booked_events.forEach(event => {
+        if (event.event_date) {
+          dates.push(event.event_date.split('T')[0]);
+        }
+      });
+    }
+    
+    // Add recommended event dates
+    if (tourResults.recommended_events) {
+      tourResults.recommended_events.forEach(event => {
+        if (event.event_date) {
+          dates.push(event.event_date.split('T')[0]);
+        }
+      });
+    }
+    
+    // Add recommended venue dates
+    if (tourResults.recommended_venues) {
+      tourResults.recommended_venues.forEach(venue => {
+        if (venue.suggested_date) {
+          dates.push(venue.suggested_date.split('T')[0]);
+        }
+      });
+    }
+    
+    return dates;
   };
   
   const handleAddVenueToTour = (venue, date) => {
@@ -610,47 +660,109 @@ const TourGenerator = ({ bandId, onBack }) => {
       venue_contact_phone: venue.contact_phone,
       suggested_date: date,
       distance_from_previous_km: 0, // Will be calculated if needed
+      distance_from_home_km: 0,
       travel_days_needed: 0,
       booking_priority: "manual",
       reasoning: ["Manually added to tour"],
       image_path: venue.image_path,
       capacity: venue.capacity,
+      score: 50,
+      availability_status: "available",
+      day_of_week: new Date(date).toLocaleDateString("en-US", { weekday: "long" }),
+      has_sound_provided: venue.has_sound_provided || false,
+      has_parking: venue.has_parking || false,
     };
   
-    // Add the venue to the tour results
-    setTourResults(prev => ({
-      ...prev,
-      recommended_venues: [...prev.recommended_venues, newVenueStop]
-    }));
+    // Add the venue to the tour results and update the summary
+    setTourResults(prev => {
+      const newRecommendedVenues = [...prev.recommended_venues, newVenueStop];
+      
+      // Calculate new total show days
+      const totalShowDays = 
+        (prev.booked_events?.length || 0) + 
+        (prev.recommended_events?.length || 0) + 
+        newRecommendedVenues.length;
+      
+      // Recalculate average km between shows
+      const averageKmBetweenShows = totalShowDays > 0 
+        ? Math.round((prev.tour_summary.total_distance_km / totalShowDays) * 10) / 10
+        : 0;
+      
+      return {
+        ...prev,
+        recommended_venues: newRecommendedVenues,
+        tour_summary: {
+          ...prev.tour_summary,
+          total_show_days: totalShowDays,
+          recommended_venues_count: newRecommendedVenues.length,
+          average_km_between_shows: averageKmBetweenShows,
+        }
+      };
+    });
+  
+    // Mark as having unsaved changes
+    setHasUnsavedChanges(true);
   
     // Close the modal
     setShowAddStopModal(false);
   };
 
-  // Helper function to format location
-  const formatLocation = (venue) => {
-    const parts = [];
-    if (venue.city) parts.push(venue.city);
-    if (venue.state) parts.push(venue.state);
-    return parts.join(", ") || "Location not specified";
+  const handleAddEventToTour = (event) => {
+    // Create an event recommendation object that matches the tour stop format
+    const newEventStop = {
+      event_id: event.id,
+      event_name: event.name,
+      event_date: event.event_date,
+      venue_id: event.venue_id,
+      venue_name: event.venue_name,
+      venue_location: formatEventLocation(event),
+      venue_capacity: event.venue_capacity || null,
+      distance_from_previous_km: 0, // Will be calculated if needed
+      distance_from_home_km: 0,
+      travel_days_needed: 0,
+      tour_score: 50,
+      recommendation_score: null,
+      availability_status: "available",
+      reasoning: ["Manually added to tour"],
+      is_open_for_applications: event.is_open_for_applications,
+      genre_tags: event.genre_tags,
+      priority: "medium",
+      image_path: event.image_path,
+    };
+  
+    // Add the event to the tour results and update the summary
+    setTourResults(prev => {
+      const newRecommendedEvents = [...prev.recommended_events, newEventStop];
+      
+      // Calculate new total show days
+      const totalShowDays = 
+        (prev.booked_events?.length || 0) + 
+        newRecommendedEvents.length + 
+        (prev.recommended_venues?.length || 0);
+      
+      // Recalculate average km between shows
+      const averageKmBetweenShows = totalShowDays > 0 
+        ? Math.round((prev.tour_summary.total_distance_km / totalShowDays) * 10) / 10
+        : 0;
+      
+      return {
+        ...prev,
+        recommended_events: newRecommendedEvents,
+        tour_summary: {
+          ...prev.tour_summary,
+          total_show_days: totalShowDays,
+          recommended_events_count: newRecommendedEvents.length,
+          average_km_between_shows: averageKmBetweenShows,
+        }
+      };
+    });
+  
+    // Mark as having unsaved changes
+    setHasUnsavedChanges(true);
+  
+    // Close the modal
+    setShowAddStopModal(false);
   };
-
-  // Update the modal component props
-  {showAddStopModal && (
-    <TourAddStopModal
-      isOpen={showAddStopModal}
-      onClose={() => setShowAddStopModal(false)}
-      onSelectType={handleAddStopTypeSelected}
-      bandId={bandId}
-      tourParams={{
-        preferred_venue_capacity_min: minVenueCapacity,
-        preferred_venue_capacity_max: maxVenueCapacity,
-      }}
-      onAddVenue={handleAddVenueToTour}
-      startDate={startDate}
-      endDate={endDate}
-    />
-  )}
 
   const formatDayOfWeek = (dateString) => {
     if (!dateString) return "";
@@ -802,7 +914,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                 </span>
                 {item.travel_days_needed > 0 && (
                   <span className="tour-metric">
-                    🚗 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
+                    🚙 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
                   </span>
                 )}
                 {item.recommendation_score && (
@@ -888,7 +1000,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                 </span>
                 {item.travel_days_needed > 0 && (
                   <span className="tour-metric">
-                    🚗 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
+                    🚙 {item.travel_days_needed} travel day{item.travel_days_needed > 1 ? "s" : ""}
                   </span>
                 )}
               </div>
@@ -932,7 +1044,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                 setHasUnsavedChanges(false);
               }}
             >
-              <div className="tour-option-icon">✨</div>
+              <div className="tour-option-icon">✿</div>
               <h3 className="tour-option-title">Generate New Tour</h3>
               <p className="tour-option-description">
                 Create an optimized tour route based on your preferences
@@ -962,7 +1074,7 @@ const TourGenerator = ({ bandId, onBack }) => {
                           🎵 {tour.total_shows} shows
                         </span>
                         <span className="saved-tour-detail">
-                          🚗 {Math.round(tour.total_distance_km)} km
+                          🚙 {Math.round(tour.total_distance_km)} km
                         </span>
                       </div>
                     </div>
@@ -1484,6 +1596,7 @@ const TourGenerator = ({ bandId, onBack }) => {
           tourParams={getCurrentTourParams()}
         />
       )}
+      
       {showAddStopModal && (
         <TourAddStopModal
           isOpen={showAddStopModal}
@@ -1495,8 +1608,10 @@ const TourGenerator = ({ bandId, onBack }) => {
             preferred_venue_capacity_max: maxVenueCapacity,
           }}
           onAddVenue={handleAddVenueToTour}
+          onAddEvent={handleAddEventToTour}
           startDate={startDate}
           endDate={endDate}
+          existingStopDates={getExistingStopDates()}
         />
       )}
     </div>
