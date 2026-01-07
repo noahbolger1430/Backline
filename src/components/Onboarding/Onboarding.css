@@ -5,6 +5,87 @@
   align-items: center;
   background-color: #000000;
   padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ambient Glow Animation */
+.onboarding-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at 20% 50%, 
+    rgba(111, 34, 210, 0.15) 0%, 
+    transparent 25%
+  ),
+  radial-gradient(
+    circle at 80% 80%, 
+    rgba(138, 43, 226, 0.12) 0%, 
+    transparent 25%
+  ),
+  radial-gradient(
+    circle at 40% 20%, 
+    rgba(111, 34, 210, 0.1) 0%, 
+    transparent 25%
+  ),
+  radial-gradient(
+    circle at 60% 90%, 
+    rgba(168, 85, 247, 0.08) 0%, 
+    transparent 25%
+  );
+  animation: ambientGlow 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.onboarding-container::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at 70% 30%, 
+    rgba(111, 34, 210, 0.1) 0%, 
+    transparent 25%
+  ),
+  radial-gradient(
+    circle at 30% 70%, 
+    rgba(138, 43, 226, 0.08) 0%, 
+    transparent 25%
+  ),
+  radial-gradient(
+    circle at 85% 60%, 
+    rgba(168, 85, 247, 0.12) 0%, 
+    transparent 25%
+  );
+  animation: ambientGlow 25s ease-in-out infinite reverse;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes ambientGlow {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(5%, 5%) rotate(90deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-3%, 8%) rotate(180deg);
+    opacity: 1;
+  }
+  75% {
+    transform: translate(8%, -5%) rotate(270deg);
+    opacity: 0.9;
+  }
 }
 
 .onboarding-card {
@@ -13,6 +94,8 @@
   padding: 40px;
   text-align: center;
   border-radius: 8px;
+  position: relative;
+  z-index: 10;
 }
 
 .onboarding-card.success-card {
@@ -55,7 +138,7 @@
 
 .role-button {
   background-color: #1a1a1a;
-  border: 2px solid #333333;
+  border: 1px solid #333333;
   border-radius: 8px;
   padding: 30px 20px;
   cursor: pointer;
@@ -111,7 +194,7 @@
 .invite-button.no {
   background-color: transparent;
   color: #ffffff;
-  border: 2px solid #ffffff;
+  border: 1px solid #ffffff;
 }
 
 .invite-button:hover {
@@ -197,7 +280,7 @@
 .button.secondary {
   background-color: transparent;
   color: #ffffff;
-  border: 2px solid #ffffff;
+  border: 1px solid #ffffff;
 }
 
 .button:hover:not(:disabled) {
@@ -240,7 +323,7 @@
 
 .invite-code-box {
   background-color: #1a1a1a;
-  border: 2px solid #333333;
+  border: 1px solid #333333;
   border-radius: 8px;
   padding: 20px;
   margin: 20px 0;
@@ -393,4 +476,3 @@
   border-color: #ffffff;
   background-color: #2a2a2a;
 }
-
