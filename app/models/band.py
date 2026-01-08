@@ -22,6 +22,8 @@ class Band(Base):
     description = Column(Text, nullable=True)
     genre = Column(String, nullable=True)
     location = Column(String, nullable=True)
+    city = Column(String, nullable=True)
+    state = Column(String, nullable=True)
     invite_code = Column(
         String,
         unique=True,

@@ -6,7 +6,7 @@ import "./Dashboard.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
-const VenuesView = ({ bandId = null }) => {
+const VenuesView = ({ bandId = null, bandLocation = null }) => {
   const [venues, setVenues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,26 +17,69 @@ const VenuesView = ({ bandId = null }) => {
   const [filterName, setFilterName] = useState("");
   const [filterLocation, setFilterLocation] = useState("");
   const [filterMinCapacity, setFilterMinCapacity] = useState("");
-  const [filterHasContact, setFilterHasContact] = useState(false); // checkbox: true = only show venues with contact info
+  const [filterHasContact, setFilterHasContact] = useState(false);
+  
+  // Distance filter state
+  const [filterDistanceInput, setFilterDistanceInput] = useState(""); // User input
+  const [appliedDistance, setAppliedDistance] = useState(""); // Actually applied filter
+  const [customLocation, setCustomLocation] = useState("");
+  const [useCustomLocation, setUseCustomLocation] = useState(false);
 
+  // Initial load
   useEffect(() => {
-    const fetchVenues = async () => {
-      try {
-        setLoading(true);
-        // Include band_id to get favorite status
-        const params = bandId ? { band_id: bandId } : {};
-        const response = await venueService.listVenues(params);
-        setVenues(response.venues || []);
-      } catch (err) {
-        setError(err.message);
-        console.error("Error fetching venues:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchVenues();
   }, [bandId]);
+
+  const fetchVenues = async (distanceOverride = null) => {
+    try {
+      setLoading(true);
+      const params = bandId ? { band_id: bandId } : {};
+      
+      // Use provided distance or the applied distance
+      const distanceToUse = distanceOverride !== null ? distanceOverride : appliedDistance;
+      
+      // Add distance filtering if enabled
+      if (distanceToUse) {
+        params.distance_km = parseFloat(distanceToUse);
+        
+        if (useCustomLocation && customLocation.trim()) {
+          params.base_location = customLocation.trim();
+        } else if (!bandLocation) {
+          setError("Distance filtering requires a band location or custom location");
+          setLoading(false);
+          return;
+        }
+      }
+      
+      const response = await venueService.listVenues(params);
+      setVenues(response.venues || []);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error("Error fetching venues:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApplyDistanceFilter = () => {
+    setAppliedDistance(filterDistanceInput);
+    fetchVenues(filterDistanceInput);
+  };
+
+  const handleDistanceKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleApplyDistanceFilter();
+    }
+  };
+
+  const handleClearDistanceFilter = () => {
+    setFilterDistanceInput("");
+    setAppliedDistance("");
+    setUseCustomLocation(false);
+    setCustomLocation("");
+    fetchVenues("");
+  };
 
   const formatLocation = (venue) => {
     const parts = [];
@@ -52,6 +95,14 @@ const VenuesView = ({ bandId = null }) => {
     if (venue.state) parts.push(venue.state);
     if (venue.zip_code) parts.push(venue.zip_code);
     return parts.join(", ") || "Address not specified";
+  };
+
+  const formatDistance = (distance) => {
+    if (distance === null || distance === undefined) return null;
+    if (distance < 1) {
+      return `${Math.round(distance * 1000)}m`;
+    }
+    return `${distance.toFixed(1)}km`;
   };
 
   const toggleVenueExpansion = (venueId) => {
@@ -73,7 +124,7 @@ const VenuesView = ({ bandId = null }) => {
     return !!(venue.contact_name || venue.contact_email || venue.contact_phone);
   };
 
-  // Filter and search logic
+  // Client-side filtering (in addition to server-side distance filtering)
   const filteredVenues = venues.filter((venue) => {
     // Search query - matches name or location (city/state)
     if (searchQuery.trim()) {
@@ -129,6 +180,7 @@ const VenuesView = ({ bandId = null }) => {
     setFilterLocation("");
     setFilterMinCapacity("");
     setFilterHasContact(false);
+    handleClearDistanceFilter();
   };
 
   const hasActiveFilters = () => {
@@ -137,7 +189,8 @@ const VenuesView = ({ bandId = null }) => {
       filterName.trim() ||
       filterLocation.trim() ||
       filterMinCapacity ||
-      filterHasContact
+      filterHasContact ||
+      appliedDistance
     );
   };
 
@@ -167,12 +220,22 @@ const VenuesView = ({ bandId = null }) => {
     }
   };
 
-  // Sort venues: favorited first, then alphabetically
+  // Sort venues: favorited first, then by distance (if available), then alphabetically
   const sortedFilteredVenues = [...filteredVenues].sort((a, b) => {
     // Favorited venues come first
     if (a.is_favorited && !b.is_favorited) return -1;
     if (!a.is_favorited && b.is_favorited) return 1;
-    // Then sort alphabetically by name
+    
+    // Then sort by distance if available
+    if (a.distance_km !== undefined && b.distance_km !== undefined) {
+      if (a.distance_km !== null && b.distance_km !== null) {
+        return a.distance_km - b.distance_km;
+      }
+      if (a.distance_km === null) return 1;
+      if (b.distance_km === null) return -1;
+    }
+    
+    // Finally sort alphabetically by name
     return a.name.localeCompare(b.name);
   });
 
@@ -247,6 +310,32 @@ const VenuesView = ({ bandId = null }) => {
               />
             </div>
 
+            {/* Distance Filter */}
+            <div className="filter-group distance-filter-group">
+              <label className="filter-label">Max Distance (km)</label>
+              <div className="distance-input-wrapper">
+                <input
+                  type="number"
+                  className="filter-input"
+                  placeholder="Distance"
+                  min="0"
+                  max="10000"
+                  step="10"
+                  value={filterDistanceInput}
+                  onChange={(e) => setFilterDistanceInput(e.target.value)}
+                  onKeyPress={handleDistanceKeyPress}
+                />
+                <button 
+                  className="apply-distance-button"
+                  onClick={handleApplyDistanceFilter}
+                  disabled={!filterDistanceInput || filterDistanceInput === appliedDistance}
+                  title="Apply distance filter"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+
             <div className="filter-group filter-checkbox-group">
               <label className="filter-checkbox-label">
                 <input
@@ -265,11 +354,53 @@ const VenuesView = ({ bandId = null }) => {
               </button>
             )}
           </div>
+
+          {/* Custom Location for Distance Filter */}
+          {(filterDistanceInput || appliedDistance) && (
+            <div className="distance-filter-options">
+              <div className="filter-checkbox-group">
+                <label className="filter-checkbox-label">
+                  <input
+                    type="checkbox"
+                    className="filter-checkbox"
+                    checked={useCustomLocation}
+                    onChange={(e) => setUseCustomLocation(e.target.checked)}
+                  />
+                  <span>Use custom location instead of band location</span>
+                </label>
+              </div>
+              
+              {useCustomLocation && (
+                <div className="filter-group custom-location-group">
+                  <input
+                    type="text"
+                    className="filter-input"
+                    placeholder="Enter location (e.g., Austin, TX or 123 Main St, Toronto, ON)"
+                    value={customLocation}
+                    onChange={(e) => setCustomLocation(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && appliedDistance) {
+                        handleApplyDistanceFilter();
+                      }
+                    }}
+                  />
+                  <button 
+                    className="update-location-button"
+                    onClick={handleApplyDistanceFilter}
+                    disabled={!customLocation.trim() || !appliedDistance}
+                  >
+                    Update Location
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {hasActiveFilters() && (
           <div className="filter-results-info">
             Showing {filteredVenues.length} of {venues.length} venues
+            {appliedDistance && ` within ${appliedDistance}km`}
           </div>
         )}
       </div>
@@ -311,13 +442,18 @@ const VenuesView = ({ bandId = null }) => {
                       }}
                       title={isFavorited ? "Unfavorite venue" : "Favorite venue"}
                     >
-                      ⭐
+                      ♥
                     </button>
                   )}
                 </div>
                 <div className="venue-card-content">
                   <h3 className="venue-name">{venue.name}</h3>
-                  <p className="venue-location">{formatLocation(venue)}</p>
+                  <p className="venue-location">
+                    {formatLocation(venue)}
+                    {venue.distance_km !== undefined && (
+                      <span className="venue-distance"> • {formatDistance(venue.distance_km)}</span>
+                    )}
+                  </p>
                   <p className="venue-contact">{formatContactInfo(venue)}</p>
                   <button
                     className="venue-expand-button"
@@ -346,6 +482,12 @@ const VenuesView = ({ bandId = null }) => {
                         <div className="venue-info-section">
                           <h4 className="venue-info-label">Capacity</h4>
                           <p className="venue-info-value">{venue.capacity.toLocaleString()} people</p>
+                        </div>
+                      )}
+                      {venue.distance_km !== undefined && (
+                        <div className="venue-info-section">
+                          <h4 className="venue-info-label">Distance from {useCustomLocation ? 'custom location' : 'band'}</h4>
+                          <p className="venue-info-value">{formatDistance(venue.distance_km) || 'Unable to calculate'}</p>
                         </div>
                       )}
                       <div className="venue-info-section">

@@ -33,6 +33,11 @@ from app.schemas.equipment import (
 )
 from app.services.venue_service import VenueService
 from app.services.storage import storage_service
+from app.services.tour_generator_geocoding_utils import (
+    GeocodingService,
+    calculate_distance,
+    build_location_string
+)
 
 router = APIRouter()
 
@@ -151,13 +156,16 @@ def list_venues(
     skip: int = 0,
     limit: int = 100,
     band_id: Optional[int] = Query(None, description="Optional band ID to include favorite status"),
+    # Add distance filter parameters
+    distance_km: Optional[float] = Query(None, ge=0, le=10000, description="Filter venues within this distance (km)"),
+    base_location: Optional[str] = Query(None, description="Base location for distance calculation (overrides band location)"),
     db: Session = Depends(get_db),
 ) -> VenueListResponse:
     """
     Search and list venues with filters.
     
     Public endpoint for discovering venues. Supports filtering by
-    location, amenities, and capacity.
+    location, amenities, capacity, and distance from band location.
     
     **Parameters:**
     - **city**: Filter by city (partial match)
@@ -168,21 +176,42 @@ def list_venues(
     - **max_capacity**: Maximum venue capacity
     - **skip**: Pagination offset
     - **limit**: Page size (max 100)
+    - **band_id**: Optional band ID to include favorite status
+    - **distance_km**: Filter venues within this distance (kilometers)
+    - **base_location**: Base location for distance calculation (overrides band location)
     
     **Returns:**
-    - **200 OK**: Paginated list of venues
-    - **400 Bad Request**: Invalid capacity range
-    
-    **Use Cases:**
-    - Bands searching for venues
-    - Public venue directory
-    - Filtered venue discovery
+    - **200 OK**: Paginated list of venues with distance info
+    - **400 Bad Request**: Invalid capacity range or distance parameters
     """
     if min_capacity and max_capacity and min_capacity > max_capacity:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="min_capacity cannot be greater than max_capacity",
         )
+
+    # Get band location if distance filtering is requested
+    band_location_str = None
+    if distance_km is not None:
+        if base_location:
+            # Use provided base location
+            band_location_str = base_location
+        elif band_id:
+            # Get band's location
+            from app.models import Band
+            band = db.query(Band).filter(Band.id == band_id).first()
+            if band:
+                band_location_str = build_location_string(
+                    city=band.city,
+                    state=band.state,
+                    street_address=band.location
+                )
+        
+        if not band_location_str:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Distance filter requires either a base_location or a band_id with location"
+            )
 
     venues, total = VenueService.list_venues(
         db,
@@ -196,6 +225,43 @@ def list_venues(
         limit=limit,
     )
 
+    # Calculate distances if requested
+    venues_with_distance = []
+    if distance_km is not None and band_location_str:
+        # Geocode band location
+        band_coords = GeocodingService.geocode(band_location_str)
+        
+        for venue in venues:
+            venue_location_str = build_location_string(venue=venue)
+            venue_coords = GeocodingService.geocode(venue_location_str)
+            
+            # Calculate distance if both locations could be geocoded
+            if band_coords and venue_coords:
+                distance = calculate_distance(
+                    band_coords[0], band_coords[1],
+                    venue_coords[0], venue_coords[1]
+                )
+                
+                # Only include venues within the specified distance
+                if distance <= distance_km:
+                    venues_with_distance.append((venue, distance))
+            else:
+                # Include venues that couldn't be geocoded with None distance
+                # (you might want to exclude these instead)
+                venues_with_distance.append((venue, None))
+        
+        # Sort by distance (venues with None distance at the end)
+        venues_with_distance.sort(
+            key=lambda x: x[1] if x[1] is not None else float('inf')
+        )
+        
+        # Update venues list and total count
+        venues = [v[0] for v in venues_with_distance]
+        total = len(venues)
+    else:
+        # No distance calculation needed
+        venues_with_distance = [(v, None) for v in venues]
+
     # Get favorite status if band_id is provided
     favorite_venue_ids = set()
     if band_id:
@@ -206,12 +272,14 @@ def list_venues(
         )
         favorite_venue_ids = {f.venue_id for f in favorites}
 
-    # Build response with favorite status
+    # Build response with favorite status and distance
     venue_responses = []
-    for venue in venues:
+    for venue, distance in venues_with_distance:
         venue_data = VenueResponse.model_validate(venue).model_dump()
         if band_id is not None:
             venue_data["is_favorited"] = venue.id in favorite_venue_ids
+        if distance is not None:
+            venue_data["distance_km"] = round(distance, 1)
         venue_responses.append(VenueResponse(**venue_data))
 
     return VenueListResponse(

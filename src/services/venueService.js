@@ -100,7 +100,9 @@ export const venueService = {
 
       if (!response.ok) {
         const error = await response.json();
-        const errorMessage = typeof error.detail === 'string' ? error.detail : (error.detail?.message || JSON.stringify(error.detail) || "Failed to fetch venues");
+        const errorMessage = typeof error.detail === 'string' 
+          ? error.detail 
+          : (error.detail?.message || JSON.stringify(error.detail) || "Failed to fetch venues");
         const err = new Error(errorMessage);
         err.status = response.status;
         throw err;
@@ -110,7 +112,9 @@ export const venueService = {
     } catch (error) {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
-        const timeoutErr = new Error("Request timeout - venue service may be slow or unavailable");
+        const timeoutErr = new Error(
+          "Request timeout - venue service may be slow or unavailable"
+        );
         timeoutErr.status = 408;
         timeoutErr.isTimeout = true;
         throw timeoutErr;
@@ -252,17 +256,47 @@ export const venueService = {
 
   async listVenues(params = {}) {
     const queryParams = new URLSearchParams();
-    if (params.city) queryParams.append("city", params.city);
-    if (params.state) queryParams.append("state", params.state);
-    if (params.has_sound_provided !== undefined) queryParams.append("has_sound_provided", params.has_sound_provided);
-    if (params.has_parking !== undefined) queryParams.append("has_parking", params.has_parking);
-    if (params.min_capacity !== undefined) queryParams.append("min_capacity", params.min_capacity);
-    if (params.max_capacity !== undefined) queryParams.append("max_capacity", params.max_capacity);
-    if (params.skip !== undefined) queryParams.append("skip", params.skip);
-    if (params.limit !== undefined) queryParams.append("limit", params.limit);
-    if (params.band_id !== undefined) queryParams.append("band_id", params.band_id);
+    
+    // Existing filter parameters
+    if (params.city) {
+      queryParams.append("city", params.city);
+    }
+    if (params.state) {
+      queryParams.append("state", params.state);
+    }
+    if (params.has_sound_provided !== undefined) {
+      queryParams.append("has_sound_provided", params.has_sound_provided);
+    }
+    if (params.has_parking !== undefined) {
+      queryParams.append("has_parking", params.has_parking);
+    }
+    if (params.min_capacity !== undefined) {
+      queryParams.append("min_capacity", params.min_capacity);
+    }
+    if (params.max_capacity !== undefined) {
+      queryParams.append("max_capacity", params.max_capacity);
+    }
+    if (params.skip !== undefined) {
+      queryParams.append("skip", params.skip);
+    }
+    if (params.limit !== undefined) {
+      queryParams.append("limit", params.limit);
+    }
+    if (params.band_id !== undefined) {
+      queryParams.append("band_id", params.band_id);
+    }
+    
+    // Distance filter parameters
+    if (params.distance_km !== undefined && params.distance_km !== null) {
+      queryParams.append("distance_km", params.distance_km);
+    }
+    if (params.base_location !== undefined && params.base_location !== null) {
+      queryParams.append("base_location", params.base_location);
+    }
 
-    const url = `${API_BASE_URL}/venues/${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+    const queryString = queryParams.toString();
+    const url = `${API_BASE_URL}/venues/${queryString ? `?${queryString}` : ""}`;
+    
     const response = await fetch(url, {
       method: "GET",
       headers: this.getAuthHeader(),

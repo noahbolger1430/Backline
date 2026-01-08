@@ -131,6 +131,7 @@ class VenueResponse(VenueBase):
     event_count: int = 0
     staff_count: int = 0
     is_favorited: Optional[bool] = None  # Only included when band_id is provided
+    distance_km: Optional[float] = None  # Distance from band location in kilometers
 
 
 class VenueListResponse(BaseModel):

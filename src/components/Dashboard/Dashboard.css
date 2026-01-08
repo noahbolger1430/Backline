@@ -3654,3 +3654,169 @@
   color: #FDBA74;
   border-color: rgba(251, 146, 60, 0.3);
 }
+/* Distance Filter Styles */
+.distance-filter-options {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background-color: #1F2833;
+  border-radius: 8px;
+  border: 1px solid rgba(111, 34, 210, 0.3);
+}
+
+.distance-filter-options .filter-checkbox-label {
+  margin-top: 0;
+}
+
+.custom-location-group {
+  margin-top: 12px;
+  flex: 2;
+  min-width: 300px;
+}
+
+.venue-distance {
+  color: #6F22D2;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .distance-filter-options {
+    padding: 6px 12px;
+  }
+
+  .custom-location-group {
+    min-width: 100%;
+  }
+}
+/* Distance Filter Styles */
+.distance-filter-group {
+  position: relative;
+}
+
+.distance-input-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.apply-distance-button {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  background-color: #6F22D2;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.apply-distance-button:hover:not(:disabled) {
+  background-color: #8B2FE8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(111, 34, 210, 0.3);
+}
+
+.apply-distance-button:disabled {
+  background-color: #3A3A3A;
+  color: #666666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.applied-distance-label {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6F22D2;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Custom Location Styles */
+.distance-filter-options {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background-color: #1F2833;
+  border-radius: 8px;
+  border: 1px solid rgba(111, 34, 210, 0.3);
+}
+
+.distance-filter-options .filter-checkbox-label {
+  margin-top: 0;
+}
+
+.custom-location-group {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.custom-location-group .filter-input {
+  flex: 1;
+}
+
+.update-location-button {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  background-color: #6F22D2;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.update-location-button:hover:not(:disabled) {
+  background-color: #8B2FE8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(111, 34, 210, 0.3);
+}
+
+.update-location-button:disabled {
+  background-color: #3A3A3A;
+  color: #666666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.venue-distance {
+  color: #6F22D2;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .distance-filter-options {
+    padding: 6px 12px;
+  }
+
+  .custom-location-group {
+    flex-direction: column;
+  }
+
+  .distance-input-wrapper {
+    flex-direction: column;
+  }
+
+  .apply-distance-button,
+  .update-location-button {
+    width: 100%;
+  }
+
+  .applied-distance-label {
+    position: static;
+    display: block;
+    margin-top: 8px;
+  }
+}
