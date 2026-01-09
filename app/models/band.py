@@ -44,6 +44,7 @@ class Band(Base):
 
     members = relationship("BandMember", back_populates="band", cascade="all, delete-orphan")
     events = relationship("BandEvent", back_populates="band", cascade="all, delete-orphan")
+    created_events = relationship("Event", back_populates="created_by_band", cascade="all, delete-orphan")
     availabilities = relationship("BandAvailability", back_populates="band", cascade="all, delete-orphan")
     event_applications = relationship("EventApplication", back_populates="band", cascade="all, delete-orphan")
     stage_plots = relationship("StagePlot", back_populates="band", cascade="all, delete-orphan")

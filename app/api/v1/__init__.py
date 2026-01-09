@@ -4,6 +4,7 @@ from app.api.v1 import (
     auth,
     availability,
     bands,
+    band_events,
     equipment,
     event_applications,
     events,
@@ -38,6 +39,7 @@ api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(bands.router, prefix="/bands", tags=["bands"])
 api_router.include_router(venues.router, prefix="/venues", tags=["venues"])
 api_router.include_router(events.router, prefix="/events", tags=["events"])
+api_router.include_router(band_events.router, prefix="/band-events", tags=["band-events"])
 api_router.include_router(availability.router, prefix="/availability", tags=["availability"])
 api_router.include_router(venue_recommendations.router, prefix="/recommendations", tags=["venue-recommendations"])
 api_router.include_router(tour_generator.router, prefix="/tours", tags=["tours"])

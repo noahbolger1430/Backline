@@ -441,4 +441,242 @@ export const eventService = {
 
     return await response.json();
   },
+
+  async createBandEvent(bandId, eventData, imageFile = null, additionalBandIds = null) {
+    const formData = new FormData();
+    
+    // Add all event data fields to FormData
+    formData.append("name", eventData.name);
+    if (eventData.description) {
+      formData.append("description", eventData.description);
+    }
+    formData.append("event_date", eventData.event_date);
+    if (eventData.doors_time) {
+      formData.append("doors_time", eventData.doors_time);
+    }
+    formData.append("show_time", eventData.show_time);
+    
+    // Location details (required for band events)
+    formData.append("location_name", eventData.location_name);
+    if (eventData.street_address) {
+      formData.append("street_address", eventData.street_address);
+    }
+    formData.append("city", eventData.city);
+    formData.append("state", eventData.state);
+    if (eventData.zip_code) {
+      formData.append("zip_code", eventData.zip_code);
+    }
+    
+    // Status (default to confirmed for band events)
+    formData.append("status", eventData.status || "confirmed");
+    
+    // Genre tags
+    if (eventData.genre_tags) {
+      formData.append("genre_tags", eventData.genre_tags);
+    }
+    
+    // Ticketing
+    formData.append("is_ticketed", eventData.is_ticketed);
+    if (eventData.ticket_price !== null && eventData.ticket_price !== undefined) {
+      formData.append("ticket_price", String(parseInt(eventData.ticket_price, 10)));
+    }
+    
+    // Age restriction
+    formData.append("is_age_restricted", eventData.is_age_restricted);
+    if (eventData.age_restriction !== null && eventData.age_restriction !== undefined) {
+      formData.append("age_restriction", String(parseInt(eventData.age_restriction, 10)));
+    }
+    
+    // Additional bands
+    if (additionalBandIds) {
+      formData.append("additional_band_ids", additionalBandIds);
+    }
+    
+    // Image file
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
+    
+    // Get auth header but remove Content-Type
+    const headers = this.getAuthHeader();
+    delete headers["Content-Type"];
+
+    const response = await fetch(`${API_BASE_URL}/band-events/bands/${bandId}/events`, {
+      method: "POST",
+      headers: headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Failed to create band event";
+      try {
+        const error = await response.json();
+        if (error.detail) {
+          if (Array.isArray(error.detail)) {
+            errorMessage = error.detail.map(err => {
+              const field = err.loc ? err.loc.join('.') : 'field';
+              const msg = err.msg || err;
+              return `${field}: ${msg}`;
+            }).join(", ");
+          } else {
+            errorMessage = error.detail;
+          }
+        }
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return await response.json();
+  },
+
+  async listBandEvents(bandId, includeVenueEvents = true, params = {}) {
+    const queryParams = {
+      ...params,
+      include_venue_events: includeVenueEvents
+    };
+    const queryString = new URLSearchParams(queryParams).toString();
+    const url = `${API_BASE_URL}/band-events/bands/${bandId}/events?${queryString}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Failed to fetch band events";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === 'string' 
+          ? error.detail 
+          : (error.detail?.message || JSON.stringify(error.detail) || errorMessage);
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return await response.json();
+  },
+
+  async updateBandEvent(bandId, eventId, eventData, imageFile = null, removeImage = false) {
+    const formData = new FormData();
+    let headers = this.getAuthHeader();
+
+    // Add all event data fields to FormData
+    if (eventData.name !== undefined) {
+      formData.append("name", eventData.name);
+    }
+    if (eventData.description !== undefined) {
+      formData.append("description", eventData.description || "");
+    }
+    if (eventData.event_date !== undefined) {
+      formData.append("event_date", eventData.event_date);
+    }
+    if (eventData.doors_time !== undefined) {
+      formData.append("doors_time", eventData.doors_time || "");
+    }
+    if (eventData.show_time !== undefined) {
+      formData.append("show_time", eventData.show_time);
+    }
+    
+    // Location fields
+    if (eventData.location_name !== undefined) {
+      formData.append("location_name", eventData.location_name);
+    }
+    if (eventData.street_address !== undefined) {
+      formData.append("street_address", eventData.street_address || "");
+    }
+    if (eventData.city !== undefined) {
+      formData.append("city", eventData.city);
+    }
+    if (eventData.state !== undefined) {
+      formData.append("state", eventData.state);
+    }
+    if (eventData.zip_code !== undefined) {
+      formData.append("zip_code", eventData.zip_code || "");
+    }
+    
+    // Other fields
+    if (eventData.status !== undefined) {
+      formData.append("status", eventData.status);
+    }
+    if (eventData.genre_tags !== undefined) {
+      formData.append("genre_tags", eventData.genre_tags || "");
+    }
+    if (eventData.is_ticketed !== undefined) {
+      formData.append("is_ticketed", eventData.is_ticketed);
+    }
+    if (eventData.ticket_price !== undefined && eventData.ticket_price !== null) {
+      formData.append("ticket_price", String(parseInt(eventData.ticket_price, 10)));
+    }
+    if (eventData.is_age_restricted !== undefined) {
+      formData.append("is_age_restricted", eventData.is_age_restricted);
+    }
+    if (eventData.age_restriction !== undefined && eventData.age_restriction !== null) {
+      formData.append("age_restriction", String(parseInt(eventData.age_restriction, 10)));
+    }
+    
+    // Image handling
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
+    if (removeImage) {
+      formData.append("remove_image", "true");
+    }
+    
+    delete headers["Content-Type"];
+
+    const response = await fetch(`${API_BASE_URL}/band-events/bands/${bandId}/events/${eventId}`, {
+      method: "PATCH",
+      headers: headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Failed to update band event";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === 'string' 
+          ? error.detail 
+          : (error.detail?.message || JSON.stringify(error.detail) || errorMessage);
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return await response.json();
+  },
+
+  async deleteBandEvent(bandId, eventId) {
+    const response = await fetch(`${API_BASE_URL}/band-events/bands/${bandId}/events/${eventId}`, {
+      method: "DELETE",
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Failed to delete band event";
+      try {
+        const error = await response.json();
+        errorMessage = typeof error.detail === 'string' 
+          ? error.detail 
+          : (error.detail?.message || JSON.stringify(error.detail) || errorMessage);
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const err = new Error(errorMessage);
+      err.status = response.status;
+      throw err;
+    }
+
+    return true;
+  },
 };

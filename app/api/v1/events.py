@@ -186,6 +186,14 @@ def serialize_event_with_details(event: Event) -> dict:
         # If venue relationship is not loaded, try to get it from the venue_id
         pass
     
+    # Safely access created_by_band name
+    created_by_band_name = None
+    try:
+        if hasattr(event, 'created_by_band') and event.created_by_band:
+            created_by_band_name = event.created_by_band.name
+    except Exception:
+        pass
+    
     # Safely access band count
     band_count = 0
     try:
@@ -197,9 +205,24 @@ def serialize_event_with_details(event: Event) -> dict:
     # Check if this is an expanded recurring event instance (has _original_event_id)
     original_event_id = getattr(event, '_original_event_id', None)
     
+    # For band-created events, use location fields
+    if event.created_by_band_id:
+        location_name = getattr(event, 'location_name', None)
+        street_address = getattr(event, 'street_address', None)
+        city = getattr(event, 'city', None)
+        state = getattr(event, 'state', None)
+        zip_code = getattr(event, 'zip_code', None)
+    else:
+        location_name = venue_name
+        street_address = venue_street_address
+        city = venue_city
+        state = venue_state
+        zip_code = venue_zip_code
+    
     event_dict = {
         "id": event.id,
         "venue_id": event.venue_id,
+        "created_by_band_id": getattr(event, 'created_by_band_id', None),
         "name": event.name,
         "description": event.description,
         "event_date": event.event_date,
@@ -219,7 +242,14 @@ def serialize_event_with_details(event: Event) -> dict:
         "venue_city": venue_city,
         "venue_state": venue_state,
         "venue_zip_code": venue_zip_code,
+        "created_by_band_name": created_by_band_name,
+        "location_name": location_name,
+        "street_address": street_address,
+        "city": city,
+        "state": state,
+        "zip_code": zip_code,
         "band_count": band_count,
+        "genre_tags": getattr(event, 'genre_tags', None),
         "is_recurring": getattr(event, 'is_recurring', False),
         "recurring_day_of_week": getattr(event, 'recurring_day_of_week', None),
         "recurring_frequency": getattr(event, 'recurring_frequency', None),

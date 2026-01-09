@@ -230,7 +230,11 @@
   margin: 0;
 }
 
-.schedule-rehearsal-btn {
+.schedule-dropdown {
+  position: relative;
+}
+
+.schedule-btn {
   background-color: #6F22D2; /* Primary Accent - Electric Violet */
   color: #FFFFFF; /* High Contrast Text - Pure White */
   border: none;
@@ -240,10 +244,70 @@
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.schedule-rehearsal-btn:hover {
+.schedule-btn:hover {
   background-color: #8B2FE8; /* Lighter purple */
+}
+
+.dropdown-arrow {
+  font-size: 10px;
+  transition: transform 0.2s ease;
+}
+
+.schedule-btn:hover .dropdown-arrow {
+  transform: translateY(1px);
+}
+
+.schedule-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  min-width: 160px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.schedule-dropdown-item {
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.schedule-dropdown-item:hover {
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
+}
+
+.schedule-dropdown-item:not(:last-child) {
+  border-bottom: 1px solid rgba(197, 198, 199, 0.2);
+}
+
+.dropdown-item-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.dropdown-item-text {
+  flex: 1;
 }
 
 .calendar-controls {

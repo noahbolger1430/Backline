@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime, time
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models.event import EventStatus
 from app.models.event_application import ApplicationStatus
@@ -33,6 +33,13 @@ class EventBase(BaseModel):
     recurring_start_date: Optional[date] = None
     recurring_end_date: Optional[date] = None
     genre_tags: Optional[str] = Field(None, max_length=500, description="Comma-separated genre tags, e.g., 'rock,alternative,indie'")
+    
+    # Location fields for band-created events
+    location_name: Optional[str] = Field(None, max_length=255)
+    street_address: Optional[str] = Field(None, max_length=255)
+    city: Optional[str] = Field(None, max_length=100)
+    state: Optional[str] = Field(None, max_length=50)
+    zip_code: Optional[str] = Field(None, max_length=20)
 
     @field_validator("genre_tags")
     @classmethod
@@ -117,7 +124,29 @@ class EventCreate(EventBase):
     Schema for creating an event.
     """
 
-    venue_id: int
+    venue_id: Optional[int] = None  # Made optional for band events
+    created_by_band_id: Optional[int] = None  # New field for band-created events
+
+    @model_validator(mode='after')
+    def validate_event_creator(self):
+        """
+        Validate that either venue_id or created_by_band_id is provided, but not both.
+        """
+        if self.venue_id is None and self.created_by_band_id is None:
+            raise ValueError("Either venue_id or created_by_band_id must be provided")
+        if self.venue_id is not None and self.created_by_band_id is not None:
+            raise ValueError("Cannot specify both venue_id and created_by_band_id")
+        
+        # If it's a band event, ensure location details are provided
+        if self.created_by_band_id is not None:
+            if not self.location_name:
+                raise ValueError("location_name is required for band-created events")
+            if not self.city:
+                raise ValueError("city is required for band-created events")
+            if not self.state:
+                raise ValueError("state is required for band-created events")
+        
+        return self
 
 
 class EventUpdate(BaseModel):
@@ -144,6 +173,13 @@ class EventUpdate(BaseModel):
     recurring_start_date: Optional[date] = None
     recurring_end_date: Optional[date] = None
     genre_tags: Optional[str] = Field(None, max_length=500, description="Comma-separated genre tags")
+    
+    # Location fields for band-created events
+    location_name: Optional[str] = Field(None, max_length=255)
+    street_address: Optional[str] = Field(None, max_length=255)
+    city: Optional[str] = Field(None, max_length=100)
+    state: Optional[str] = Field(None, max_length=50)
+    zip_code: Optional[str] = Field(None, max_length=20)
 
     @field_validator("name")
     @classmethod
@@ -178,7 +214,8 @@ class EventInDB(EventBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    venue_id: int
+    venue_id: Optional[int]
+    created_by_band_id: Optional[int]
     created_at: datetime
     updated_at: datetime
 
@@ -191,12 +228,14 @@ class EventResponse(EventBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    venue_id: int
-    venue_name: str
+    venue_id: Optional[int]
+    created_by_band_id: Optional[int]
+    venue_name: Optional[str] = None
     venue_street_address: Optional[str] = None
     venue_city: Optional[str] = None
     venue_state: Optional[str] = None
     venue_zip_code: Optional[str] = None
+    created_by_band_name: Optional[str] = None
     image_path: Optional[str] = None
     created_at: datetime
     updated_at: datetime
@@ -206,6 +245,13 @@ class EventResponse(EventBase):
     recurring_frequency: Optional[str] = None
     recurring_start_date: Optional[date] = None
     recurring_end_date: Optional[date] = None
+    
+    # Include location fields
+    location_name: Optional[str] = None
+    street_address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip_code: Optional[str] = None
 
 
 class EventListResponse(BaseModel):
@@ -298,8 +344,11 @@ class EventSummary(BaseModel):
     name: str
     event_date: date
     show_time: time
-    venue_id: int
-    venue_name: str
+    venue_id: Optional[int]
+    venue_name: Optional[str]
+    created_by_band_id: Optional[int]
+    created_by_band_name: Optional[str]
+    location_name: Optional[str]
 
 
 class EventWithBands(EventResponse):

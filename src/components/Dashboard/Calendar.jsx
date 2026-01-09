@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import AvailabilityModal from "./AvailabilityModal";
 import EventModal from "./EventModal";
 import RehearsalModal from "./RehearsalModal";
 import RehearsalEditModal from "./RehearsalEditModal";
+import GigModal from "./GigModal";
 import { availabilityService } from "../../services/availabilityService";
 import { bandService } from "../../services/bandService";
 import { rehearsalService } from "../../services/rehearsalService";
@@ -25,6 +26,10 @@ const Calendar = ({ bandId }) => {
   const [showRehearsalEditModal, setShowRehearsalEditModal] = useState(false);
   const [selectedRehearsalInstance, setSelectedRehearsalInstance] = useState(null);
   const [rehearsalDate, setRehearsalDate] = useState(null);
+  const [showScheduleDropdown, setShowScheduleDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+  const [showGigModal, setShowGigModal] = useState(false);
+  const [gigDate, setGigDate] = useState(null);
 
   const monthNames = [
     "January",
@@ -74,6 +79,20 @@ const Calendar = ({ bandId }) => {
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
+
+  // Handle clicking outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowScheduleDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Fetch availability and events when month changes
   useEffect(() => {
@@ -135,6 +154,17 @@ const Calendar = ({ bandId }) => {
     fetchData();
   }, [bandId, currentDate]);
 
+  const handleScheduleClick = (type) => {
+    setShowScheduleDropdown(false);
+    if (type === 'rehearsal') {
+      setRehearsalDate(null);
+      setShowRehearsalModal(true);
+    } else if (type === 'gig') {
+      setGigDate(null);
+      setShowGigModal(true);
+    }
+  };
+
   const renderCalendarDays = () => {
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
@@ -189,10 +219,19 @@ const Calendar = ({ bandId }) => {
       let availabilityText = "";
       let eventText = "";
       if (hasEvent) {
-        eventText = dayEvents.length === 1 
-          ? firstEvent.venue_name || "Event"
-          : `${dayEvents.length} events`;
+        // For band-created events (gigs), show the event name
+        // For venue events, show the venue name
+        if (firstEvent.created_by_band_id) {
+          eventText = dayEvents.length === 1 
+            ? firstEvent.name || "Event"
+            : `${dayEvents.length} events`;
+        } else {
+          eventText = dayEvents.length === 1 
+            ? firstEvent.venue_name || firstEvent.name || "Event"
+            : `${dayEvents.length} events`;
+        }
       }
+
       if (unavailableCount === 1 && availabilityInfo?.unavailableMembers) {
         availabilityText = `${availabilityInfo.unavailableMembers[0]} unavailable`;
       } else if (unavailableCount > 1) {
@@ -219,7 +258,7 @@ const Calendar = ({ bandId }) => {
             }
           }}
           title={eventText || (hasRehearsal ? "Rehearsal" : "") || availabilityText}
-        >
+          >
           <div className="day-number">{day}</div>
           {hasEvent && firstEvent && (
             <div className="event-content">
@@ -233,16 +272,18 @@ const Calendar = ({ bandId }) => {
                   }}
                 />
               ) : (
-                <div className="event-thumbnail-placeholder">🎸</div>
+                <div className="event-thumbnail-placeholder">🎵</div>
               )}
               {eventText && (
-                <div className="event-venue-text">{eventText}</div>
+                <div className="event-venue-text">
+                  {eventText}
+                </div>
               )}
             </div>
           )}
           {hasRehearsal && !hasEvent && (
             <div className="rehearsal-content">
-              <div className="rehearsal-icon">🎵</div>
+              <div className="rehearsal-icon">🎸</div>
               {firstRehearsal.location && (
                 <div className="rehearsal-location-text">{firstRehearsal.location}</div>
               )}
@@ -268,16 +309,34 @@ const Calendar = ({ bandId }) => {
     <div className="calendar-container">
       <div className="calendar-header-section">
         <h2 className="calendar-title">Availability</h2>
-        <button
-          className="schedule-rehearsal-btn"
-          onClick={() => {
-            setRehearsalDate(null);
-            setShowRehearsalModal(true);
-          }}
-          title="Schedule a rehearsal"
-        >
-          + Schedule Rehearsal
-        </button>
+        <div className="schedule-dropdown" ref={dropdownRef}>
+          <button
+            className="schedule-btn"
+            onClick={() => setShowScheduleDropdown(!showScheduleDropdown)}
+            title="Schedule an event"
+          >
+            + Schedule Event
+            <span className="dropdown-arrow">▼</span>
+          </button>
+          {showScheduleDropdown && (
+            <div className="schedule-dropdown-menu">
+              <button
+                className="schedule-dropdown-item"
+                onClick={() => handleScheduleClick('rehearsal')}
+              >
+                <span className="dropdown-item-icon">🎸</span>
+                <span className="dropdown-item-text">Rehearsal</span>
+              </button>
+              <button
+                className="schedule-dropdown-item"
+                onClick={() => handleScheduleClick('gig')}
+              >
+                <span className="dropdown-item-icon">🎵</span>
+                <span className="dropdown-item-text">Gig</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="calendar-controls">
@@ -442,9 +501,39 @@ const Calendar = ({ bandId }) => {
           />
         );
       })()}
+      {showGigModal && (
+        <GigModal
+          bandId={bandId}
+          initialDate={gigDate}
+          onClose={() => {
+            setShowGigModal(false);
+            setGigDate(null);
+          }}
+          onSuccess={async () => {
+            // Refetch events after creating one
+            try {
+              const eventsData = await bandService.getBandEvents(bandId);
+              
+              // Filter events for the current month
+              const monthEvents = eventsData.filter((event) => {
+                const eventDate = parseDateString(event.event_date);
+                return (
+                  eventDate.getMonth() === currentDate.getMonth() &&
+                  eventDate.getFullYear() === currentDate.getFullYear()
+                );
+              });
+              setEvents(monthEvents);
+            } catch (error) {
+              console.error("Error fetching events after gig creation:", error);
+            }
+            
+            setShowGigModal(false);
+            setGigDate(null);
+          }}
+        />
+      )}
     </div>
   );
 };
 
 export default Calendar;
-
