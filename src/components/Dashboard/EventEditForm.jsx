@@ -86,13 +86,7 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
       if (event.image_path) {
         // Construct image URL using utility function that handles GCP URLs
         const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventEditForm.jsx:86',message:'Setting event image preview',data:{imagePath:event.image_path,isGcpUrl:event.image_path?.startsWith('http://')||event.image_path?.startsWith('https://')},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
         const imageUrl = getImageUrl(event.image_path, apiBaseUrl);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventEditForm.jsx:92',message:'Event image preview URL',data:{imagePath:event.image_path,imageUrl:imageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
         setImagePreview(imageUrl);
       } else {
         setImagePreview(null);
@@ -566,13 +560,7 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
                   const bandName = bandEvent.band_name || bandEvent.band?.name || `Band ${bandEvent.band_id}`;
                   const bandImagePath = bandEvent.band_image_path || bandEvent.band?.image_path || null;
                   const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
-                  // #region agent log
-                  fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventEditForm.jsx:557',message:'Building band image URL',data:{bandImagePath:bandImagePath,isGcpUrl:bandImagePath?.startsWith('http://')||bandImagePath?.startsWith('https://')},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})}).catch(()=>{});
-                  // #endregion
                   const imageUrl = bandImagePath ? getImageUrl(bandImagePath, apiBaseUrl) : null;
-                  // #region agent log
-                  fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventEditForm.jsx:563',message:'Band image URL result',data:{bandImagePath:bandImagePath,imageUrl:imageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})}).catch(()=>{});
-                  // #endregion
                   
                   return (
                     <div 
@@ -1074,13 +1062,8 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
                 const bandName = bandEvent.band_name || bandEvent.band?.name || `Band ${bandEvent.band_id}`;
                 const bandImagePath = bandEvent.band_image_path || bandEvent.band?.image_path || null;
                 const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventEditForm.jsx:1046',message:'Building band image URL (second location)',data:{bandImagePath:bandImagePath,isGcpUrl:bandImagePath?.startsWith('http://')||bandImagePath?.startsWith('https://')},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})}).catch(()=>{});
                 // #endregion
                 const imageUrl = bandImagePath ? getImageUrl(bandImagePath, apiBaseUrl) : null;
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventEditForm.jsx:1052',message:'Band image URL result (second location)',data:{bandImagePath:bandImagePath,imageUrl:imageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})}).catch(()=>{});
-                // #endregion
                 
                 return (
                   <div 
@@ -1442,7 +1425,7 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
     {/* Physical Tickets Modal */}
     {showPhysicalTicketsModal && event && (
       <PhysicalTicketsModal
-        event={event}
+        event={{ ...event, bands: eventBands }}
         onClose={() => setShowPhysicalTicketsModal(false)}
       />
     )}

@@ -41,7 +41,7 @@ api_router.include_router(venues.router, prefix="/venues", tags=["venues"])
 api_router.include_router(events.router, prefix="/events", tags=["events"])
 api_router.include_router(band_events.router, prefix="/band-events", tags=["band-events"])
 api_router.include_router(availability.router, prefix="/availability", tags=["availability"])
-api_router.include_router(venue_recommendations.router, prefix="/recommendations", tags=["venue-recommendations"])
+api_router.include_router(venue_recommendations.router, prefix="/venue-recommendations", tags=["venue-recommendations"])
 api_router.include_router(tour_generator.router, prefix="/tours", tags=["tours"])
 # Rehearsals router routes already include /bands/{band_id}/ prefix, so include without additional prefix
 api_router.include_router(rehearsals.router, tags=["rehearsals"])

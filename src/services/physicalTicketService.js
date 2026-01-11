@@ -28,7 +28,7 @@ export const physicalTicketService = {
    * @returns {Promise<object>} Created ticket pool
    */
   async createTicketPool(eventId, poolData) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/ticket-pool`, {
+    const response = await fetch(`${API_BASE_URL}/physical-tickets/events/${eventId}/ticket-pool`, {
       method: "POST",
       headers: this.getAuthHeader(),
       body: JSON.stringify(poolData),
@@ -48,7 +48,7 @@ export const physicalTicketService = {
    * @returns {Promise<object|null>} Ticket pool with allocations or null if not found
    */
   async getTicketPool(eventId) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/ticket-pool`, {
+    const response = await fetch(`${API_BASE_URL}/physical-tickets/events/${eventId}/ticket-pool`, {
       method: "GET",
       headers: this.getAuthHeader(),
     });
@@ -70,7 +70,7 @@ export const physicalTicketService = {
    * @param {number} eventId - Event ID
    */
   async deleteTicketPool(eventId) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/ticket-pool`, {
+    const response = await fetch(`${API_BASE_URL}/physical-tickets/events/${eventId}/ticket-pool`, {
       method: "DELETE",
       headers: this.getAuthHeader(),
     });
@@ -90,7 +90,7 @@ export const physicalTicketService = {
    * @returns {Promise<object>} Created allocation
    */
   async allocateTickets(eventId, allocationData) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/ticket-pool/allocations`, {
+    const response = await fetch(`${API_BASE_URL}/physical-tickets/events/${eventId}/ticket-pool/allocations`, {
       method: "POST",
       headers: this.getAuthHeader(),
       body: JSON.stringify(allocationData),
@@ -110,7 +110,7 @@ export const physicalTicketService = {
    * @returns {Promise<object>} Allocation with sales
    */
   async getAllocation(allocationId) {
-    const response = await fetch(`${API_BASE_URL}/allocations/${allocationId}`, {
+    const response = await fetch(`${API_BASE_URL}/physical-tickets/allocations/${allocationId}`, {
       method: "GET",
       headers: this.getAuthHeader(),
     });
@@ -130,7 +130,7 @@ export const physicalTicketService = {
    * @returns {Promise<object>} Updated allocation
    */
   async updateAllocation(allocationId, updateData) {
-    const response = await fetch(`${API_BASE_URL}/allocations/${allocationId}`, {
+    const response = await fetch(`${API_BASE_URL}/physical-tickets/allocations/${allocationId}`, {
       method: "PUT",
       headers: this.getAuthHeader(),
       body: JSON.stringify(updateData),
@@ -149,7 +149,7 @@ export const physicalTicketService = {
    * @param {number} allocationId - Allocation ID
    */
   async deleteAllocation(allocationId) {
-    const response = await fetch(`${API_BASE_URL}/allocations/${allocationId}`, {
+    const response = await fetch(`${API_BASE_URL}/physical-tickets/allocations/${allocationId}`, {
       method: "DELETE",
       headers: this.getAuthHeader(),
     });
@@ -168,7 +168,7 @@ export const physicalTicketService = {
    * @returns {Promise<object>} Ticket summary
    */
   async getEventTicketSummary(eventId) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/tickets/summary`, {
+    const response = await fetch(`${API_BASE_URL}/physical-tickets/events/${eventId}/tickets/summary`, {
       method: "GET",
       headers: this.getAuthHeader(),
     });
@@ -190,7 +190,7 @@ export const physicalTicketService = {
    */
   async downloadTicketsPDF(eventId, eventName = "tickets") {
     const token = localStorage.getItem("access_token");
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/tickets/pdf`, {
+    const response = await fetch(`${API_BASE_URL}/physical-tickets/events/${eventId}/tickets/pdf`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -227,7 +227,7 @@ export const physicalTicketService = {
    * @returns {Promise<object|null>} Allocation with sales or null if not found
    */
   async getBandTicketAllocation(bandId, eventId) {
-    const response = await fetch(`${API_BASE_URL}/bands/${bandId}/events/${eventId}/ticket-allocation`, {
+    const response = await fetch(`${API_BASE_URL}/physical-tickets/bands/${bandId}/events/${eventId}/ticket-allocation`, {
       method: "GET",
       headers: this.getAuthHeader(),
     });
@@ -253,7 +253,7 @@ export const physicalTicketService = {
    * @returns {Promise<object>} Created sale
    */
   async recordSale(allocationId, saleData) {
-    const response = await fetch(`${API_BASE_URL}/allocations/${allocationId}/sales`, {
+    const response = await fetch(`${API_BASE_URL}/physical-tickets/allocations/${allocationId}/sales`, {
       method: "POST",
       headers: this.getAuthHeader(),
       body: JSON.stringify(saleData),
@@ -274,7 +274,7 @@ export const physicalTicketService = {
    * @returns {Promise<object>} Updated sale
    */
   async updateSale(saleId, updateData) {
-    const response = await fetch(`${API_BASE_URL}/sales/${saleId}`, {
+    const response = await fetch(`${API_BASE_URL}/physical-tickets/sales/${saleId}`, {
       method: "PUT",
       headers: this.getAuthHeader(),
       body: JSON.stringify(updateData),
@@ -293,7 +293,7 @@ export const physicalTicketService = {
    * @param {number} saleId - Sale ID
    */
   async deleteSale(saleId) {
-    const response = await fetch(`${API_BASE_URL}/sales/${saleId}`, {
+    const response = await fetch(`${API_BASE_URL}/physical-tickets/sales/${saleId}`, {
       method: "DELETE",
       headers: this.getAuthHeader(),
     });
