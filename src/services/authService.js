@@ -1,5 +1,19 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api/v1";
 
+// Helper to decode JWT and check expiry
+const isTokenExpired = (token) => {
+  if (!token) return true;
+  
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const expiryTime = payload.exp * 1000; // Convert to milliseconds
+    return Date.now() >= expiryTime;
+  } catch (error) {
+    console.error("Error decoding token:", error);
+    return true;
+  }
+};
+
 export const authService = {
   async login(email, password) {
     // OAuth2PasswordRequestForm expects form-encoded data, not JSON
@@ -78,11 +92,19 @@ export const authService = {
   },
 
   getToken() {
-    return localStorage.getItem("access_token");
+    const token = localStorage.getItem("access_token");
+    
+    // Check if token is expired
+    if (token && isTokenExpired(token)) {
+      this.logout();
+      return null;
+    }
+    
+    return token;
   },
 
   isAuthenticated() {
-    return !!localStorage.getItem("access_token");
+    const token = this.getToken();
+    return !!token && !isTokenExpired(token);
   },
 };
-

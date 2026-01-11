@@ -1,18 +1,12 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api/v1";
+import { apiClient } from '../utils/apiClient';
 
 export const rehearsalService = {
-  getAuthHeader() {
-    const token = localStorage.getItem("access_token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  },
-
   async createRehearsal(bandId, rehearsalData) {
-    const response = await fetch(`${API_BASE_URL}/bands/${bandId}/rehearsals`, {
+    const response = await apiClient(`/bands/${bandId}/rehearsals`, {
       method: "POST",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(rehearsalData),
     });
 
@@ -25,15 +19,17 @@ export const rehearsalService = {
   },
 
   async getBandRehearsals(bandId, startDate = null, endDate = null) {
-    let url = `${API_BASE_URL}/bands/${bandId}/rehearsals`;
+    let url = `/bands/${bandId}/rehearsals`;
     const params = new URLSearchParams();
     if (startDate) params.append("start_date", startDate);
     if (endDate) params.append("end_date", endDate);
     if (params.toString()) url += `?${params.toString()}`;
 
-    const response = await fetch(url, {
+    const response = await apiClient(url, {
       method: "GET",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -49,15 +45,14 @@ export const rehearsalService = {
       start_date: startDate,
       end_date: endDate,
     });
-    const url = `${API_BASE_URL}/bands/${bandId}/rehearsals/calendar?${params.toString()}`;
+    const url = `/bands/${bandId}/rehearsals/calendar?${params.toString()}`;
 
-    const response = await fetch(
-      url,
-      {
-        method: "GET",
-        headers: this.getAuthHeader(),
-      }
-    );
+    const response = await apiClient(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
     if (!response.ok) {
       const error = await response.json();
@@ -68,11 +63,13 @@ export const rehearsalService = {
   },
 
   async getRehearsal(bandId, rehearsalId) {
-    const response = await fetch(
-      `${API_BASE_URL}/bands/${bandId}/rehearsals/${rehearsalId}`,
+    const response = await apiClient(
+      `/bands/${bandId}/rehearsals/${rehearsalId}`,
       {
         method: "GET",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -85,11 +82,13 @@ export const rehearsalService = {
   },
 
   async updateRehearsal(bandId, rehearsalId, rehearsalData) {
-    const response = await fetch(
-      `${API_BASE_URL}/bands/${bandId}/rehearsals/${rehearsalId}`,
+    const response = await apiClient(
+      `/bands/${bandId}/rehearsals/${rehearsalId}`,
       {
         method: "PUT",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(rehearsalData),
       }
     );
@@ -103,11 +102,13 @@ export const rehearsalService = {
   },
 
   async deleteRehearsal(bandId, rehearsalId) {
-    const response = await fetch(
-      `${API_BASE_URL}/bands/${bandId}/rehearsals/${rehearsalId}`,
+    const response = await apiClient(
+      `/bands/${bandId}/rehearsals/${rehearsalId}`,
       {
         method: "DELETE",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -124,17 +125,10 @@ export const rehearsalService = {
       formData.append("file_type", fileType);
     }
 
-    const token = localStorage.getItem("access_token");
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      // Don't set Content-Type - let browser set it with boundary
-    };
-
-    const response = await fetch(
-      `${API_BASE_URL}/bands/${bandId}/rehearsals/${rehearsalId}/attachments`,
+    const response = await apiClient(
+      `/bands/${bandId}/rehearsals/${rehearsalId}/attachments`,
       {
         method: "POST",
-        headers: headers,
         body: formData,
       }
     );
@@ -148,11 +142,13 @@ export const rehearsalService = {
   },
 
   async deleteAttachment(bandId, rehearsalId, attachmentId) {
-    const response = await fetch(
-      `${API_BASE_URL}/bands/${bandId}/rehearsals/${rehearsalId}/attachments/${attachmentId}`,
+    const response = await apiClient(
+      `/bands/${bandId}/rehearsals/${rehearsalId}/attachments/${attachmentId}`,
       {
         method: "DELETE",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -163,11 +159,13 @@ export const rehearsalService = {
   },
 
   async getRehearsalInstance(bandId, instanceId) {
-    const response = await fetch(
-      `${API_BASE_URL}/bands/${bandId}/rehearsals/instances/${instanceId}`,
+    const response = await apiClient(
+      `/bands/${bandId}/rehearsals/instances/${instanceId}`,
       {
         method: "GET",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -180,11 +178,13 @@ export const rehearsalService = {
   },
 
   async updateRehearsalInstance(bandId, instanceId, instanceData) {
-    const response = await fetch(
-      `${API_BASE_URL}/bands/${bandId}/rehearsals/instances/${instanceId}`,
+    const response = await apiClient(
+      `/bands/${bandId}/rehearsals/instances/${instanceId}`,
       {
         method: "PUT",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(instanceData),
       }
     );
@@ -204,17 +204,10 @@ export const rehearsalService = {
       formData.append("file_type", fileType);
     }
 
-    const token = localStorage.getItem("access_token");
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      // Don't set Content-Type - let browser set it with boundary
-    };
-
-    const response = await fetch(
-      `${API_BASE_URL}/bands/${bandId}/rehearsals/instances/${instanceId}/attachments`,
+    const response = await apiClient(
+      `/bands/${bandId}/rehearsals/instances/${instanceId}/attachments`,
       {
         method: "POST",
-        headers: headers,
         body: formData,
       }
     );
@@ -232,17 +225,10 @@ export const rehearsalService = {
     formData.append("setlist_id", setlistId.toString());
     formData.append("file_type", "setlist");
 
-    const token = localStorage.getItem("access_token");
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      // Don't set Content-Type - let browser set it with boundary
-    };
-
-    const response = await fetch(
-      `${API_BASE_URL}/bands/${bandId}/rehearsals/instances/${instanceId}/attachments`,
+    const response = await apiClient(
+      `/bands/${bandId}/rehearsals/instances/${instanceId}/attachments`,
       {
         method: "POST",
-        headers: headers,
         body: formData,
       }
     );
@@ -256,11 +242,13 @@ export const rehearsalService = {
   },
 
   async deleteInstanceAttachment(bandId, instanceId, attachmentId) {
-    const response = await fetch(
-      `${API_BASE_URL}/bands/${bandId}/rehearsals/instances/${instanceId}/attachments/${attachmentId}`,
+    const response = await apiClient(
+      `/bands/${bandId}/rehearsals/instances/${instanceId}/attachments/${attachmentId}`,
       {
         method: "DELETE",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -270,4 +258,3 @@ export const rehearsalService = {
     }
   },
 };
-

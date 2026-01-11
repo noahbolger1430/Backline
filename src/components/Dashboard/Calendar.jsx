@@ -182,15 +182,21 @@ const Calendar = ({ bandId }) => {
         day === new Date().getDate() &&
         currentDate.getMonth() === new Date().getMonth() &&
         currentDate.getFullYear() === new Date().getFullYear();
-
+    
       const isSelected =
         selectedDate &&
         day === selectedDate.getDate() &&
         currentDate.getMonth() === selectedDate.getMonth() &&
         currentDate.getFullYear() === selectedDate.getFullYear();
-
+    
       const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       const dateStr = formatDateString(dateObj);
+      
+      // Check if date is in the past
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const isPastDate = dateObj < today;
+
       const holidayName = holidays.get(dateStr) || null;
       const availabilityInfo = dateAvailability.get(dateStr);
       const unavailableCount = availabilityInfo?.unavailableCount || 0;
@@ -253,7 +259,8 @@ const Calendar = ({ bandId }) => {
               // Open edit modal for the clicked rehearsal instance
               setSelectedRehearsalInstance(firstRehearsal);
               setShowRehearsalEditModal(true);
-            } else {
+            } else if (!isPastDate) {
+              // Only show availability modal for current/future dates
               setShowAvailabilityModal(true);
             }
           }}

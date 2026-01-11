@@ -158,8 +158,6 @@ class PhysicalTicketAllocation(Base):
 class PhysicalTicketSale(Base):
     """
     Represents an individual ticket sale by a band.
-    
-    Contains purchaser information, payment status, and delivery assignment.
     """
 
     __tablename__ = "physical_ticket_sales"
@@ -171,7 +169,7 @@ class PhysicalTicketSale(Base):
         nullable=False,
         index=True
     )
-    ticket_number = Column(String(100), nullable=False, unique=True, index=True)
+    ticket_number = Column(String(100), nullable=False, index=True)  # Remove unique=True
     purchaser_name = Column(String(255), nullable=False)
     purchaser_email = Column(String(255), nullable=True)
     purchaser_phone = Column(String(50), nullable=True)
@@ -202,3 +200,7 @@ class PhysicalTicketSale(Base):
     delivery_assigned_to = relationship("BandMember")
     created_by = relationship("User")
 
+    # Unique constraint: ticket number unique within allocation
+    __table_args__ = (
+        UniqueConstraint("allocation_id", "ticket_number", name="uq_allocation_ticket_number"),
+    )

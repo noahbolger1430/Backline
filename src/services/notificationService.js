@@ -1,20 +1,14 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
+import { apiClient } from '../utils/apiClient';
 
 export const notificationService = {
-  getAuthHeader() {
-    const token = localStorage.getItem("access_token");
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
-  },
-
   async getNotifications(unreadOnly = false, limit = 50) {
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/notifications?unread_only=${unreadOnly}&limit=${limit}`,
+    const response = await apiClient(
+      `/notifications?unread_only=${unreadOnly}&limit=${limit}`,
       {
         method: "GET",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -27,9 +21,11 @@ export const notificationService = {
   },
 
   async getUnreadCount() {
-    const response = await fetch(`${API_BASE_URL}/api/v1/notifications/unread-count`, {
+    const response = await apiClient('/notifications/unread-count', {
       method: "GET",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -41,9 +37,11 @@ export const notificationService = {
   },
 
   async markAsRead(notificationId) {
-    const response = await fetch(`${API_BASE_URL}/api/v1/notifications/${notificationId}`, {
+    const response = await apiClient(`/notifications/${notificationId}`, {
       method: "PATCH",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ is_read: true }),
     });
 
@@ -56,9 +54,11 @@ export const notificationService = {
   },
 
   async markAllAsRead() {
-    const response = await fetch(`${API_BASE_URL}/api/v1/notifications/mark-all-read`, {
+    const response = await apiClient('/notifications/mark-all-read', {
       method: "POST",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -69,4 +69,3 @@ export const notificationService = {
     return response.json();
   },
 };
-

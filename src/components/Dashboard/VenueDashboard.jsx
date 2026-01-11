@@ -8,6 +8,7 @@ import VenueProfile from "./VenueProfile";
 import NotificationBell from "./NotificationBell";
 import { venueService } from "../../services/venueService";
 import { authService } from "../../services/authService";
+import { onAuthError } from "../../utils/apiClient";
 import "./Dashboard.css";
 
 const VenueDashboard = ({ venueId, onLogout }) => {
@@ -23,11 +24,32 @@ const VenueDashboard = ({ venueId, onLogout }) => {
 
   const [events, setEvents] = useState({});
 
+  // Listen for authentication errors
+  useEffect(() => {
+    const unsubscribe = onAuthError(() => {
+      console.log('Authentication error detected - logging out');
+      if (onLogout) {
+        onLogout();
+      }
+    });
+
+    return unsubscribe;
+  }, [onLogout]);
+
   useEffect(() => {
     const fetchVenueData = async () => {
       if (!venueId) {
         setError("No venue ID provided");
         setLoading(false);
+        return;
+      }
+
+      // Check authentication before fetching
+      if (!authService.isAuthenticated()) {
+        console.log('Not authenticated - triggering logout');
+        if (onLogout) {
+          onLogout();
+        }
         return;
       }
 
@@ -70,15 +92,18 @@ const VenueDashboard = ({ venueId, onLogout }) => {
         // For now, set empty events object
         setEvents({});
       } catch (err) {
-        setError(err.message);
-        console.error("Error fetching venue data:", err);
+        // Don't show error if it's an auth error (user will be logged out)
+        if (!err.message.includes('Session expired') && !err.message.includes('No valid authentication')) {
+          setError(err.message);
+          console.error("Error fetching venue data:", err);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchVenueData();
-  }, [venueId]);
+  }, [venueId, onLogout]);
 
   const handleEventClick = (event) => {
     if (event) {

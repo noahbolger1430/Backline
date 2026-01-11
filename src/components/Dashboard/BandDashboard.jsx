@@ -18,6 +18,7 @@ import NotificationBell from "./NotificationBell";
 import { bandService } from "../../services/bandService";
 import { stagePlotService } from "../../services/stagePlotService";
 import { authService } from "../../services/authService";
+import { onAuthError } from "../../utils/apiClient";
 import { getImageUrl } from "../../utils/imageUtils";
 import "./Dashboard.css";
 
@@ -37,11 +38,32 @@ const BandDashboard = ({ bandId, onLogout }) => {
   const [selectedSetlistId, setSelectedSetlistId] = useState(null);
   const [showSetlistList, setShowSetlistList] = useState(false);
 
+  // Listen for authentication errors
+  useEffect(() => {
+    const unsubscribe = onAuthError(() => {
+      console.log('Authentication error detected - logging out');
+      if (onLogout) {
+        onLogout();
+      }
+    });
+
+    return unsubscribe;
+  }, [onLogout]);
+
   useEffect(() => {
     const fetchBandData = async () => {
       if (!bandId) {
         setError("No band ID provided");
         setLoading(false);
+        return;
+      }
+
+      // Check authentication before fetching
+      if (!authService.isAuthenticated()) {
+        console.log('Not authenticated - triggering logout');
+        if (onLogout) {
+          onLogout();
+        }
         return;
       }
 
@@ -67,15 +89,18 @@ const BandDashboard = ({ bandId, onLogout }) => {
           .sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date ascending
         setEvents(transformedEvents);
       } catch (err) {
-        setError(err.message);
-        console.error("Error fetching band data:", err);
+        // Don't show error if it's an auth error (user will be logged out)
+        if (!err.message.includes('Session expired') && !err.message.includes('No valid authentication')) {
+          setError(err.message);
+          console.error("Error fetching band data:", err);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchBandData();
-  }, [bandId]);
+  }, [bandId, onLogout]);
 
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
@@ -287,7 +312,7 @@ const BandDashboard = ({ bandId, onLogout }) => {
             ) : activeTab === "calendar" ? (
               <Calendar bandId={bandId} />
             ) : activeTab === "venues" ? (
-              <VenuesView bandId={bandId}   bandLocation={band ? `${band.city}, ${band.state}` : null}              />
+              <VenuesView bandId={bandId} bandLocation={band ? `${band.city}, ${band.state}` : null} />
             ) : activeTab === "gigs" ? (
               <GigsView bandId={bandId} />
             ) : activeTab === "tools" ? (

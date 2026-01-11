@@ -1,20 +1,14 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api/v1";
+import { apiClient } from '../utils/apiClient';
 
 export const venueFavoriteService = {
-  getAuthHeader() {
-    const token = localStorage.getItem("access_token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  },
-
   async favoriteVenue(bandId, venueId) {
-    const response = await fetch(
-      `${API_BASE_URL}/bands/${bandId}/venues/${venueId}/favorite`,
+    const response = await apiClient(
+      `/bands/${bandId}/venues/${venueId}/favorite`,
       {
         method: "POST",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -27,11 +21,13 @@ export const venueFavoriteService = {
   },
 
   async unfavoriteVenue(bandId, venueId) {
-    const response = await fetch(
-      `${API_BASE_URL}/bands/${bandId}/venues/${venueId}/favorite`,
+    const response = await apiClient(
+      `/bands/${bandId}/venues/${venueId}/favorite`,
       {
         method: "DELETE",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -44,11 +40,13 @@ export const venueFavoriteService = {
   },
 
   async getFavoriteVenues(bandId) {
-    const response = await fetch(
-      `${API_BASE_URL}/bands/${bandId}/favorite-venues`,
+    const response = await apiClient(
+      `/bands/${bandId}/favorite-venues`,
       {
         method: "GET",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -60,4 +58,3 @@ export const venueFavoriteService = {
     return await response.json();
   },
 };
-

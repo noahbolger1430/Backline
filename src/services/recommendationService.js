@@ -1,14 +1,6 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api/v1";
+import { apiClient } from '../utils/apiClient';
 
 export const recommendationService = {
-  getAuthHeader() {
-    const token = localStorage.getItem("access_token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  },
-
   /**
    * Get recommended gigs for a band.
    * Returns gigs sorted by recommendation score with explanations.
@@ -26,11 +18,13 @@ export const recommendationService = {
       include_applied: includeApplied.toString(),
     });
 
-    const response = await fetch(
-      `${API_BASE_URL}/recommendations/bands/${bandId}/recommended-gigs?${params}`,
+    const response = await apiClient(
+      `/recommendations/bands/${bandId}/recommended-gigs?${params}`,
       {
         method: "GET",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -59,11 +53,13 @@ export const recommendationService = {
    * @param {number} eventId - The event ID that was viewed
    */
   async recordGigView(bandId, eventId) {
-    const response = await fetch(
-      `${API_BASE_URL}/recommendations/bands/${bandId}/gig-views`,
+    const response = await apiClient(
+      `/recommendations/bands/${bandId}/gig-views`,
       {
         method: "POST",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ event_id: eventId }),
       }
     );
@@ -77,4 +73,3 @@ export const recommendationService = {
     return await response.json();
   },
 };
-

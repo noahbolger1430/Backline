@@ -1,18 +1,12 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api/v1";
+import { apiClient } from '../utils/apiClient';
 
 export const setlistService = {
-  getAuthHeader() {
-    const token = localStorage.getItem("access_token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  },
-
   async createSetlist(setlistData) {
-    const response = await fetch(`${API_BASE_URL}/setlists/`, {
+    const response = await apiClient('/setlists/', {
       method: "POST",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(setlistData),
     });
 
@@ -25,9 +19,11 @@ export const setlistService = {
   },
 
   async getSetlist(setlistId) {
-    const response = await fetch(`${API_BASE_URL}/setlists/${setlistId}`, {
+    const response = await apiClient(`/setlists/${setlistId}`, {
       method: "GET",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -39,9 +35,11 @@ export const setlistService = {
   },
 
   async getBandSetlists(bandId) {
-    const response = await fetch(`${API_BASE_URL}/setlists/band/${bandId}`, {
+    const response = await apiClient(`/setlists/band/${bandId}`, {
       method: "GET",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -53,9 +51,11 @@ export const setlistService = {
   },
 
   async updateSetlist(setlistId, setlistData) {
-    const response = await fetch(`${API_BASE_URL}/setlists/${setlistId}`, {
+    const response = await apiClient(`/setlists/${setlistId}`, {
       method: "PUT",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(setlistData),
     });
 
@@ -68,9 +68,11 @@ export const setlistService = {
   },
 
   async deleteSetlist(setlistId) {
-    const response = await fetch(`${API_BASE_URL}/setlists/${setlistId}`, {
+    const response = await apiClient(`/setlists/${setlistId}`, {
       method: "DELETE",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -81,4 +83,3 @@ export const setlistService = {
     return true;
   },
 };
-

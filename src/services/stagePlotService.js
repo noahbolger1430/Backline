@@ -1,18 +1,12 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api/v1";
+import { apiClient } from '../utils/apiClient';
 
 export const stagePlotService = {
-  getAuthHeader() {
-    const token = localStorage.getItem("access_token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  },
-
   async createStagePlot(stagePlotData) {
-    const response = await fetch(`${API_BASE_URL}/stage-plots/`, {
+    const response = await apiClient('/stage-plots/', {
       method: "POST",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(stagePlotData),
     });
 
@@ -25,9 +19,11 @@ export const stagePlotService = {
   },
 
   async getStagePlot(stagePlotId) {
-    const response = await fetch(`${API_BASE_URL}/stage-plots/${stagePlotId}`, {
+    const response = await apiClient(`/stage-plots/${stagePlotId}`, {
       method: "GET",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -39,9 +35,11 @@ export const stagePlotService = {
   },
 
   async getBandStagePlots(bandId) {
-    const response = await fetch(`${API_BASE_URL}/stage-plots/band/${bandId}`, {
+    const response = await apiClient(`/stage-plots/band/${bandId}`, {
       method: "GET",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -53,9 +51,11 @@ export const stagePlotService = {
   },
 
   async updateStagePlot(stagePlotId, stagePlotData) {
-    const response = await fetch(`${API_BASE_URL}/stage-plots/${stagePlotId}`, {
+    const response = await apiClient(`/stage-plots/${stagePlotId}`, {
       method: "PUT",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(stagePlotData),
     });
 
@@ -68,9 +68,11 @@ export const stagePlotService = {
   },
 
   async deleteStagePlot(stagePlotId) {
-    const response = await fetch(`${API_BASE_URL}/stage-plots/${stagePlotId}`, {
+    const response = await apiClient(`/stage-plots/${stagePlotId}`, {
       method: "DELETE",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {

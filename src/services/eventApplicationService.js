@@ -1,20 +1,14 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api/v1";
+import { apiClient } from '../utils/apiClient';
 
 export const eventApplicationService = {
-  getAuthHeader() {
-    const token = localStorage.getItem("access_token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  },
-
   async submitApplication(eventId, bandId, applicationData) {
-    const response = await fetch(
-      `${API_BASE_URL}/event-applications/events/${eventId}/applications?band_id=${bandId}`,
+    const response = await apiClient(
+      `/event-applications/events/${eventId}/applications?band_id=${bandId}`,
       {
         method: "POST",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(applicationData),
       }
     );
@@ -40,12 +34,14 @@ export const eventApplicationService = {
   async listBandApplications(bandId, params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const url = queryString
-      ? `${API_BASE_URL}/event-applications/bands/${bandId}/applications?${queryString}`
-      : `${API_BASE_URL}/event-applications/bands/${bandId}/applications`;
+      ? `/event-applications/bands/${bandId}/applications?${queryString}`
+      : `/event-applications/bands/${bandId}/applications`;
 
-    const response = await fetch(url, {
+    const response = await apiClient(url, {
       method: "GET",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -69,12 +65,14 @@ export const eventApplicationService = {
   async listEventApplications(eventId, params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const url = queryString
-      ? `${API_BASE_URL}/event-applications/events/${eventId}/applications?${queryString}`
-      : `${API_BASE_URL}/event-applications/events/${eventId}/applications`;
+      ? `/event-applications/events/${eventId}/applications?${queryString}`
+      : `/event-applications/events/${eventId}/applications`;
 
-    const response = await fetch(url, {
+    const response = await apiClient(url, {
       method: "GET",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -96,11 +94,13 @@ export const eventApplicationService = {
   },
 
   async getApplication(applicationId) {
-    const response = await fetch(
-      `${API_BASE_URL}/event-applications/applications/${applicationId}`,
+    const response = await apiClient(
+      `/event-applications/applications/${applicationId}`,
       {
         method: "GET",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -123,11 +123,13 @@ export const eventApplicationService = {
   },
 
   async updateApplication(applicationId, applicationData) {
-    const response = await fetch(
-      `${API_BASE_URL}/event-applications/applications/${applicationId}`,
+    const response = await apiClient(
+      `/event-applications/applications/${applicationId}`,
       {
         method: "PATCH",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(applicationData),
       }
     );
@@ -151,11 +153,13 @@ export const eventApplicationService = {
   },
 
   async withdrawApplication(applicationId) {
-    const response = await fetch(
-      `${API_BASE_URL}/event-applications/applications/${applicationId}/withdraw`,
+    const response = await apiClient(
+      `/event-applications/applications/${applicationId}/withdraw`,
       {
         method: "POST",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -178,11 +182,13 @@ export const eventApplicationService = {
   },
 
   async reviewApplication(applicationId, reviewData) {
-    const response = await fetch(
-      `${API_BASE_URL}/event-applications/applications/${applicationId}/review`,
+    const response = await apiClient(
+      `/event-applications/applications/${applicationId}/review`,
       {
         method: "POST",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(reviewData),
       }
     );

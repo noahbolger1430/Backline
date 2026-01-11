@@ -1,14 +1,6 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api/v1";
+import { apiClient } from '../utils/apiClient';
 
 export const tourService = {
-  getAuthHeader() {
-    const token = localStorage.getItem("access_token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  },
-
   /**
    * Convert algorithm weights from camelCase to snake_case for API.
    * 
@@ -70,11 +62,13 @@ export const tourService = {
   async generateTour(bandId, tourParams) {
     const formattedParams = this.formatTourParams(tourParams);
 
-    const response = await fetch(
-      `${API_BASE_URL}/tours/bands/${bandId}/generate-tour`,
+    const response = await apiClient(
+      `/tours/bands/${bandId}/generate-tour`,
       {
         method: "POST",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(formattedParams),
       }
     );
@@ -107,11 +101,13 @@ export const tourService = {
    * @returns {Promise<Object>} Saved tour details
    */
   async saveTour(bandId, tourId, name, tourData) {
-    const response = await fetch(
-      `${API_BASE_URL}/tours/bands/${bandId}/tours/${tourId}/save`,
+    const response = await apiClient(
+      `/tours/bands/${bandId}/tours/${tourId}/save`,
       {
         method: "POST",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           save_request: {
             name: name,
@@ -149,11 +145,13 @@ export const tourService = {
    * @returns {Promise<Object>} Updated tour details
    */
   async updateSavedTour(bandId, tourId, name, tourData) {
-    const response = await fetch(
-      `${API_BASE_URL}/tours/bands/${bandId}/tours/${tourId}`,
+    const response = await apiClient(
+      `/tours/bands/${bandId}/tours/${tourId}`,
       {
         method: "PUT",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           save_request: {
             name: name,
@@ -188,11 +186,13 @@ export const tourService = {
    * @returns {Promise<Array>} List of saved tour summaries
    */
   async getSavedTours(bandId) {
-    const response = await fetch(
-      `${API_BASE_URL}/tours/bands/${bandId}/tours`,
+    const response = await apiClient(
+      `/tours/bands/${bandId}/tours`,
       {
         method: "GET",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -222,11 +222,13 @@ export const tourService = {
    * @returns {Promise<Object>} Saved tour details with full tour results
    */
   async getSavedTour(bandId, tourId) {
-    const response = await fetch(
-      `${API_BASE_URL}/tours/bands/${bandId}/tours/${tourId}`,
+    const response = await apiClient(
+      `/tours/bands/${bandId}/tours/${tourId}`,
       {
         method: "GET",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -256,11 +258,13 @@ export const tourService = {
    * @returns {Promise<void>}
    */
   async deleteSavedTour(bandId, tourId) {
-    const response = await fetch(
-      `${API_BASE_URL}/tours/bands/${bandId}/tours/${tourId}`,
+    const response = await apiClient(
+      `/tours/bands/${bandId}/tours/${tourId}`,
       {
         method: "DELETE",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -294,11 +298,13 @@ export const tourService = {
       end_date: endDate,
     });
 
-    const response = await fetch(
-      `${API_BASE_URL}/tours/bands/${bandId}/tour-availability-summary?${params}`,
+    const response = await apiClient(
+      `/tours/bands/${bandId}/tour-availability-summary?${params}`,
       {
         method: "GET",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -334,11 +340,13 @@ export const tourService = {
    * @returns {Promise<Object>} Distance calculation result
    */
   async calculateVenueSwapDistance(params) {
-    const response = await fetch(
-      `${API_BASE_URL}/tours/calculate-venue-swap-distance`,
+    const response = await apiClient(
+      '/tours/calculate-venue-swap-distance',
       {
         method: "POST",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(params),
       }
     );

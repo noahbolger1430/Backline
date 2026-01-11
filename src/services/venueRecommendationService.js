@@ -1,3 +1,5 @@
+import { apiClient } from '../utils/apiClient';
+
 /**
  * Venue Recommendation Service
  * 
@@ -6,17 +8,7 @@
  * 2. Reviewing band applications for an event
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api/v1";
-
 export const venueRecommendationService = {
-  getAuthHeader() {
-    const token = localStorage.getItem("access_token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  },
-
   /**
    * Get recommended bands for an event.
    * 
@@ -40,11 +32,13 @@ export const venueRecommendationService = {
       params.append("search", search);
     }
 
-    const response = await fetch(
-      `${API_BASE_URL}/venue-recommendations/venues/${venueId}/events/${eventId}/recommended-bands?${params}`,
+    const response = await apiClient(
+      `/venue-recommendations/venues/${venueId}/events/${eventId}/recommended-bands?${params}`,
       {
         method: "GET",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -76,11 +70,13 @@ export const venueRecommendationService = {
    * @param {number} eventId - The event ID
    */
   async getScoredApplicants(venueId, eventId) {
-    const response = await fetch(
-      `${API_BASE_URL}/venue-recommendations/venues/${venueId}/events/${eventId}/scored-applicants`,
+    const response = await apiClient(
+      `/venue-recommendations/venues/${venueId}/events/${eventId}/scored-applicants`,
       {
         method: "GET",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -102,4 +98,3 @@ export const venueRecommendationService = {
     return await response.json();
   },
 };
-

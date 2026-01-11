@@ -1,14 +1,6 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api/v1";
+import { apiClient } from '../utils/apiClient';
 
 export const availabilityService = {
-  getAuthHeader() {
-    const token = localStorage.getItem("access_token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  },
-
   /**
    * Set availability for a specific date
    * @param {number} bandId - The band ID
@@ -17,11 +9,13 @@ export const availabilityService = {
    * @param {string} note - Optional note
    */
   async setMemberAvailability(bandId, date, status, note = null) {
-    const response = await fetch(
-      `${API_BASE_URL}/availability/bands/${bandId}/members/me/availability`,
+    const response = await apiClient(
+      `/availability/bands/${bandId}/members/me/availability`,
       {
         method: "POST",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           entries: [
             {
@@ -54,11 +48,13 @@ export const availabilityService = {
       end_date: endDate,
     });
 
-    const response = await fetch(
-      `${API_BASE_URL}/availability/bands/${bandId}/members/me/availability?${params}`,
+    const response = await apiClient(
+      `/availability/bands/${bandId}/members/me/availability?${params}`,
       {
         method: "GET",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -82,11 +78,13 @@ export const availabilityService = {
       end_date: endDate,
     });
 
-    const response = await fetch(
-      `${API_BASE_URL}/availability/bands/${bandId}/availability?${params}`,
+    const response = await apiClient(
+      `/availability/bands/${bandId}/availability?${params}`,
       {
         method: "GET",
-        headers: this.getAuthHeader(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 

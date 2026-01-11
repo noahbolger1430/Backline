@@ -1,14 +1,6 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api/v1";
+import { apiClient } from '../utils/apiClient';
 
 export const eventService = {
-  getAuthHeader() {
-    const token = localStorage.getItem("access_token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  },
-
   async createEvent(eventData, imageFile = null, bandIds = null) {
     const formData = new FormData();
     
@@ -72,14 +64,9 @@ export const eventService = {
     if (imageFile) {
       formData.append("image", imageFile);
     }
-    
-    // Get auth header but remove Content-Type to let browser set it with boundary
-    const headers = this.getAuthHeader();
-    delete headers["Content-Type"];
 
-    const response = await fetch(`${API_BASE_URL}/events/`, {
+    const response = await apiClient('/events/', {
       method: "POST",
-      headers: headers,
       body: formData,
     });
 
@@ -111,9 +98,11 @@ export const eventService = {
   },
 
   async deleteEvent(eventId) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
+    const response = await apiClient(`/events/${eventId}`, {
       method: "DELETE",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -135,9 +124,11 @@ export const eventService = {
   },
 
   async getEvent(eventId) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
+    const response = await apiClient(`/events/${eventId}`, {
       method: "GET",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -161,12 +152,14 @@ export const eventService = {
   async listEvents(params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const url = queryString 
-      ? `${API_BASE_URL}/events/?${queryString}` 
-      : `${API_BASE_URL}/events/`;
+      ? `/events/?${queryString}` 
+      : `/events/`;
 
-    const response = await fetch(url, {
+    const response = await apiClient(url, {
       method: "GET",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -190,7 +183,6 @@ export const eventService = {
   async updateEvent(eventId, eventData, imageFile = null, removeImage = false) {
     // Always use FormData to match backend expectations
     const formData = new FormData();
-    let headers = this.getAuthHeader();
 
     // Add all event data fields to FormData
     if (eventData.name !== undefined) {
@@ -237,15 +229,10 @@ export const eventService = {
     if (removeImage) {
       formData.append("remove_image", "true");
     }
-    
-    const body = formData;
-    // Remove Content-Type to let browser set it with boundary
-    delete headers["Content-Type"];
 
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
+    const response = await apiClient(`/events/${eventId}`, {
       method: "PATCH",
-      headers: headers,
-      body: body,
+      body: formData,
     });
 
     if (!response.ok) {
@@ -267,9 +254,11 @@ export const eventService = {
   },
 
   async openEventForApplications(eventId) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/open-applications`, {
+    const response = await apiClient(`/events/${eventId}/open-applications`, {
       method: "POST",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -291,9 +280,11 @@ export const eventService = {
   },
 
   async closeEventApplications(eventId) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/close-applications`, {
+    const response = await apiClient(`/events/${eventId}/close-applications`, {
       method: "POST",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -315,9 +306,11 @@ export const eventService = {
   },
 
   async confirmEvent(eventId) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/confirm`, {
+    const response = await apiClient(`/events/${eventId}/confirm`, {
       method: "POST",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -339,9 +332,11 @@ export const eventService = {
   },
 
   async getEventBands(eventId) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/bands`, {
+    const response = await apiClient(`/events/${eventId}/bands`, {
       method: "GET",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -363,9 +358,11 @@ export const eventService = {
   },
 
   async addBandToEvent(eventId, bandId, bandEventData = {}) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/bands`, {
+    const response = await apiClient(`/events/${eventId}/bands`, {
       method: "POST",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         band_id: bandId,
         status: bandEventData.status || "confirmed",
@@ -394,9 +391,11 @@ export const eventService = {
   },
 
   async removeBandFromEvent(eventId, bandId) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/bands/${bandId}`, {
+    const response = await apiClient(`/events/${eventId}/bands/${bandId}`, {
       method: "DELETE",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -418,9 +417,11 @@ export const eventService = {
   },
 
   async updateEventSchedule(eventId, scheduleUpdates) {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/schedule`, {
+    const response = await apiClient(`/events/${eventId}/schedule`, {
       method: "PATCH",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ schedule: scheduleUpdates }),
     });
 
@@ -496,14 +497,9 @@ export const eventService = {
     if (imageFile) {
       formData.append("image", imageFile);
     }
-    
-    // Get auth header but remove Content-Type
-    const headers = this.getAuthHeader();
-    delete headers["Content-Type"];
 
-    const response = await fetch(`${API_BASE_URL}/band-events/bands/${bandId}/events`, {
+    const response = await apiClient(`/band-events/bands/${bandId}/events`, {
       method: "POST",
-      headers: headers,
       body: formData,
     });
 
@@ -539,11 +535,13 @@ export const eventService = {
       include_venue_events: includeVenueEvents
     };
     const queryString = new URLSearchParams(queryParams).toString();
-    const url = `${API_BASE_URL}/band-events/bands/${bandId}/events?${queryString}`;
+    const url = `/band-events/bands/${bandId}/events?${queryString}`;
 
-    const response = await fetch(url, {
+    const response = await apiClient(url, {
       method: "GET",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -566,7 +564,6 @@ export const eventService = {
 
   async updateBandEvent(bandId, eventId, eventData, imageFile = null, removeImage = false) {
     const formData = new FormData();
-    let headers = this.getAuthHeader();
 
     // Add all event data fields to FormData
     if (eventData.name !== undefined) {
@@ -629,12 +626,9 @@ export const eventService = {
     if (removeImage) {
       formData.append("remove_image", "true");
     }
-    
-    delete headers["Content-Type"];
 
-    const response = await fetch(`${API_BASE_URL}/band-events/bands/${bandId}/events/${eventId}`, {
+    const response = await apiClient(`/band-events/bands/${bandId}/events/${eventId}`, {
       method: "PATCH",
-      headers: headers,
       body: formData,
     });
 
@@ -657,9 +651,11 @@ export const eventService = {
   },
 
   async deleteBandEvent(bandId, eventId) {
-    const response = await fetch(`${API_BASE_URL}/band-events/bands/${bandId}/events/${eventId}`, {
+    const response = await apiClient(`/band-events/bands/${bandId}/events/${eventId}`, {
       method: "DELETE",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {

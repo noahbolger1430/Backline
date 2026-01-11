@@ -1,18 +1,12 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api/v1";
+import { apiClient } from '../utils/apiClient';
 
 export const userService = {
-  getAuthHeader() {
-    const token = localStorage.getItem("access_token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  },
-
   async getCurrentUser() {
-    const response = await fetch(`${API_BASE_URL}/users/me`, {
+    const response = await apiClient('/users/me', {
       method: "GET",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -24,9 +18,11 @@ export const userService = {
   },
 
   async updateUser(userData) {
-    const response = await fetch(`${API_BASE_URL}/users/me`, {
+    const response = await apiClient('/users/me', {
       method: "PUT",
-      headers: this.getAuthHeader(),
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(userData),
     });
 
@@ -38,4 +34,3 @@ export const userService = {
     return await response.json();
   },
 };
-

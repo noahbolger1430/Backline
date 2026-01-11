@@ -1,24 +1,20 @@
+import { apiClient } from '../utils/apiClient';
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api/v1";
 
 export const bandService = {
-  getAuthHeader() {
-    const token = localStorage.getItem("access_token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  },
-
   async createBand(bandData) {
-    const response = await fetch(`${API_BASE_URL}/bands/`, {
-      method: "POST",
-      headers: this.getAuthHeader(),
+    const response = await apiClient('/bands/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(bandData),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to create band");
+      throw new Error(error.detail || 'Failed to create band');
     }
 
     return await response.json();
@@ -29,9 +25,11 @@ export const bandService = {
       // Convert empty string to null to match backend schema validation
       const instrumentValue = instrument && instrument.trim() ? instrument.trim() : null;
       
-      const response = await fetch(`${API_BASE_URL}/bands/join`, {
-        method: "POST",
-        headers: this.getAuthHeader(),
+      const response = await apiClient('/bands/join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           invite_code: inviteCode,
           instrument: instrumentValue,
@@ -73,9 +71,11 @@ export const bandService = {
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
     
     try {
-      const response = await fetch(`${API_BASE_URL}/bands/`, {
-        method: "GET",
-        headers: this.getAuthHeader(),
+      const response = await apiClient('/bands/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         signal: controller.signal,
       });
 
@@ -110,28 +110,32 @@ export const bandService = {
   },
 
   async getBandDetails(bandId) {
-    const response = await fetch(`${API_BASE_URL}/bands/${bandId}`, {
-      method: "GET",
-      headers: this.getAuthHeader(),
+    const response = await apiClient(`/bands/${bandId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to fetch band details");
+      throw new Error(error.detail || 'Failed to fetch band details');
     }
 
     return await response.json();
   },
 
   async getBandEvents(bandId) {
-    const response = await fetch(`${API_BASE_URL}/events?band_id=${bandId}`, {
-      method: "GET",
-      headers: this.getAuthHeader(),
+    const response = await apiClient(`/events?band_id=${bandId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to fetch band events");
+      throw new Error(error.detail || 'Failed to fetch band events');
     }
 
     const data = await response.json();
@@ -139,14 +143,16 @@ export const bandService = {
   },
 
   async searchBands(searchTerm) {
-    const response = await fetch(`${API_BASE_URL}/bands/?search=${encodeURIComponent(searchTerm)}`, {
-      method: "GET",
-      headers: this.getAuthHeader(),
+    const response = await apiClient(`/bands/?search=${encodeURIComponent(searchTerm)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to search bands");
+      throw new Error(error.detail || 'Failed to search bands');
     }
 
     return await response.json();
@@ -196,17 +202,14 @@ export const bandService = {
       fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bandService.js:updateBand',message:'Logo appended to FormData',data:{formDataKeys:Array.from(formData.keys()),hasLogo:formData.has('logo')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
       // #endregion
     }
-    
-    // Get auth header but remove Content-Type to let browser set it with boundary
-    const headers = this.getAuthHeader();
-    delete headers["Content-Type"];
 
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bandService.js:updateBand',message:'Sending API request',data:{bandId,url:`${API_BASE_URL}/bands/${bandId}`,formDataKeys:Array.from(formData.keys())},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
     // #endregion
-    const response = await fetch(`${API_BASE_URL}/bands/${bandId}`, {
-      method: "PUT",
-      headers: headers,
+    
+    // For FormData, don't set Content-Type header (browser will set it with boundary)
+    const response = await apiClient(`/bands/${bandId}`, {
+      method: 'PUT',
       body: formData,
     });
     
@@ -219,7 +222,7 @@ export const bandService = {
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'bandService.js:updateBand',message:'API error response',data:{status:response.status,error:error.detail||error},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
       // #endregion
-      throw new Error(error.detail || "Failed to update band");
+      throw new Error(error.detail || 'Failed to update band');
     }
 
     const result = await response.json();
@@ -232,43 +235,44 @@ export const bandService = {
   async updateMyBandMemberInfo(bandId, instrument) {
     // Always include the instrument field in the payload
     const payload = {
-        instrument: instrument && instrument.trim() ? instrument.trim() : null
+      instrument: instrument && instrument.trim() ? instrument.trim() : null
     };
 
     console.log('Sending payload:', JSON.stringify(payload)); // Debug log
 
-    const response = await fetch(`${API_BASE_URL}/bands/${bandId}/members/me`, {
-        method: "PUT",
-        headers: this.getAuthHeader(),
-        body: JSON.stringify(payload),
+    const response = await apiClient(`/bands/${bandId}/members/me`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-        const error = await response.json();
-        console.error('API Error Response:', error); // Debug log
-        
-        let errorMessage = "Failed to update band member information";
-        
-        if (error.detail) {
-            if (typeof error.detail === 'string') {
-                errorMessage = error.detail;
-            } else if (Array.isArray(error.detail)) {
-                // Pydantic validation errors
-                errorMessage = error.detail
-                    .map(e => {
-                        const field = e.loc ? e.loc.join('.') : 'field';
-                        return `${field}: ${e.msg}`;
-                    })
-                    .join('; ');
-            } else {
-                errorMessage = JSON.stringify(error.detail);
-            }
+      const error = await response.json();
+      console.error('API Error Response:', error); // Debug log
+      
+      let errorMessage = "Failed to update band member information";
+      
+      if (error.detail) {
+        if (typeof error.detail === 'string') {
+          errorMessage = error.detail;
+        } else if (Array.isArray(error.detail)) {
+          // Pydantic validation errors
+          errorMessage = error.detail
+            .map(e => {
+              const field = e.loc ? e.loc.join('.') : 'field';
+              return `${field}: ${e.msg}`;
+            })
+            .join('; ');
+        } else {
+          errorMessage = JSON.stringify(error.detail);
         }
-        
-        throw new Error(errorMessage);
+      }
+      
+      throw new Error(errorMessage);
     }
 
     return await response.json();
-},
+  },
 };
-

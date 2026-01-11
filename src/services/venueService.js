@@ -1,14 +1,8 @@
+import { apiClient } from '../utils/apiClient';
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api/v1";
 
 export const venueService = {
-  getAuthHeader() {
-    const token = localStorage.getItem("access_token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  },
-
   async createVenue(venueData, imageFile = null) {
     const formData = new FormData();
     
@@ -34,14 +28,10 @@ export const venueService = {
     if (imageFile) {
       formData.append("image", imageFile);
     }
-    
-    // Get auth header but remove Content-Type to let browser set it with boundary
-    const headers = this.getAuthHeader();
-    delete headers["Content-Type"];
 
-    const response = await fetch(`${API_BASE_URL}/venues/`, {
-      method: "POST",
-      headers: headers,
+    // For FormData, don't set Content-Type header (browser will set it with boundary)
+    const response = await apiClient('/venues/', {
+      method: 'POST',
       body: formData,
     });
 
@@ -68,9 +58,11 @@ export const venueService = {
   },
 
   async joinVenueWithInvite(inviteCode) {
-    const response = await fetch(`${API_BASE_URL}/venues/join`, {
-      method: "POST",
-      headers: this.getAuthHeader(),
+    const response = await apiClient('/venues/join', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         invite_code: inviteCode,
       }),
@@ -78,7 +70,7 @@ export const venueService = {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to join venue");
+      throw new Error(error.detail || 'Failed to join venue');
     }
 
     return await response.json();
@@ -90,9 +82,11 @@ export const venueService = {
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
     
     try {
-      const response = await fetch(`${API_BASE_URL}/venues/my-venues`, {
-        method: "GET",
-        headers: this.getAuthHeader(),
+      const response = await apiClient('/venues/my-venues', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         signal: controller.signal,
       });
 
@@ -124,23 +118,27 @@ export const venueService = {
   },
 
   async getVenueDetails(venueId) {
-    const response = await fetch(`${API_BASE_URL}/venues/${venueId}`, {
-      method: "GET",
-      headers: this.getAuthHeader(),
+    const response = await apiClient(`/venues/${venueId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to fetch venue details");
+      throw new Error(error.detail || 'Failed to fetch venue details');
     }
 
     return await response.json();
   },
 
   async updateVenue(venueId, venueData) {
-    const response = await fetch(`${API_BASE_URL}/venues/${venueId}`, {
-      method: "PATCH",
-      headers: this.getAuthHeader(),
+    const response = await apiClient(`/venues/${venueId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(venueData),
     });
 
@@ -168,14 +166,9 @@ export const venueService = {
     const formData = new FormData();
     formData.append("image", imageFile);
 
-    const token = localStorage.getItem("access_token");
-    const headers = {
-      Authorization: `Bearer ${token}`,
-    };
-
-    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/image`, {
-      method: "POST",
-      headers: headers,
+    // For FormData, don't set Content-Type header (browser will set it with boundary)
+    const response = await apiClient(`/venues/${venueId}/image`, {
+      method: 'POST',
       body: formData,
     });
 
@@ -200,23 +193,27 @@ export const venueService = {
   },
 
   async getVenueOperatingHours(venueId) {
-    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/operating-hours`, {
-      method: "GET",
-      headers: this.getAuthHeader(),
+    const response = await apiClient(`/venues/${venueId}/operating-hours`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to fetch venue operating hours");
+      throw new Error(error.detail || 'Failed to fetch venue operating hours');
     }
 
     return await response.json();
   },
 
   async updateVenueOperatingHours(venueId, hoursData) {
-    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/operating-hours`, {
-      method: "PUT",
-      headers: this.getAuthHeader(),
+    const response = await apiClient(`/venues/${venueId}/operating-hours`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(hoursData),
     });
 
@@ -241,14 +238,16 @@ export const venueService = {
   },
 
   async getVenueStaff(venueId) {
-    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/staff`, {
-      method: "GET",
-      headers: this.getAuthHeader(),
+    const response = await apiClient(`/venues/${venueId}/staff`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to fetch venue staff");
+      throw new Error(error.detail || 'Failed to fetch venue staff');
     }
 
     return await response.json();
@@ -295,16 +294,18 @@ export const venueService = {
     }
 
     const queryString = queryParams.toString();
-    const url = `${API_BASE_URL}/venues/${queryString ? `?${queryString}` : ""}`;
+    const url = `/venues/${queryString ? `?${queryString}` : ""}`;
     
-    const response = await fetch(url, {
-      method: "GET",
-      headers: this.getAuthHeader(),
+    const response = await apiClient(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to fetch venues");
+      throw new Error(error.detail || 'Failed to fetch venues');
     }
 
     return await response.json();
@@ -312,37 +313,43 @@ export const venueService = {
 
   // Venue Equipment Methods
   async getVenueEquipmentCategories(venueId) {
-    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/equipment/categories`, {
-      method: "GET",
-      headers: this.getAuthHeader(),
+    const response = await apiClient(`/venues/${venueId}/equipment/categories`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to fetch venue equipment categories");
+      throw new Error(error.detail || 'Failed to fetch venue equipment categories');
     }
 
     return await response.json();
   },
 
   async getVenueEquipment(venueId) {
-    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/equipment`, {
-      method: "GET",
-      headers: this.getAuthHeader(),
+    const response = await apiClient(`/venues/${venueId}/equipment`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to fetch venue equipment");
+      throw new Error(error.detail || 'Failed to fetch venue equipment');
     }
 
     return await response.json();
   },
 
   async createVenueEquipment(venueId, equipmentData) {
-    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/equipment`, {
-      method: "POST",
-      headers: this.getAuthHeader(),
+    const response = await apiClient(`/venues/${venueId}/equipment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(equipmentData),
     });
 
@@ -367,9 +374,11 @@ export const venueService = {
   },
 
   async updateVenueEquipment(venueId, equipmentId, equipmentData) {
-    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/equipment/${equipmentId}`, {
-      method: "PUT",
-      headers: this.getAuthHeader(),
+    const response = await apiClient(`/venues/${venueId}/equipment/${equipmentId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(equipmentData),
     });
 
@@ -394,14 +403,16 @@ export const venueService = {
   },
 
   async deleteVenueEquipment(venueId, equipmentId) {
-    const response = await fetch(`${API_BASE_URL}/venues/${venueId}/equipment/${equipmentId}`, {
-      method: "DELETE",
-      headers: this.getAuthHeader(),
+    const response = await apiClient(`/venues/${venueId}/equipment/${equipmentId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Failed to delete venue equipment");
+      throw new Error(error.detail || 'Failed to delete venue equipment');
     }
 
     return null; // 204 No Content

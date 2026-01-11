@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Login from "./components/Auth/Login";
 import Signup from "./components/Auth/Signup";
 import RoleSelection from "./components/Onboarding/RoleSelection";
@@ -24,9 +24,14 @@ const App = () => {
   const [currentVenue, setCurrentVenue] = useState(null);
   const [isCheckingEntities, setIsCheckingEntities] = useState(false);
 
+  const hasCheckedEntities = useRef(false);
+
   useEffect(() => {
     const token = localStorage.getItem("access_token");
-    if (token) {
+    
+    // Prevent double-call in StrictMode
+    if (token && !hasCheckedEntities.current) {
+      hasCheckedEntities.current = true;
       setIsAuthenticated(true);
       setIsCheckingEntities(true);
       checkUserEntities();
