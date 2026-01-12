@@ -4,6 +4,7 @@ import { OrbitControls, Text } from "@react-three/drei";
 import { stagePlotService } from "../../services/stagePlotService";
 import * as THREE from "three";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
 import "./StagePlot.css";
 
 // Cache for processed amplifier models
@@ -290,38 +291,114 @@ const processBassGuitarModel = (obj) => {
   return clonedObj;
 };
 
-// Amplifier 3D Model Component
-const AmplifierModel = ({ color }) => {
-  const obj = useLoader(OBJLoader, "/3dmodels/Guitar Amplifier.obj");
+// Amplifier 3D Model Component with MTL support
+const AmplifierModel = ({ color, useOriginalMaterials = true }) => {
   const groupRef = useRef();
   const instanceRef = useRef();
-  const materialsRef = useRef([]);
+  const originalMaterialsRef = useRef([]); // Store original materials
+  const [modelReady, setModelReady] = useState(false);
+  const [loadedObj, setLoadedObj] = useState(null);
   
-  // Process model only once when loaded
+  // Load materials and model
+  useEffect(() => {
+    const mtlLoader = new MTLLoader();
+    mtlLoader.setPath("/3dmodels/");
+    
+    mtlLoader.load(
+      "Guitar Amplifier.mtl",
+      (materials) => {
+        materials.preload();
+        
+        const objLoader = new OBJLoader();
+        objLoader.setMaterials(materials);
+        objLoader.setPath("/3dmodels/");
+        
+        objLoader.load(
+          "Guitar Amplifier.obj",
+          (obj) => {
+            setLoadedObj(obj);
+            setModelReady(true);
+          },
+          undefined,
+          (error) => {
+            console.error("Error loading amplifier OBJ:", error);
+            // Fallback: load without materials
+            loadWithoutMaterials();
+          }
+        );
+      },
+      undefined,
+      (error) => {
+        console.warn("MTL file not found for amplifier, loading OBJ only:", error);
+        loadWithoutMaterials();
+      }
+    );
+    
+    const loadWithoutMaterials = () => {
+      const objLoader = new OBJLoader();
+      objLoader.setPath("/3dmodels/");
+      objLoader.load(
+        "Guitar Amplifier.obj",
+        (obj) => {
+          setLoadedObj(obj);
+          setModelReady(true);
+        },
+        undefined,
+        (error) => {
+          console.error("Error loading amplifier OBJ:", error);
+        }
+      );
+    };
+  }, []);
+  
+  // Process model once loaded
   const processedModel = useMemo(() => {
-    if (obj) {
-      return processAmplifierModel(obj);
+    if (loadedObj) {
+      amplifierModelCache.delete('processed');
+      return processAmplifierModel(loadedObj);
     }
     return null;
-  }, [obj]);
+  }, [loadedObj]);
   
   // Initialize model once
   useEffect(() => {
     if (processedModel && groupRef.current && !instanceRef.current) {
-      // Clone the processed model for this instance
       const instance = processedModel.clone();
       instanceRef.current = instance;
       
-      // Store materials and apply initial settings
+      // Store original materials for each mesh
       instance.traverse((child) => {
         if (child.isMesh) {
-          const material = new THREE.MeshStandardMaterial({
-            color: color,
-            metalness: 0.3,
-            roughness: 0.7,
-          });
-          child.material = material;
-          materialsRef.current.push(material);
+          // Clone and store the original material(s)
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              const clonedMaterials = child.material.map(mat => mat.clone());
+              originalMaterialsRef.current.push({
+                mesh: child,
+                materials: clonedMaterials
+              });
+              child.material = clonedMaterials;
+            } else {
+              const clonedMaterial = child.material.clone();
+              originalMaterialsRef.current.push({
+                mesh: child,
+                materials: clonedMaterial
+              });
+              child.material = clonedMaterial;
+            }
+          } else {
+            // No material exists, create a default one
+            const material = new THREE.MeshStandardMaterial({
+              color: color,
+              metalness: 0.3,
+              roughness: 0.7,
+            });
+            originalMaterialsRef.current.push({
+              mesh: child,
+              materials: material
+            });
+            child.material = material;
+          }
           child.castShadow = true;
           child.receiveShadow = true;
         }
@@ -329,65 +406,159 @@ const AmplifierModel = ({ color }) => {
       
       groupRef.current.add(instance);
     }
-  }, [processedModel]); // Only depend on processedModel, not color
+  }, [processedModel]);
   
-  // Update material color when it changes (without recreating the model)
+  // Update materials based on hover state
   useEffect(() => {
-    if (materialsRef.current.length > 0 && instanceRef.current) {
-      materialsRef.current.forEach(material => {
-        material.color.set(color);
+    if (originalMaterialsRef.current.length > 0 && instanceRef.current) {
+      originalMaterialsRef.current.forEach(({ mesh, materials }) => {
+        if (useOriginalMaterials) {
+          // Restore original materials
+          mesh.material = Array.isArray(materials) ? materials : materials;
+        } else {
+          // Apply highlight color
+          if (Array.isArray(materials)) {
+            mesh.material = materials.map(() => new THREE.MeshStandardMaterial({
+              color: color,
+              metalness: 0.3,
+              roughness: 0.7,
+            }));
+          } else {
+            mesh.material = new THREE.MeshStandardMaterial({
+              color: color,
+              metalness: 0.3,
+              roughness: 0.7,
+            });
+          }
+        }
       });
     }
-  }, [color]);
+  }, [useOriginalMaterials, color]);
+  
+  if (!modelReady) {
+    return (
+      <mesh>
+        <boxGeometry args={[0.8, 1.2, 0.6]} />
+        <meshStandardMaterial color={color} metalness={0.3} roughness={0.7} />
+      </mesh>
+    );
+  }
   
   return <group ref={groupRef} />;
 };
 
-// Drum Kit 3D Model Component
-const DrumKitModel = ({ color }) => {
-  const obj = useLoader(OBJLoader, "/3dmodels/Drum%20Kit.obj");
+
+// Drum Kit 3D Model Component with MTL support
+const DrumKitModel = ({ color, useOriginalMaterials = true }) => {
   const groupRef = useRef();
   const instanceRef = useRef();
-  const materialsRef = useRef([]);
+  const originalMaterialsRef = useRef([]);
+  const [modelReady, setModelReady] = useState(false);
+  const [loadedObj, setLoadedObj] = useState(null);
   
-  // Process model only once when loaded
-  const processedModel = useMemo(() => {
-    if (obj) {
-      try {
-        return processDrumKitModel(obj);
-      } catch (error) {
-        console.error("Error processing drum kit model:", error);
-        return null;
+  // Load materials and model
+  useEffect(() => {
+    const mtlLoader = new MTLLoader();
+    mtlLoader.setPath("/3dmodels/");
+    
+    mtlLoader.load(
+      "Drum Kit.mtl",
+      (materials) => {
+        materials.preload();
+        
+        const objLoader = new OBJLoader();
+        objLoader.setMaterials(materials);
+        objLoader.setPath("/3dmodels/");
+        
+        objLoader.load(
+          "Drum Kit.obj",
+          (obj) => {
+            setLoadedObj(obj);
+            setModelReady(true);
+          },
+          undefined,
+          (error) => {
+            console.error("Error loading drum kit OBJ:", error);
+            loadWithoutMaterials();
+          }
+        );
+      },
+      undefined,
+      (error) => {
+        console.warn("MTL file not found for drum kit, loading OBJ only:", error);
+        loadWithoutMaterials();
       }
+    );
+    
+    const loadWithoutMaterials = () => {
+      const objLoader = new OBJLoader();
+      objLoader.setPath("/3dmodels/");
+      objLoader.load(
+        "Drum Kit.obj",
+        (obj) => {
+          setLoadedObj(obj);
+          setModelReady(true);
+        },
+        undefined,
+        (error) => {
+          console.error("Error loading drum kit OBJ:", error);
+        }
+      );
+    };
+  }, []);
+  
+  // Process model once loaded
+  const processedModel = useMemo(() => {
+    if (loadedObj) {
+      drumKitModelCache.delete('processed');
+      return processDrumKitModel(loadedObj);
     }
     return null;
-  }, [obj]);
+  }, [loadedObj]);
   
   // Initialize model once
   useEffect(() => {
     if (processedModel && groupRef.current && !instanceRef.current) {
       try {
-        // Clone the processed model for this instance
         const instance = processedModel.clone();
         instanceRef.current = instance;
         
-        // Ensure the instance is at origin (should already be from processing)
         instance.position.set(0, 0, 0);
         instance.rotation.set(0, 0, 0);
-        // Don't reset scale - it's already applied in processing!
         
-        // Store materials and apply initial settings
         let meshCount = 0;
         instance.traverse((child) => {
           if (child.isMesh) {
             meshCount++;
-            const material = new THREE.MeshStandardMaterial({
-              color: color,
-              metalness: 0.3,
-              roughness: 0.7,
-            });
-            child.material = material;
-            materialsRef.current.push(material);
+            
+            if (child.material) {
+              if (Array.isArray(child.material)) {
+                const clonedMaterials = child.material.map(mat => mat.clone());
+                originalMaterialsRef.current.push({
+                  mesh: child,
+                  materials: clonedMaterials
+                });
+                child.material = clonedMaterials;
+              } else {
+                const clonedMaterial = child.material.clone();
+                originalMaterialsRef.current.push({
+                  mesh: child,
+                  materials: clonedMaterial
+                });
+                child.material = clonedMaterial;
+              }
+            } else {
+              const material = new THREE.MeshStandardMaterial({
+                color: color,
+                metalness: 0.3,
+                roughness: 0.7,
+              });
+              originalMaterialsRef.current.push({
+                mesh: child,
+                materials: material
+              });
+              child.material = material;
+            }
             child.castShadow = true;
             child.receiveShadow = true;
           }
@@ -402,21 +573,225 @@ const DrumKitModel = ({ color }) => {
         console.error("Error initializing drum kit model:", error);
       }
     }
-  }, [processedModel, color]); // Include color in dependencies for initial setup
+  }, [processedModel]);
   
-  // Update material color when it changes (without recreating the model)
+  // Update materials based on hover state
   useEffect(() => {
-    if (materialsRef.current.length > 0 && instanceRef.current) {
-      materialsRef.current.forEach(material => {
-        material.color.set(color);
+    if (originalMaterialsRef.current.length > 0 && instanceRef.current) {
+      originalMaterialsRef.current.forEach(({ mesh, materials }) => {
+        if (useOriginalMaterials) {
+          // Restore original materials
+          mesh.material = Array.isArray(materials) ? materials : materials;
+        } else {
+          // Apply highlight color
+          if (Array.isArray(materials)) {
+            mesh.material = materials.map(() => new THREE.MeshStandardMaterial({
+              color: color,
+              metalness: 0.3,
+              roughness: 0.7,
+            }));
+          } else {
+            mesh.material = new THREE.MeshStandardMaterial({
+              color: color,
+              metalness: 0.3,
+              roughness: 0.7,
+            });
+          }
+        }
       });
     }
-  }, [color]);
+  }, [useOriginalMaterials, color]);
+  
+  if (!modelReady) {
+    return (
+      <group>
+        <mesh castShadow receiveShadow>
+          <cylinderGeometry args={[0.4, 0.4, 0.3, 16]} />
+          <meshStandardMaterial color={color} metalness={0.3} roughness={0.7} />
+        </mesh>
+        <mesh position={[0.5, 0, 0]} castShadow receiveShadow>
+          <cylinderGeometry args={[0.3, 0.3, 0.3, 16]} />
+          <meshStandardMaterial color={color} metalness={0.3} roughness={0.7} />
+        </mesh>
+        <mesh position={[-0.5, 0, 0]} castShadow receiveShadow>
+          <cylinderGeometry args={[0.3, 0.3, 0.3, 16]} />
+          <meshStandardMaterial color={color} metalness={0.3} roughness={0.7} />
+        </mesh>
+      </group>
+    );
+  }
   
   return <group ref={groupRef} />;
 };
 
-// Keyboard 3D Model Component
+
+// Electric Guitar 3D Model Component with MTL support
+const ElectricGuitarModel = ({ color, useOriginalMaterials = true }) => {
+  const groupRef = useRef();
+  const instanceRef = useRef();
+  const originalMaterialsRef = useRef([]);
+  const [modelReady, setModelReady] = useState(false);
+  const [loadedObj, setLoadedObj] = useState(null);
+  
+  // Load materials and model
+  useEffect(() => {
+    const mtlLoader = new MTLLoader();
+    mtlLoader.setPath("/3dmodels/");
+    
+    mtlLoader.load(
+      "Electric Guitar.mtl",
+      (materials) => {
+        materials.preload();
+        
+        const objLoader = new OBJLoader();
+        objLoader.setMaterials(materials);
+        objLoader.setPath("/3dmodels/");
+        
+        objLoader.load(
+          "Electric Guitar.obj",
+          (obj) => {
+            setLoadedObj(obj);
+            setModelReady(true);
+          },
+          undefined,
+          (error) => {
+            console.error("Error loading electric guitar OBJ:", error);
+            loadWithoutMaterials();
+          }
+        );
+      },
+      undefined,
+      (error) => {
+        console.warn("MTL file not found for electric guitar, loading OBJ only:", error);
+        loadWithoutMaterials();
+      }
+    );
+    
+    const loadWithoutMaterials = () => {
+      const objLoader = new OBJLoader();
+      objLoader.setPath("/3dmodels/");
+      objLoader.load(
+        "Electric Guitar.obj",
+        (obj) => {
+          setLoadedObj(obj);
+          setModelReady(true);
+        },
+        undefined,
+        (error) => {
+          console.error("Error loading electric guitar OBJ:", error);
+        }
+      );
+    };
+  }, []);
+  
+  // Process model once loaded
+  const processedModel = useMemo(() => {
+    if (loadedObj) {
+      electricGuitarModelCache.delete('processed');
+      return processElectricGuitarModel(loadedObj);
+    }
+    return null;
+  }, [loadedObj]);
+  
+  // Initialize model once
+  useEffect(() => {
+    if (processedModel && groupRef.current && !instanceRef.current) {
+      try {
+        const instance = processedModel.clone();
+        instanceRef.current = instance;
+        
+        instance.position.set(0, 0, 0);
+        instance.rotation.set(0, 0, 0);
+        
+        let meshCount = 0;
+        instance.traverse((child) => {
+          if (child.isMesh) {
+            meshCount++;
+            
+            if (child.material) {
+              if (Array.isArray(child.material)) {
+                const clonedMaterials = child.material.map(mat => mat.clone());
+                originalMaterialsRef.current.push({
+                  mesh: child,
+                  materials: clonedMaterials
+                });
+                child.material = clonedMaterials;
+              } else {
+                const clonedMaterial = child.material.clone();
+                originalMaterialsRef.current.push({
+                  mesh: child,
+                  materials: clonedMaterial
+                });
+                child.material = clonedMaterial;
+              }
+            } else {
+              const material = new THREE.MeshStandardMaterial({
+                color: color,
+                metalness: 0.3,
+                roughness: 0.7,
+              });
+              originalMaterialsRef.current.push({
+                mesh: child,
+                materials: material
+              });
+              child.material = material;
+            }
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+        
+        if (meshCount === 0) {
+          console.warn("Electric guitar model has no meshes");
+        }
+        
+        groupRef.current.add(instance);
+      } catch (error) {
+        console.error("Error initializing electric guitar model:", error);
+      }
+    }
+  }, [processedModel]);
+  
+  // Update materials based on hover state
+  useEffect(() => {
+    if (originalMaterialsRef.current.length > 0 && instanceRef.current) {
+      originalMaterialsRef.current.forEach(({ mesh, materials }) => {
+        if (useOriginalMaterials) {
+          // Restore original materials
+          mesh.material = Array.isArray(materials) ? materials : materials;
+        } else {
+          // Apply highlight color
+          if (Array.isArray(materials)) {
+            mesh.material = materials.map(() => new THREE.MeshStandardMaterial({
+              color: color,
+              metalness: 0.3,
+              roughness: 0.7,
+            }));
+          } else {
+            mesh.material = new THREE.MeshStandardMaterial({
+              color: color,
+              metalness: 0.3,
+              roughness: 0.7,
+            });
+          }
+        }
+      });
+    }
+  }, [useOriginalMaterials, color]);
+  
+  if (!modelReady) {
+    return (
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[1.2, 0.2, 0.05]} />
+        <meshStandardMaterial color={color} metalness={0.3} roughness={0.7} />
+      </mesh>
+    );
+  }
+  
+  return <group ref={groupRef} />;
+};
+
+// Keyboard 3D Model Component (unchanged - no MTL support requested)
 const KeyboardModel = ({ color }) => {
   const obj = useLoader(OBJLoader, "/3dmodels/Keyboard.obj");
   const groupRef = useRef();
@@ -489,7 +864,7 @@ const KeyboardModel = ({ color }) => {
   return <group ref={groupRef} />;
 };
 
-// Microphone 3D Model Component
+// Microphone 3D Model Component (unchanged - no MTL support requested)
 const MicrophoneModel = ({ color }) => {
   const obj = useLoader(OBJLoader, "/3dmodels/Microphone.obj");
   const groupRef = useRef();
@@ -562,80 +937,7 @@ const MicrophoneModel = ({ color }) => {
   return <group ref={groupRef} />;
 };
 
-// Electric Guitar 3D Model Component
-const ElectricGuitarModel = ({ color }) => {
-  const obj = useLoader(OBJLoader, "/3dmodels/Electric%20Guitar.obj");
-  const groupRef = useRef();
-  const instanceRef = useRef();
-  const materialsRef = useRef([]);
-  
-  // Process model only once when loaded
-  const processedModel = useMemo(() => {
-    if (obj) {
-      try {
-        return processElectricGuitarModel(obj);
-      } catch (error) {
-        console.error("Error processing electric guitar model:", error);
-        return null;
-      }
-    }
-    return null;
-  }, [obj]);
-  
-  // Initialize model once
-  useEffect(() => {
-    if (processedModel && groupRef.current && !instanceRef.current) {
-      try {
-        // Clone the processed model for this instance
-        const instance = processedModel.clone();
-        instanceRef.current = instance;
-        
-        // Ensure the instance is at origin (should already be from processing)
-        instance.position.set(0, 0, 0);
-        instance.rotation.set(0, 0, 0);
-        // Don't reset scale - it's already applied in processing!
-        
-        // Store materials and apply initial settings
-        let meshCount = 0;
-        instance.traverse((child) => {
-          if (child.isMesh) {
-            meshCount++;
-            const material = new THREE.MeshStandardMaterial({
-              color: color,
-              metalness: 0.3,
-              roughness: 0.7,
-            });
-            child.material = material;
-            materialsRef.current.push(material);
-            child.castShadow = true;
-            child.receiveShadow = true;
-          }
-        });
-        
-        if (meshCount === 0) {
-          console.warn("Electric guitar model has no meshes");
-        }
-        
-        groupRef.current.add(instance);
-      } catch (error) {
-        console.error("Error initializing electric guitar model:", error);
-      }
-    }
-  }, [processedModel, color]); // Include color in dependencies for initial setup
-  
-  // Update material color when it changes (without recreating the model)
-  useEffect(() => {
-    if (materialsRef.current.length > 0 && instanceRef.current) {
-      materialsRef.current.forEach(material => {
-        material.color.set(color);
-      });
-    }
-  }, [color]);
-  
-  return <group ref={groupRef} />;
-};
-
-// Bass Guitar 3D Model Component
+// Bass Guitar 3D Model Component (unchanged - no MTL support requested)
 const BassGuitarModel = ({ color }) => {
   const obj = useLoader(OBJLoader, "/3dmodels/Bass%20Guitar.obj");
   const groupRef = useRef();
@@ -777,56 +1079,29 @@ const getEquipmentYOffset = (equipmentId) => {
   
   switch (equipmentId) {
     case "vocal-mic":
-      // Processed model target size: 3.0, centered at origin
-      // Calculate based on actual height - approximate as 2.4 units height
-      // So bottom is at -1.2, top at +1.2
-      // To position bottom at stage surface (0.2), position at 0.2 + 1.2 = 1.4
-      return STAGE_SURFACE_Y + 0.1; // Half height above stage surface
+      return STAGE_SURFACE_Y + 0.1;
     case "electric-guitar":
-      // Processed model target size: 1.2, centered at origin
-      // Calculate based on actual height - approximate as 0.2 units height
-      // So bottom is at -0.1, top at +0.1
-      // To position bottom at stage surface (0.2), position at 0.2 + 0.1 = 0.3
-      return STAGE_SURFACE_Y + 0.1; // Half height above stage surface
+      return STAGE_SURFACE_Y + 0.1;
     case "acoustic-guitar":
-      // Box height: 0.05 (very thin)
-      return STAGE_SURFACE_Y + 0.025; // Half height above stage surface
+      return STAGE_SURFACE_Y + 0.025;
     case "bass-guitar":
-      // Processed model target size: 1.2, centered at origin
-      // Calculate based on actual height - approximate as 0.2 units height
-      // So bottom is at -0.1, top at +0.1
-      // To position bottom at stage surface (0.2), position at 0.2 + 0.1 = 0.3
-      return STAGE_SURFACE_Y + 0.6; // Half height above stage surface
+      return STAGE_SURFACE_Y + 0.6;
     case "guitar-amp":
       return STAGE_SURFACE_Y + 0.9;
     case "bass-amp":
       return STAGE_SURFACE_Y + 0.9;
     case "keyboard-amp":
-      // Processed model target height: 1.2, centered at origin
-      // So bottom is at -0.6, top at +0.6
-      // To position bottom at stage surface (0.2), position at 0.2 + 0.6 = 0.8
-      return STAGE_SURFACE_Y + 0.9; // Half height above stage surface
+      return STAGE_SURFACE_Y + 0.9;
     case "keyboard":
-      // Processed model target size: 1.0, centered at origin
-      // Calculate based on actual height - approximate as 0.3 units height
-      // So bottom is at -0.15, top at +0.15
-      // To position bottom at stage surface (0.2), position at 0.2 + 0.15 = 0.35
-      return STAGE_SURFACE_Y + 0.15; // Half height above stage surface
+      return STAGE_SURFACE_Y + 0.15;
     case "di-box":
-      // Box height: 0.15
-      return STAGE_SURFACE_Y + 0.075; // Half height above stage surface
+      return STAGE_SURFACE_Y + 0.075;
     case "drum-kit":
-      // Processed model target size: 1.44, centered at origin
-      // Calculate based on actual height - approximate as 1.08 units height
-      // So bottom is at -0.54, top at +0.54
-      // To position bottom at stage surface (0.2), position at 0.2 + 0.54 = 0.74
-      return STAGE_SURFACE_Y + 1; // Half height above stage surface
+      return STAGE_SURFACE_Y + 1;
     case "power-connection":
-      // Flat 2D icon, position just above stage surface
       return STAGE_SURFACE_Y + 0.01;
     default:
-      // Default box height: 0.5
-      return STAGE_SURFACE_Y + 0.25; // Half height above stage surface
+      return STAGE_SURFACE_Y + 0.25;
   }
 };
 
@@ -839,6 +1114,21 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
   const dragPlane = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
   const { raycaster, camera, gl } = useThree();
   const lastClickTimeRef = useRef(0);
+  const isMountedRef = useRef(true);
+
+  // Cleanup on unmount - reset any hover/drag states
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      // Force reset hover state on unmount
+      setHovered(false);
+      setIsDragging(false);
+      if (gl?.domElement) {
+        gl.domElement.style.cursor = 'default';
+      }
+    };
+  }, [gl]);
 
   const handlePointerDown = (e) => {
     if (viewOnly) return;
@@ -858,11 +1148,13 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
     // Store click time for potential double click
     lastClickTimeRef.current = currentTime;
     
-    setIsDragging(true);
-    gl.domElement.style.cursor = 'grabbing';
-    // Disable orbit controls while dragging
-    if (controlsRef?.current) {
-      controlsRef.current.enabled = false;
+    if (isMountedRef.current) {
+      setIsDragging(true);
+      gl.domElement.style.cursor = 'grabbing';
+      // Disable orbit controls while dragging
+      if (controlsRef?.current) {
+        controlsRef.current.enabled = false;
+      }
     }
   };
 
@@ -870,7 +1162,7 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
   const hasMovedRef = useRef(false);
   
   useFrame((state) => {
-    if (isDragging && groupRef.current) {
+    if (isDragging && groupRef.current && isMountedRef.current) {
       // Use state.pointer which is already normalized
       const mouse = new THREE.Vector2(state.pointer.x, state.pointer.y);
       raycaster.setFromCamera(mouse, camera);
@@ -910,14 +1202,16 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
 
   useEffect(() => {
     const handlePointerUp = (e) => {
-      if (isDragging) {
+      if (isDragging && isMountedRef.current) {
         // If item was moved during drag, reset click time to prevent accidental double-click
         if (hasMovedRef.current) {
           lastClickTimeRef.current = 0;
         }
         
         setIsDragging(false);
-        gl.domElement.style.cursor = 'default';
+        if (gl?.domElement) {
+          gl.domElement.style.cursor = 'default';
+        }
         // Re-enable orbit controls
         if (controlsRef?.current) {
           controlsRef.current.enabled = true;
@@ -936,6 +1230,13 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
     };
   }, [isDragging, gl, controlsRef]);
 
+  // Ensure hover state is reset when item changes or component updates
+  useEffect(() => {
+    if (!isMountedRef.current) {
+      setHovered(false);
+    }
+  }, [item.instanceId]);
+
   const color = hovered || isDragging ? "#6F22D2" : getEquipmentColor(item.id);
   const isAmplifier = item.id === "guitar-amp" || item.id === "bass-amp" || item.id === "keyboard-amp";
   const isDrumKit = item.id === "drum-kit";
@@ -946,14 +1247,32 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
   const isPowerConnection = item.id === "power-connection";
   const yOffset = getEquipmentYOffset(item.id);
 
+  // Determine if we should use original materials (not when hovered/dragging)
+  const useOriginalMaterials = !hovered && !isDragging;
+
+  // Safe hover handlers that check if component is mounted
+  const handlePointerOver = (e) => {
+    e.stopPropagation();
+    if (isMountedRef.current && !viewOnly) {
+      setHovered(true);
+    }
+  };
+
+  const handlePointerOut = (e) => {
+    e.stopPropagation();
+    if (isMountedRef.current) {
+      setHovered(false);
+    }
+  };
+
   return (
     <group ref={groupRef} position={[item.x, yOffset, item.z]}>
       {isDrumKit ? (
         <Suspense fallback={
           <group
             ref={meshRef}
-            onPointerOver={() => setHovered(true)}
-            onPointerOut={() => setHovered(false)}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
             onPointerDown={handlePointerDown}
           >
             <mesh castShadow receiveShadow>
@@ -973,28 +1292,19 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
           <group
             ref={meshRef}
             rotation={[-Math.PI / 2, 0, 0]}
-            onPointerOver={(e) => {
-              e.stopPropagation();
-              setHovered(true);
-            }}
-            onPointerOut={(e) => {
-              e.stopPropagation();
-              setHovered(false);
-            }}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              handlePointerDown(e);
-            }}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
+            onPointerDown={handlePointerDown}
           >
-            <DrumKitModel color={color} />
+            <DrumKitModel color={color} useOriginalMaterials={useOriginalMaterials} />
           </group>
         </Suspense>
       ) : isAmplifier ? (
         <Suspense fallback={
           <mesh 
             ref={meshRef}
-            onPointerOver={() => setHovered(true)}
-            onPointerOut={() => setHovered(false)}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
             onPointerDown={handlePointerDown}
             castShadow 
             receiveShadow
@@ -1006,28 +1316,19 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
           <group
             ref={meshRef}
             rotation={[0, -Math.PI / 2, 0]}
-            onPointerOver={(e) => {
-              e.stopPropagation();
-              setHovered(true);
-            }}
-            onPointerOut={(e) => {
-              e.stopPropagation();
-              setHovered(false);
-            }}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              handlePointerDown(e);
-            }}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
+            onPointerDown={handlePointerDown}
           >
-            <AmplifierModel color={color} />
+            <AmplifierModel color={color} useOriginalMaterials={useOriginalMaterials} />
           </group>
         </Suspense>
       ) : isKeyboard ? (
         <Suspense fallback={
           <mesh 
             ref={meshRef}
-            onPointerOver={() => setHovered(true)}
-            onPointerOut={() => setHovered(false)}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
             onPointerDown={handlePointerDown}
             castShadow 
             receiveShadow
@@ -1039,18 +1340,9 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
           <group
             ref={meshRef}
             rotation={[0, Math.PI / 2, 0]}
-            onPointerOver={(e) => {
-              e.stopPropagation();
-              setHovered(true);
-            }}
-            onPointerOut={(e) => {
-              e.stopPropagation();
-              setHovered(false);
-            }}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              handlePointerDown(e);
-            }}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
+            onPointerDown={handlePointerDown}
           >
             <KeyboardModel color={color} />
           </group>
@@ -1059,8 +1351,8 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
         <Suspense fallback={
           <mesh 
             ref={meshRef}
-            onPointerOver={() => setHovered(true)}
-            onPointerOut={() => setHovered(false)}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
             onPointerDown={handlePointerDown}
             castShadow 
             receiveShadow
@@ -1071,18 +1363,9 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
         }>
           <group
             ref={meshRef}
-            onPointerOver={(e) => {
-              e.stopPropagation();
-              setHovered(true);
-            }}
-            onPointerOut={(e) => {
-              e.stopPropagation();
-              setHovered(false);
-            }}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              handlePointerDown(e);
-            }}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
+            onPointerDown={handlePointerDown}
           >
             <MicrophoneModel color={color} />
           </group>
@@ -1091,8 +1374,8 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
         <Suspense fallback={
           <mesh 
             ref={meshRef}
-            onPointerOver={() => setHovered(true)}
-            onPointerOut={() => setHovered(false)}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
             onPointerDown={handlePointerDown}
             castShadow 
             receiveShadow
@@ -1103,28 +1386,19 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
         }>
           <group
             ref={meshRef}
-            onPointerOver={(e) => {
-              e.stopPropagation();
-              setHovered(true);
-            }}
-            onPointerOut={(e) => {
-              e.stopPropagation();
-              setHovered(false);
-            }}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              handlePointerDown(e);
-            }}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
+            onPointerDown={handlePointerDown}
           >
-            <ElectricGuitarModel color={color} />
+            <ElectricGuitarModel color={color} useOriginalMaterials={useOriginalMaterials} />
           </group>
         </Suspense>
       ) : isBassGuitar ? (
         <Suspense fallback={
           <mesh 
             ref={meshRef}
-            onPointerOver={() => setHovered(true)}
-            onPointerOut={() => setHovered(false)}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
             onPointerDown={handlePointerDown}
             castShadow 
             receiveShadow
@@ -1136,18 +1410,9 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
           <group
             ref={meshRef}
             rotation={[Math.PI / 2, 0, 0]}
-            onPointerOver={(e) => {
-              e.stopPropagation();
-              setHovered(true);
-            }}
-            onPointerOut={(e) => {
-              e.stopPropagation();
-              setHovered(false);
-            }}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              handlePointerDown(e);
-            }}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
+            onPointerDown={handlePointerDown}
           >
             <BassGuitarModel color={color} />
           </group>
@@ -1155,26 +1420,17 @@ const DraggableEquipment = ({ item, onUpdate, onRemove, controlsRef, viewOnly = 
       ) : isPowerConnection ? (
         <group
           ref={meshRef}
-          onPointerOver={(e) => {
-            e.stopPropagation();
-            setHovered(true);
-          }}
-          onPointerOut={(e) => {
-            e.stopPropagation();
-            setHovered(false);
-          }}
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            handlePointerDown(e);
-          }}
+          onPointerOver={handlePointerOver}
+          onPointerOut={handlePointerOut}
+          onPointerDown={handlePointerDown}
         >
           <LightningBolt color={color} />
         </group>
       ) : (
         <mesh
           ref={meshRef}
-          onPointerOver={() => setHovered(true)}
-          onPointerOut={() => setHovered(false)}
+          onPointerOver={handlePointerOver}
+          onPointerOut={handlePointerOut}
           onPointerDown={handlePointerDown}
           castShadow
           receiveShadow
@@ -1315,10 +1571,10 @@ const StagePlot = ({ onBack, bandId, stagePlotId = null, viewOnly = false, onPlo
     { id: "electric-guitar", name: "Electric Guitar", icon: "🎸" },
     { id: "acoustic-guitar", name: "Acoustic Guitar", icon: "🪕" },
     { id: "bass-guitar", name: "Bass Guitar", icon: "🎸" },
-    { id: "guitar-amp", name: "Guitar Amplifier", icon: "🔊" },
-    { id: "bass-amp", name: "Bass Amplifier", icon: "🔊" },
+    { id: "guitar-amp", name: "Guitar Amplifier", icon: "🔈" },
+    { id: "bass-amp", name: "Bass Amplifier", icon: "🔈" },
     { id: "keyboard", name: "Keyboard", icon: "🎹" },
-    { id: "keyboard-amp", name: "Keyboard Amplifier", icon: "🔊" },
+    { id: "keyboard-amp", name: "Keyboard Amplifier", icon: "🔈" },
     { id: "di-box", name: "DI Box", icon: "📦" },
     { id: "drum-kit", name: "Drum Kit", icon: "🥁" },
     { id: "power-connection", name: "Power Connection", icon: "⚡" }
@@ -1418,7 +1674,7 @@ const StagePlot = ({ onBack, bandId, stagePlotId = null, viewOnly = false, onPlo
         const newPlot = await stagePlotService.createStagePlot({
           band_id: bandId,
           name: plotName,
-          description: plotDescription || null,
+          description: plot.description || null,
           items: formattedItems,
           settings: {
             stage_width: 600,
@@ -1637,7 +1893,7 @@ const StagePlot = ({ onBack, bandId, stagePlotId = null, viewOnly = false, onPlo
               </>
             )}
             {draggedItem && (
-              <p className="drop-hint">📍 Click on stage to place {draggedItem.name}</p>
+              <p className="drop-hint">📌 Click on stage to place {draggedItem.name}</p>
             )}
           </div>
         </div>
