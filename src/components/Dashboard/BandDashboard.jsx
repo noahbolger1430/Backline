@@ -38,10 +38,8 @@ const BandDashboard = ({ bandId, onLogout }) => {
   const [selectedSetlistId, setSelectedSetlistId] = useState(null);
   const [showSetlistList, setShowSetlistList] = useState(false);
 
-  // Listen for authentication errors
   useEffect(() => {
     const unsubscribe = onAuthError(() => {
-      console.log('Authentication error detected - logging out');
       if (onLogout) {
         onLogout();
       }
@@ -58,9 +56,7 @@ const BandDashboard = ({ bandId, onLogout }) => {
         return;
       }
 
-      // Check authentication before fetching
       if (!authService.isAuthenticated()) {
-        console.log('Not authenticated - triggering logout');
         if (onLogout) {
           onLogout();
         }
@@ -76,8 +72,6 @@ const BandDashboard = ({ bandId, onLogout }) => {
 
         setBand(bandData);
         
-        // Transform events to match EventsCarousel format
-        // Sort by date (upcoming first) and take the most upcoming event
         const transformedEvents = eventsData
           .map((event) => ({
             id: event.id,
@@ -86,13 +80,11 @@ const BandDashboard = ({ bandId, onLogout }) => {
             image_path: event.image_path,
             name: event.name,
           }))
-          .sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date ascending
+          .sort((a, b) => new Date(a.date) - new Date(b.date));
         setEvents(transformedEvents);
       } catch (err) {
-        // Don't show error if it's an auth error (user will be logged out)
         if (!err.message.includes('Session expired') && !err.message.includes('No valid authentication')) {
           setError(err.message);
-          console.error("Error fetching band data:", err);
         }
       } finally {
         setLoading(false);
@@ -108,16 +100,12 @@ const BandDashboard = ({ bandId, onLogout }) => {
 
   const handleToolSelect = (toolId) => {
     if (toolId === "stage-plot") {
-      // Show stage plot list first to let user choose
       setShowStagePlotList(true);
     } else if (toolId === "setlist-builder") {
-      // Show setlist list first to let user choose
       setShowSetlistList(true);
     } else if (toolId === "practice-companion") {
-      // Practice companion opens directly
       setSelectedTool(toolId);
     } else if (toolId === "tour-generator") {
-      // Tour generator opens directly
       setSelectedTool(toolId);
     }
     setSelectedTool(toolId);
@@ -162,7 +150,6 @@ const BandDashboard = ({ bandId, onLogout }) => {
   };
 
   const handleSetlistSave = () => {
-    // After saving, go back to list
     setSelectedSetlistId(null);
     setShowSetlistList(true);
   };
@@ -179,13 +166,7 @@ const BandDashboard = ({ bandId, onLogout }) => {
   };
 
   const handleBandUpdate = (updatedBand) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BandDashboard.jsx:handleBandUpdate',message:'Updating band state',data:{hasLogoPath:!!updatedBand.logo_path,logoPath:updatedBand.logo_path,bandId:updatedBand.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-    // #endregion
     setBand(updatedBand);
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BandDashboard.jsx:handleBandUpdate',message:'Band state updated',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-    // #endregion
   };
 
   if (loading) {
@@ -212,13 +193,12 @@ const BandDashboard = ({ bandId, onLogout }) => {
     );
   }
 
-  // Get current user email from token
   const getCurrentUserEmail = () => {
     try {
       const token = authService.getToken();
       if (token) {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.sub; // JWT "sub" field contains the email
+        return payload.sub;
       }
     } catch (e) {
       return null;
@@ -228,7 +208,6 @@ const BandDashboard = ({ bandId, onLogout }) => {
 
   const currentUserEmail = getCurrentUserEmail();
   
-  // Helper function to get initials from name
   const getInitials = (name) => {
     if (!name) return "?";
     const parts = name.trim().split(/\s+/);
@@ -238,7 +217,6 @@ const BandDashboard = ({ bandId, onLogout }) => {
     return name[0].toUpperCase();
   };
   
-  // Transform members to match component format
   const allMembers = band.members?.map((member) => ({
     id: member.id,
     name: member.user_name || `User ${member.user_id}`,
@@ -246,7 +224,6 @@ const BandDashboard = ({ bandId, onLogout }) => {
     isCurrentUser: member.user_email === currentUserEmail,
   })) || [];
   
-  // Sort members: current user last (so it appears on top/front)
   const bandMembers = [...allMembers].sort((a, b) => {
     if (a.isCurrentUser) return 1;
     if (b.isCurrentUser) return -1;
@@ -296,7 +273,7 @@ const BandDashboard = ({ bandId, onLogout }) => {
             <div className="profile-view-header">
               <h2>User Profile</h2>
               <button className="profile-close-button" onClick={() => setShowProfile(false)}>
-                ×
+                ├ù
               </button>
             </div>
             <UserProfile onUserUpdate={() => {}} />

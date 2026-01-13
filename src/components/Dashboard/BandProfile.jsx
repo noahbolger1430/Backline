@@ -41,7 +41,6 @@ const BandProfile = ({ band, onBandUpdate }) => {
     const file = e.target.files[0];
     if (file) {
       setSelectedImage(file);
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -51,25 +50,14 @@ const BandProfile = ({ band, onBandUpdate }) => {
   };
 
   const handleLogoChange = (e) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BandProfile.jsx:handleLogoChange',message:'Logo file picker triggered',data:{hasFile:!!e.target.files[0],fileName:e.target.files[0]?.name,fileSize:e.target.files[0]?.size},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     const file = e.target.files[0];
     if (file) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BandProfile.jsx:handleLogoChange',message:'Setting selectedLogo state',data:{fileName:file.name,fileSize:file.size,fileType:file.type},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       setSelectedLogo(file);
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoPreview(reader.result);
       };
       reader.readAsDataURL(file);
-    } else {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BandProfile.jsx:handleLogoChange',message:'No file selected',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
     }
   };
 
@@ -97,7 +85,6 @@ const BandProfile = ({ band, onBandUpdate }) => {
       setLoading(true);
       setError(null);
 
-      // Prepare update data - only include fields that have changed
       const updateData = {};
       if (formData.name !== band.name) updateData.name = formData.name;
       if (formData.description !== (band.description || "")) {
@@ -122,13 +109,7 @@ const BandProfile = ({ band, onBandUpdate }) => {
         updateData.website_url = formData.website_url || null;
       }
 
-      // Always send all current form data when submitting (FormData requires all fields)
-      // Only make API call if there are changes or an image/logo was selected
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BandProfile.jsx:handleSubmit',message:'Before API call check',data:{hasUpdateData:Object.keys(updateData).length>0,hasSelectedImage:!!selectedImage,hasSelectedLogo:!!selectedLogo,selectedLogoName:selectedLogo?.name,selectedLogoSize:selectedLogo?.size},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
       if (Object.keys(updateData).length > 0 || selectedImage || selectedLogo) {
-        // Send all form fields, not just changed ones, since we're using FormData
         const allFormData = {
           name: formData.name,
           description: formData.description,
@@ -139,34 +120,19 @@ const BandProfile = ({ band, onBandUpdate }) => {
           spotify_url: formData.spotify_url,
           website_url: formData.website_url,
         };
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BandProfile.jsx:handleSubmit',message:'Calling updateBand service',data:{bandId:band.id,hasImage:!!selectedImage,hasLogo:!!selectedLogo,logoFileName:selectedLogo?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
         const updatedBand = await bandService.updateBand(band.id, allFormData, selectedImage, selectedLogo);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BandProfile.jsx:handleSubmit',message:'API call completed',data:{hasLogoPath:!!updatedBand.logo_path,logoPath:updatedBand.logo_path,bandName:updatedBand.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
-        // #endregion
         if (onBandUpdate) {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BandProfile.jsx:handleSubmit',message:'Calling onBandUpdate callback',data:{hasLogoPath:!!updatedBand.logo_path},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-          // #endregion
           onBandUpdate(updatedBand);
         }
-        // Clear image/logo selection after successful upload
         setSelectedImage(null);
         setImagePreview(null);
         setSelectedLogo(null);
         setLogoPreview(null);
-      } else {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BandProfile.jsx:handleSubmit',message:'Skipping API call - no changes',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
       }
 
       setIsEditing(false);
     } catch (err) {
       setError(err.message || "Failed to update band information");
-      console.error("Error updating band:", err);
     } finally {
       setLoading(false);
     }
@@ -360,7 +326,7 @@ const BandProfile = ({ band, onBandUpdate }) => {
             <div className="band-profile-value">
               {band.instagram_url ? (
                 <a href={band.instagram_url} target="_blank" rel="noopener noreferrer" className="band-social-link">
-                  <span className="social-icon">📷</span>
+                  <span className="social-icon">­ƒôÀ</span>
                   {band.instagram_url}
                 </a>
               ) : (
@@ -392,7 +358,7 @@ const BandProfile = ({ band, onBandUpdate }) => {
             <div className="band-profile-value">
               {band.facebook_url ? (
                 <a href={band.facebook_url} target="_blank" rel="noopener noreferrer" className="band-social-link">
-                  <span className="social-icon">👥</span>
+                  <span className="social-icon">­ƒæÑ</span>
                   {band.facebook_url}
                 </a>
               ) : (
@@ -424,7 +390,7 @@ const BandProfile = ({ band, onBandUpdate }) => {
             <div className="band-profile-value">
               {band.spotify_url ? (
                 <a href={band.spotify_url} target="_blank" rel="noopener noreferrer" className="band-social-link">
-                  <span className="social-icon">🎵</span>
+                  <span className="social-icon">­ƒÄÁ</span>
                   {band.spotify_url}
                 </a>
               ) : (
@@ -451,7 +417,7 @@ const BandProfile = ({ band, onBandUpdate }) => {
             <div className="band-profile-value">
               {band.website_url ? (
                 <a href={band.website_url} target="_blank" rel="noopener noreferrer" className="band-social-link">
-                  <span className="social-icon">🌐</span>
+                  <span className="social-icon">­ƒîÉ</span>
                   {band.website_url}
                 </a>
               ) : (
@@ -500,4 +466,3 @@ const BandProfile = ({ band, onBandUpdate }) => {
 };
 
 export default BandProfile;
-
