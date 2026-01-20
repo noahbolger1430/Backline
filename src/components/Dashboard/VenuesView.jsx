@@ -484,12 +484,6 @@ const VenuesView = ({ bandId = null, bandLocation = null }) => {
                           <p className="venue-info-value">{venue.capacity.toLocaleString()} people</p>
                         </div>
                       )}
-                      {venue.distance_km !== undefined && (
-                        <div className="venue-info-section">
-                          <h4 className="venue-info-label">Distance from {useCustomLocation ? 'custom location' : 'band'}</h4>
-                          <p className="venue-info-value">{formatDistance(venue.distance_km) || 'Unable to calculate'}</p>
-                        </div>
-                      )}
                       <div className="venue-info-section">
                         <h4 className="venue-info-label">Amenities</h4>
                         <div className="venue-amenities">

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { eventService } from "../../services/eventService";
 import { getCanadianHolidays } from "../../utils/canadianHolidays";
+import VenueCalendarWeekly from "./VenueCalendarWeekly";
 
 const VenueCalendar = ({ venueId, onEventClick }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [eventsByDate, setEventsByDate] = useState(new Map());
+  const [calendarView, setCalendarView] = useState("month");
   const [loading, setLoading] = useState(true);
 
   const monthNames = [
@@ -41,6 +43,11 @@ const VenueCalendar = ({ venueId, onEventClick }) => {
 
   const handleYearChange = (e) => {
     setCurrentDate(new Date(parseInt(e.target.value, 10), currentDate.getMonth(), 1));
+  };
+
+  // Add this function to handle view change
+  const handleViewChange = (view) => {
+    setCalendarView(view);
   };
 
   // Helper function to format date as YYYY-MM-DD
@@ -175,62 +182,83 @@ const VenueCalendar = ({ venueId, onEventClick }) => {
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
   return (
-    <div className="calendar-container venue-calendar-container">
-      <h2 className="calendar-title">Event Calendar</h2>
+    <>
+      {calendarView === "month" ? (
+        <div className="calendar-container venue-calendar-container">
+          <div className="calendar-header-section">
+            <h2 className="calendar-title">Event Calendar</h2>
+            <div className="calendar-view-selector">
+              <button
+                className={`view-selector-btn ${calendarView === "month" ? "active" : ""}`}
+                onClick={() => handleViewChange("month")}
+              >
+                Month
+              </button>
+              <button
+                className={`view-selector-btn ${calendarView === "week" ? "active" : ""}`}
+                onClick={() => handleViewChange("week")}
+              >
+                Week
+              </button>
+            </div>
+          </div>
+          <div className="calendar-controls">
+            <button
+              className="calendar-nav-btn"
+              onClick={handlePreviousMonth}
+              aria-label="Previous month"
+            >
+              ←
+            </button>
 
-      <div className="calendar-controls">
-        <button
-          className="calendar-nav-btn"
-          onClick={handlePreviousMonth}
-          aria-label="Previous month"
-        >
-          ←
-        </button>
+            <div className="calendar-selectors">
+              <select
+                value={currentDate.getMonth()}
+                onChange={handleMonthChange}
+                className="calendar-select"
+              >
+                {monthNames.map((month, index) => (
+                  <option key={month} value={index}>
+                    {month}
+                  </option>
+                ))}
+              </select>
 
-        <div className="calendar-selectors">
-          <select
-            value={currentDate.getMonth()}
-            onChange={handleMonthChange}
-            className="calendar-select"
-          >
-            {monthNames.map((month, index) => (
-              <option key={month} value={index}>
-                {month}
-              </option>
-            ))}
-          </select>
+              <select
+                value={currentDate.getFullYear()}
+                onChange={handleYearChange}
+                className="calendar-select"
+              >
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <select
-            value={currentDate.getFullYear()}
-            onChange={handleYearChange}
-            className="calendar-select"
-          >
-            {years.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
+            <button className="calendar-nav-btn" onClick={handleNextMonth} aria-label="Next month">
+              →
+            </button>
+          </div>
+
+          <div className="calendar-grid">
+            <div className="calendar-header">
+              <div className="calendar-day-name">Sun</div>
+              <div className="calendar-day-name">Mon</div>
+              <div className="calendar-day-name">Tue</div>
+              <div className="calendar-day-name">Wed</div>
+              <div className="calendar-day-name">Thu</div>
+              <div className="calendar-day-name">Fri</div>
+              <div className="calendar-day-name">Sat</div>
+            </div>
+            <div className="calendar-days">{loading ? <div>Loading...</div> : renderCalendarDays()}</div>
+          </div>
         </div>
-
-        <button className="calendar-nav-btn" onClick={handleNextMonth} aria-label="Next month">
-          →
-        </button>
-      </div>
-
-      <div className="calendar-grid">
-        <div className="calendar-header">
-          <div className="calendar-day-name">Sun</div>
-          <div className="calendar-day-name">Mon</div>
-          <div className="calendar-day-name">Tue</div>
-          <div className="calendar-day-name">Wed</div>
-          <div className="calendar-day-name">Thu</div>
-          <div className="calendar-day-name">Fri</div>
-          <div className="calendar-day-name">Sat</div>
-        </div>
-        <div className="calendar-days">{loading ? <div>Loading...</div> : renderCalendarDays()}</div>
-      </div>
-    </div>
+      ) : (
+        <VenueCalendarWeekly venueId={venueId} onEventClick={onEventClick} onViewChange={handleViewChange} />
+      )}
+    </>
   );
 };
 

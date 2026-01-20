@@ -1,0 +1,396 @@
+/* src/components/Dashboard/CalendarWeekly.css */
+/* Band Weekly Calendar Specific Styles */
+
+/* =====================================================
+   CONTAINER STRUCTURE
+   ===================================================== */
+   .calendar-weekly-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .weekly-calendar-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #0B0C10;
+    border-radius: 8px;
+    margin-top: 20px;
+    overflow: hidden;
+    min-height: 0;
+  }
+  
+  /* =====================================================
+     FIXED HEADERS ROW
+     ===================================================== */
+  .weekly-headers-row {
+    display: flex;
+    background-color: #0B0C10;
+    border-bottom: 1px solid rgba(197, 198, 199, 0.2);
+    flex-shrink: 0;
+    height: 100px;
+  }
+  
+  .weekly-corner-cell {
+    width: 80px;
+    flex-shrink: 0;
+    background-color: #0B0C10;
+    border-right: 1px solid rgba(197, 198, 199, 0.2);
+  }
+  
+  .weekly-column-headers {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+  
+  .weekly-column-header {
+    padding: 12px 8px;
+    text-align: center;
+    border-right: 1px solid rgba(197, 198, 199, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background-color: #0B0C10;
+  }
+  
+  .weekly-column-header:last-child {
+    border-right: none;
+  }
+  
+  .weekly-column-header.today .weekly-day-date {
+    background-color: #6F22D2;
+    color: #FFFFFF;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+  
+  .weekly-column-header.today .weekly-availability-badge {
+    border: 1px solid #FFFFFF;
+  }
+  
+  /* =====================================================
+     SCROLLABLE TIME GRID
+     ===================================================== */
+  .weekly-time-grid-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    height: 600px;
+  }
+  
+  .weekly-time-grid {
+    display: flex;
+    min-height: 1440px;
+  }
+  
+  /* =====================================================
+     TIME COLUMN
+     ===================================================== */
+  .weekly-time-column {
+    width: 80px;
+    flex-shrink: 0;
+    background-color: #0B0C10;
+    border-right: 1px solid rgba(197, 198, 199, 0.2);
+  }
+  
+  .weekly-time-slot {
+    height: 60px;
+    position: relative;
+  }
+  
+  .weekly-time-label {
+    position: absolute;
+    top: -8px;
+    left: 8px;
+    font-size: 12px;
+    color: #8E8E93;
+    background-color: #0B0C10;
+    padding: 0 4px;
+  }
+  
+  /* =====================================================
+     DAYS GRID
+     ===================================================== */
+  .weekly-days-grid {
+    flex: 1;
+    position: relative;
+  }
+  
+  .weekly-grid-lines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+  }
+  
+  .weekly-hour-line {
+    height: 60px;
+    border-bottom: 1px solid rgba(197, 198, 199, 0.1);
+  }
+  
+  .weekly-columns {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+  
+  .weekly-day-column {
+    border-right: 1px solid rgba(197, 198, 199, 0.2);
+    position: relative;
+  }
+  
+  .weekly-day-column:last-child {
+    border-right: none;
+  }
+  
+  /* =====================================================
+     EVENTS
+     ===================================================== */
+  .weekly-event {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 5;
+    background-color: rgba(111, 34, 210, 0.15);
+    border: 1px solid #6F22D2;
+    color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .weekly-event:hover {
+    background-color: rgba(111, 34, 210, 0.25);
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(111, 34, 210, 0.3);
+    z-index: 6;
+  }
+  
+  /* Event size adjustments */
+  .weekly-event[style*="height: 50px"],
+  .weekly-event[style*="height: 60px"],
+  .weekly-event[style*="height: 40px"] {
+    padding: 4px 6px;
+  }
+  
+  .weekly-event[style*="height: 40px"] .weekly-event-times,
+  .weekly-event[style*="height: 50px"] .weekly-event-times,
+  .weekly-event[style*="height: 60px"] .weekly-event-times {
+    display: none;
+  }
+  
+  .weekly-event[style*="height: 40px"] .weekly-event-name,
+  .weekly-event[style*="height: 50px"] .weekly-event-name,
+  .weekly-event[style*="height: 60px"] .weekly-event-name {
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+  
+  .weekly-event[style*="height: 7"] .weekly-event-name,
+  .weekly-event[style*="height: 8"] .weekly-event-name,
+  .weekly-event[style*="height: 9"] .weekly-event-name,
+  .weekly-event[style*="height: 10"] .weekly-event-name,
+  .weekly-event[style*="height: 11"] .weekly-event-name {
+    max-height: calc(100% - 40px);
+    overflow: hidden;
+  }
+  
+  .weekly-event[style*="height: 12"] .weekly-event-name,
+  .weekly-event[style*="height: 13"] .weekly-event-name,
+  .weekly-event[style*="height: 14"] .weekly-event-name,
+  .weekly-event[style*="height: 15"] .weekly-event-name,
+  .weekly-event[style*="height: 16"] .weekly-event-name,
+  .weekly-event[style*="height: 17"] .weekly-event-name,
+  .weekly-event[style*="height: 18"] .weekly-event-name,
+  .weekly-event[style*="height: 19"] .weekly-event-name,
+  .weekly-event[style*="height: 2"] .weekly-event-name {
+    max-height: calc(100% - 40px);
+    overflow: auto;
+  }
+  
+  /* Event name scrollbar */
+  .weekly-event-name::-webkit-scrollbar {
+    width: 2px;
+  }
+  
+  .weekly-event-name::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .weekly-event-name::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+  }
+  
+  /* =====================================================
+     REHEARSALS
+     ===================================================== */
+  .weekly-rehearsal {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 6 !important;
+    background-color: rgba(69, 183, 209, 0.15);
+    border: 1px solid #45B7D1;
+    color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  
+  .weekly-rehearsal:hover {
+    background-color: rgba(69, 183, 209, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(69, 183, 209, 0.3);
+    z-index: 10;
+  }
+  
+  .weekly-rehearsal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  .weekly-rehearsal-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 2px;
+  }
+  
+  .weekly-rehearsal-icon {
+    font-size: 14px;
+    margin-right: 4px;
+    display: inline;
+  }
+  
+  .weekly-rehearsal-time {
+    font-size: 11px;
+    font-weight: 600;
+    color: #FFFFFF;
+  }
+  
+  .weekly-rehearsal-location {
+    font-size: 11px;
+    color: #666;
+    line-height: 1.2;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow: visible;
+    font-weight: 600;
+  }
+  
+  /* =====================================================
+     AVAILABILITY BADGE
+     ===================================================== */
+  .weekly-availability-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  
+  .weekly-availability-badge.all-unavailable {
+    background-color: rgba(111, 34, 210, 0.3);
+    color: #FFFFFF;
+    border: 1px solid #6F22D2;
+  }
+  
+  .weekly-availability-badge.some-unavailable {
+    background-color: #fff3e0;
+    color: #e65100;
+    border: 1px solid #ff9800;
+  }
+  
+  /* =====================================================
+     CURRENT TIME INDICATOR
+     ===================================================== */
+  .weekly-current-time-line {
+    position: absolute;
+    height: 2px;
+    background-color: #6F22D2;
+    pointer-events: none;
+    z-index: 15;
+  }
+  
+  .weekly-current-time-line::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: -5px;
+    width: 12px;
+    height: 12px;
+    background-color: #6F22D2;
+    border-radius: 50%;
+  }
+  
+  /* =====================================================
+     CUSTOM SCROLLBAR
+     ===================================================== */
+  .weekly-time-grid-container::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  .weekly-time-grid-container::-webkit-scrollbar-track {
+    background: #0B0C10;
+  }
+  
+  .weekly-time-grid-container::-webkit-scrollbar-thumb {
+    background: #6F22D2;
+    border-radius: 5px;
+  }
+  
+  .weekly-time-grid-container::-webkit-scrollbar-thumb:hover {
+    background: #8B2FE8;
+  }
+  
+  /* =====================================================
+     RESPONSIVE
+     ===================================================== */
+  @media (max-width: 768px) {
+    .weekly-corner-cell,
+    .weekly-time-column {
+      width: 60px;
+    }
+  
+    .weekly-time-label {
+      font-size: 11px;
+      left: 4px;
+    }
+  
+    .weekly-column-header {
+      padding: 12px 4px;
+    }
+  
+    .weekly-headers-row {
+      height: 80px;
+    }
+  }

@@ -3040,26 +3040,31 @@
 }
 
 .gig-card {
-  background: #ffffff;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  transition: all 0.3s ease;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
 .gig-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px rgba(111, 34, 210, 0.3);
+  border-color: #6F22D2; /* Primary Accent - Electric Violet */
 }
 
 .gig-image-placeholder {
   width: 100%;
-  height: 180px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  height: 200px;
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
   display: flex;
   align-items: center;
   justify-content: center;
+  border-bottom: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
   position: relative;
   overflow: hidden;
 }
@@ -3071,39 +3076,43 @@
 }
 
 .gig-image-icon {
-  font-size: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 64px;
+  opacity: 0.5;
+  position: absolute;
 }
 
 .gig-card-content {
-  padding: 16px;
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 100px;
 }
 
 .gig-name {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
-  color: #333333;
-  margin: 0 0 8px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  margin: 0;
+  flex: 1;
 }
 
 .gig-venue {
   font-size: 14px;
-  color: #666666;
-  margin: 0 0 8px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  margin: 0 0 auto 0;
 }
 
 .gig-date {
-  font-size: 13px;
-  color: #888888;
-  margin-bottom: 12px;
+  font-size: 12px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  font-weight: 500;
+  z-index: 2;
+  white-space: nowrap;
 }
 
 .gig-status-badge {
@@ -3143,7 +3152,7 @@
   grid-column: 1 / -1;
   text-align: center;
   padding: 60px 20px;
-  color: #666666;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
 }
 
 .no-gigs-icon {
@@ -3209,11 +3218,14 @@
 }
 
 .gig-card {
-  background: #ffffff;
+  background-color: #1F2833; /* Secondary Background - Charcoal Grey */
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
 .gig-card.clickable {
@@ -3222,11 +3234,12 @@
 
 .gig-card.clickable:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px rgba(111, 34, 210, 0.3);
+  border-color: #6F22D2; /* Primary Accent - Electric Violet */
 }
 
 .gig-card.clickable:focus {
-  outline: 2px solid #2196f3;
+  outline: 2px solid #6F22D2;
   outline-offset: 2px;
 }
 
@@ -3237,11 +3250,12 @@
 
 .gig-image-placeholder {
   width: 100%;
-  height: 180px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  height: 200px;
+  background-color: #0B0C10; /* Primary Background - Obsidian Black */
   display: flex;
   align-items: center;
   justify-content: center;
+  border-bottom: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
   position: relative;
   overflow: hidden;
 }
@@ -3253,39 +3267,43 @@
 }
 
 .gig-image-icon {
-  font-size: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 64px;
+  opacity: 0.5;
+  position: absolute;
 }
 
 .gig-card-content {
-  padding: 16px;
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 100px;
 }
 
 .gig-name {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
-  color: #333333;
-  margin: 0 0 8px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: #FFFFFF; /* High Contrast Text - Pure White */
+  margin: 0;
+  flex: 1;
 }
 
 .gig-venue {
   font-size: 14px;
-  color: #666666;
-  margin: 0 0 8px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  margin: 0 0 auto 0;
 }
 
 .gig-date {
-  font-size: 13px;
-  color: #888888;
-  margin-bottom: 12px;
+  font-size: 12px;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  font-weight: 500;
+  z-index: 2;
+  white-space: nowrap;
 }
 
 .gig-status-badge {
@@ -3359,7 +3377,7 @@
   grid-column: 1 / -1;
   text-align: center;
   padding: 60px 20px;
-  color: #666666;
+  color: #8E8E93; /* Subtle Text - Slate Silver */
 }
 
 .no-gigs-icon {

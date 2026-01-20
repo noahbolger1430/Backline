@@ -4,6 +4,7 @@ import EventModal from "./EventModal";
 import RehearsalModal from "./RehearsalModal";
 import RehearsalEditModal from "./RehearsalEditModal";
 import GigModal from "./GigModal";
+import CalendarWeekly from "./CalendarWeekly";
 import { availabilityService } from "../../services/availabilityService";
 import { bandService } from "../../services/bandService";
 import { rehearsalService } from "../../services/rehearsalService";
@@ -30,6 +31,7 @@ const Calendar = ({ bandId }) => {
   const dropdownRef = useRef(null);
   const [showGigModal, setShowGigModal] = useState(false);
   const [gigDate, setGigDate] = useState(null);
+  const [calendarView, setCalendarView] = useState("month"); // "month" or "week"
 
   const monthNames = [
     "January",
@@ -163,6 +165,10 @@ const Calendar = ({ bandId }) => {
       setGigDate(null);
       setShowGigModal(true);
     }
+  };
+
+  const handleViewChange = (view) => {
+    setCalendarView(view);
   };
 
   const renderCalendarDays = () => {
@@ -316,76 +322,98 @@ const Calendar = ({ bandId }) => {
     <div className="calendar-container">
       <div className="calendar-header-section">
         <h2 className="calendar-title">Availability</h2>
-        <div className="schedule-dropdown" ref={dropdownRef}>
-          <button
-            className="schedule-btn"
-            onClick={() => setShowScheduleDropdown(!showScheduleDropdown)}
-            title="Schedule an event"
-          >
-            + Schedule Event
-            <span className="dropdown-arrow">▼</span>
-          </button>
-          {showScheduleDropdown && (
-            <div className="schedule-dropdown-menu">
-              <button
-                className="schedule-dropdown-item"
-                onClick={() => handleScheduleClick('rehearsal')}
-              >
-                <span className="dropdown-item-icon">🎸</span>
-                <span className="dropdown-item-text">Rehearsal</span>
-              </button>
-              <button
-                className="schedule-dropdown-item"
-                onClick={() => handleScheduleClick('gig')}
-              >
-                <span className="dropdown-item-icon">🎵</span>
-                <span className="dropdown-item-text">Gig</span>
-              </button>
+        <div className="calendar-header-controls">
+          <div className="calendar-view-selector">
+            <button
+              className={`view-selector-btn ${calendarView === "month" ? "active" : ""}`}
+              onClick={() => handleViewChange("month")}
+            >
+              Month
+            </button>
+            <button
+              className={`view-selector-btn ${calendarView === "week" ? "active" : ""}`}
+              onClick={() => handleViewChange("week")}
+            >
+              Week
+            </button>
+          </div>
+          <div className="schedule-dropdown" ref={dropdownRef}>
+            <button
+              className="schedule-btn"
+              onClick={() => setShowScheduleDropdown(!showScheduleDropdown)}
+              title="Schedule an event"
+            >
+              + Schedule Event
+              <span className="dropdown-arrow">▼</span>
+            </button>
+            {showScheduleDropdown && (
+              <div className="schedule-dropdown-menu">
+                <button
+                  className="schedule-dropdown-item"
+                  onClick={() => handleScheduleClick('rehearsal')}
+                >
+                  <span className="dropdown-item-icon">🎸</span>
+                  <span className="dropdown-item-text">Rehearsal</span>
+                </button>
+                <button
+                  className="schedule-dropdown-item"
+                  onClick={() => handleScheduleClick('gig')}
+                >
+                  <span className="dropdown-item-icon">🎵</span>
+                  <span className="dropdown-item-text">Gig</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {calendarView === "month" ? (
+        <>
+          <div className="calendar-controls">
+            <button className="calendar-nav-btn" onClick={handlePreviousMonth} aria-label="Previous month">
+              ←
+            </button>
+
+            <div className="calendar-selectors">
+              <select value={currentDate.getMonth()} onChange={handleMonthChange} className="calendar-select">
+                {monthNames.map((month, index) => (
+                  <option key={month} value={index}>
+                    {month}
+                  </option>
+                ))}
+              </select>
+
+              <select value={currentDate.getFullYear()} onChange={handleYearChange} className="calendar-select">
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
-        </div>
-      </div>
 
-      <div className="calendar-controls">
-        <button className="calendar-nav-btn" onClick={handlePreviousMonth} aria-label="Previous month">
-          ←
-        </button>
+            <button className="calendar-nav-btn" onClick={handleNextMonth} aria-label="Next month">
+              →
+            </button>
+          </div>
 
-        <div className="calendar-selectors">
-          <select value={currentDate.getMonth()} onChange={handleMonthChange} className="calendar-select">
-            {monthNames.map((month, index) => (
-              <option key={month} value={index}>
-                {month}
-              </option>
-            ))}
-          </select>
-
-          <select value={currentDate.getFullYear()} onChange={handleYearChange} className="calendar-select">
-            {years.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <button className="calendar-nav-btn" onClick={handleNextMonth} aria-label="Next month">
-          →
-        </button>
-      </div>
-
-      <div className="calendar-grid">
-        <div className="calendar-header">
-          <div className="calendar-day-name">Sun</div>
-          <div className="calendar-day-name">Mon</div>
-          <div className="calendar-day-name">Tue</div>
-          <div className="calendar-day-name">Wed</div>
-          <div className="calendar-day-name">Thu</div>
-          <div className="calendar-day-name">Fri</div>
-          <div className="calendar-day-name">Sat</div>
-        </div>
-        <div className="calendar-days">{renderCalendarDays()}</div>
-      </div>
+          <div className="calendar-grid">
+            <div className="calendar-header">
+              <div className="calendar-day-name">Sun</div>
+              <div className="calendar-day-name">Mon</div>
+              <div className="calendar-day-name">Tue</div>
+              <div className="calendar-day-name">Wed</div>
+              <div className="calendar-day-name">Thu</div>
+              <div className="calendar-day-name">Fri</div>
+              <div className="calendar-day-name">Sat</div>
+            </div>
+            <div className="calendar-days">{renderCalendarDays()}</div>
+          </div>
+        </>
+      ) : (
+        <CalendarWeekly bandId={bandId} />
+      )}
 
       {showEventModal && selectedEvent && (
         <EventModal
@@ -508,6 +536,7 @@ const Calendar = ({ bandId }) => {
           />
         );
       })()}
+      
       {showGigModal && (
         <GigModal
           bandId={bandId}

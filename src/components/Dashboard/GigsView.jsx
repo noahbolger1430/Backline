@@ -366,6 +366,7 @@ const GigsView = ({ bandId }) => {
           is_age_restricted: gig.is_age_restricted,
           age_restriction: gig.age_restriction,
           image_path: gig.image_path,
+          venue_image_path: gig.venue_image_path,
           is_recurring: gig.is_recurring,
           recurring_frequency: gig.recurring_frequency,
           venue_id: gig.venue_id,
@@ -395,9 +396,9 @@ const GigsView = ({ bandId }) => {
           Recommended
         </div>
         <div className="gig-image-placeholder">
-          {gig.image_path ? (
+          {(gig.image_path || gig.venue_image_path) ? (
             <img
-              src={getImageUrl(gig.image_path, API_BASE_URL)}
+              src={getImageUrl(gig.image_path || gig.venue_image_path, API_BASE_URL)}
               alt={gig.name}
               className="gig-image"
               onError={(e) => {
@@ -407,7 +408,7 @@ const GigsView = ({ bandId }) => {
               }}
             />
           ) : null}
-          <span className="gig-image-icon" style={{ display: gig.image_path ? 'none' : 'flex' }}>
+          <span className="gig-image-icon" style={{ display: (gig.image_path || gig.venue_image_path) ? 'none' : 'flex' }}>
             🎸
           </span>
         </div>
@@ -623,9 +624,9 @@ const GigsView = ({ bandId }) => {
                   }}
                 >
                   <div className="gig-image-placeholder">
-                    {event.image_path ? (
+                    {(event.image_path || event.venue_image_path) ? (
                       <img
-                        src={getImageUrl(event.image_path, API_BASE_URL)}
+                        src={getImageUrl(event.image_path || event.venue_image_path, API_BASE_URL)}
                         alt={event.name}
                         className="gig-image"
                         onError={(e) => {
@@ -635,7 +636,7 @@ const GigsView = ({ bandId }) => {
                         }}
                       />
                     ) : null}
-                    <span className="gig-image-icon" style={{ display: event.image_path ? 'none' : 'flex' }}>
+                    <span className="gig-image-icon" style={{ display: (event.image_path || event.venue_image_path) ? 'none' : 'flex' }}>
                       🎸
                     </span>
                   </div>

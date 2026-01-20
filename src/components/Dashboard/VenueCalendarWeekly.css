@@ -1,0 +1,283 @@
+/* src/components/Dashboard/VenueCalendarWeekly.css */
+/* Venue Weekly Calendar Specific Styles */
+
+/* =====================================================
+   CONTAINER
+   ===================================================== */
+   .venue-calendar-weekly-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .calendar-weekly-grid {
+    flex: 1;
+    display: flex;
+    background-color: #0B0C10;
+    border-radius: 8px;
+    margin-top: 20px;
+    overflow: hidden;
+    min-height: 0;
+  }
+  
+  /* =====================================================
+     TIME COLUMN - VENUE STRUCTURE
+     ===================================================== */
+  .venue-calendar-weekly-container .weekly-time-column {
+    width: 80px;
+    flex-shrink: 0;
+    background-color: #0B0C10;
+    border-right: 1px solid rgba(197, 198, 199, 0.2);
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .weekly-day-header-spacer {
+    height: 100px;
+    border-bottom: 1px solid rgba(197, 198, 199, 0.2);
+  }
+  
+  .weekly-hours-labels {
+    flex: 1;
+  }
+  
+  .weekly-hour-label {
+    height: 60px;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: #8E8E93;
+    display: flex;
+    align-items: flex-start;
+    border-bottom: 1px solid rgba(197, 198, 199, 0.1);
+  }
+  
+  /* =====================================================
+     DAYS CONTAINER
+     ===================================================== */
+  .weekly-days-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  /* =====================================================
+     DAY HEADERS
+     ===================================================== */
+  .weekly-day-headers {
+    display: flex;
+    height: 100px;
+    background-color: #0B0C10;
+    border-bottom: 1px solid rgba(197, 198, 199, 0.2);
+    flex-shrink: 0;
+  }
+  
+  .venue-calendar-weekly-container .weekly-day-header {
+    flex: 1;
+    padding: 16px 12px;
+    text-align: center;
+    border-right: 1px solid rgba(197, 198, 199, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .venue-calendar-weekly-container .weekly-day-header:last-child {
+    border-right: none;
+  }
+  
+  .venue-calendar-weekly-container .weekly-day-header.today .weekly-day-date {
+    background-color: #6F22D2;
+    color: #FFFFFF;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+  
+  .weekly-day-event-count {
+    font-size: 11px;
+    color: #8E8E93;
+  }
+  
+  /* =====================================================
+     DAYS CONTENT - SCROLLABLE AREA
+     ===================================================== */
+  .weekly-days-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    height: 600px;
+  }
+  
+  .weekly-hours-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    min-height: 1440px;
+  }
+  
+  .weekly-hour-row {
+    height: 60px;
+    border-bottom: 1px solid rgba(197, 198, 199, 0.1);
+  }
+  
+  .weekly-days-columns {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    min-height: 1440px;
+  }
+  
+  .venue-calendar-weekly-container .weekly-day-column {
+    border-right: 1px solid rgba(197, 198, 199, 0.2);
+    position: relative;
+  }
+  
+  .venue-calendar-weekly-container .weekly-day-column:last-child {
+    border-right: none;
+  }
+  
+  /* =====================================================
+     VENUE EVENTS
+     ===================================================== */
+  .weekly-venue-event {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 5;
+    background-color: rgba(111, 34, 210, 0.15);
+    border: 1px solid #6F22D2;
+    color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .weekly-venue-event:hover {
+    background-color: rgba(111, 34, 210, 0.25);
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(111, 34, 210, 0.3);
+    z-index: 6;
+  }
+  
+  /* =====================================================
+     VENUE LOAD IN AND SOUND CHECK
+     ===================================================== */
+  .weekly-venue-event.weekly-load-in,
+  .weekly-venue-event.weekly-sound-check {
+    background-color: rgba(111, 34, 210, 0.10);
+    opacity: 0.85;
+  }
+  
+  .weekly-venue-event.weekly-load-in:hover,
+  .weekly-venue-event.weekly-sound-check:hover {
+    background-color: rgba(111, 34, 210, 0.20);
+    opacity: 1;
+  }
+  
+  /* =====================================================
+     SMALL VENUE EVENTS COMPACT VIEW
+     ===================================================== */
+  .weekly-venue-event[style*="height: 50px"],
+  .weekly-venue-event[style*="height: 30px"],
+  .weekly-venue-event[style*="height: 40px"] {
+    padding: 4px 6px;
+  }
+  
+  .weekly-venue-event[style*="height: 50px"] .weekly-event-name,
+  .weekly-venue-event[style*="height: 30px"] .weekly-event-name,
+  .weekly-venue-event[style*="height: 40px"] .weekly-event-name {
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+  
+  .weekly-venue-event[style*="height: 50px"] .weekly-event-time,
+  .weekly-venue-event[style*="height: 30px"] .weekly-event-time,
+  .weekly-venue-event[style*="height: 40px"] .weekly-event-time {
+    font-size: 10px;
+  }
+  
+  .weekly-venue-event[style*="height: 30px"] .weekly-event-time {
+    display: none;
+  }
+  
+  /* =====================================================
+     CURRENT TIME INDICATOR
+     ===================================================== */
+  .weekly-current-time-indicator {
+    position: absolute;
+    height: 2px;
+    background-color: #6F22D2;
+    pointer-events: none;
+    z-index: 15;
+  }
+  
+  .weekly-current-time-indicator::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: -5px;
+    width: 12px;
+    height: 12px;
+    background-color: #6F22D2;
+    border-radius: 50%;
+  }
+  
+  /* =====================================================
+     CUSTOM SCROLLBAR
+     ===================================================== */
+  .weekly-days-content::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  .weekly-days-content::-webkit-scrollbar-track {
+    background: #0B0C10;
+  }
+  
+  .weekly-days-content::-webkit-scrollbar-thumb {
+    background: #6F22D2;
+    border-radius: 5px;
+  }
+  
+  .weekly-days-content::-webkit-scrollbar-thumb:hover {
+    background: #8B2FE8;
+  }
+  
+  /* =====================================================
+     RESPONSIVE
+     ===================================================== */
+  @media (max-width: 768px) {
+    .venue-calendar-weekly-container .weekly-time-column {
+      width: 60px;
+    }
+  
+    .weekly-hour-label {
+      font-size: 11px;
+    }
+  
+    .venue-calendar-weekly-container .weekly-day-header {
+      padding: 12px 4px;
+    }
+  
+    .weekly-day-header-spacer,
+    .weekly-day-headers {
+      height: 80px;
+    }
+  }

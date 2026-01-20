@@ -1,0 +1,240 @@
+/* src/components/Dashboard/CalendarWeeklyShared.css */
+/* Shared styles for both Band and Venue Weekly Calendars */
+
+/* =====================================================
+   CALENDAR VIEW SELECTOR
+   ===================================================== */
+   .calendar-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .calendar-view-selector {
+    display: flex;
+    background-color: #1F2833;
+    border-radius: 6px;
+    padding: 4px;
+    gap: 4px;
+  }
+  
+  .view-selector-btn {
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    color: #8E8E93;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .view-selector-btn:hover {
+    background-color: rgba(111, 34, 210, 0.1);
+    color: #FFFFFF;
+  }
+  
+  .view-selector-btn.active {
+    background-color: #6F22D2;
+    color: #FFFFFF;
+  }
+  
+  /* =====================================================
+     WEEK DISPLAY
+     ===================================================== */
+  .calendar-week-display {
+    font-size: 16px;
+    font-weight: 600;
+    color: #FFFFFF;
+    min-width: 300px;
+    text-align: center;
+  }
+  
+  /* =====================================================
+     SHARED DAY HEADER STYLES
+     ===================================================== */
+  .weekly-day-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #C5C6C7;
+  }
+  
+  .weekly-day-date {
+    font-size: 20px;
+    font-weight: 500;
+    color: #FFFFFF;
+  }
+  
+  /* =====================================================
+     SHARED EVENT CONTENT STYLES
+     ===================================================== */
+  .weekly-event-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 4px;
+    overflow: hidden;
+  }
+  
+  .weekly-event-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: #FFFFFF;
+    line-height: 1.3;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    text-overflow: clip;
+    display: block;
+    flex-shrink: 0;
+    margin-bottom: 4px;
+  }
+  
+  .weekly-event-time {
+    font-size: 11px;
+    color: #C5C6C7;
+  }
+  
+  .weekly-event-times {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 11px;
+    margin-top: auto;
+  }
+  
+  .weekly-event-time-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  
+  .weekly-event-time-label {
+    color: #C5C6C7;
+    font-weight: 500;
+    min-width: 40px;
+  }
+  
+  .weekly-event-time-value {
+    color: #FFFFFF;
+    font-weight: 400;
+  }
+  
+  /* =====================================================
+     LOAD IN AND SOUND CHECK STYLES
+     ===================================================== */
+  .weekly-load-in,
+  .weekly-sound-check {
+    background-color: rgba(111, 34, 210, 0.10) !important;
+    opacity: 0.85;
+  }
+  
+  .weekly-load-in:hover,
+  .weekly-sound-check:hover {
+    background-color: rgba(111, 34, 210, 0.20) !important;
+    opacity: 1;
+  }
+  
+  .weekly-load-in .weekly-event-name,
+  .weekly-sound-check .weekly-event-name {
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .weekly-load-in .weekly-event-times,
+  .weekly-sound-check .weekly-event-times,
+  .weekly-load-in .weekly-event-time,
+  .weekly-sound-check .weekly-event-time {
+    font-size: 10px;
+  }
+  
+  /* Main event styling to distinguish from load-in/sound-check */
+  .weekly-main-event {
+    background-color: rgba(111, 34, 210, 0.15);
+    border: 1px solid #6F22D2;
+    border-style: solid;
+  }
+  
+  .weekly-main-event:hover {
+    background-color: rgba(111, 34, 210, 0.25);
+  }
+  
+  /* Stacking order */
+  .weekly-load-in {
+    z-index: 3 !important;
+  }
+  
+  .weekly-sound-check {
+    z-index: 4 !important;
+  }
+  
+  .weekly-main-event {
+    z-index: 5 !important;
+  }
+  
+  /* Compact styling for smaller blocks */
+  .weekly-load-in[style*="height: 30px"],
+  .weekly-sound-check[style*="height: 30px"],
+  .weekly-load-in[style*="height: 40px"],
+  .weekly-sound-check[style*="height: 40px"] {
+    padding: 2px 4px;
+  }
+  
+  .weekly-load-in[style*="height: 30px"] .weekly-event-name,
+  .weekly-sound-check[style*="height: 30px"] .weekly-event-name {
+    font-size: 10px;
+  }
+  
+  .weekly-load-in[style*="height: 30px"] .weekly-event-times,
+  .weekly-sound-check[style*="height: 30px"] .weekly-event-times,
+  .weekly-load-in[style*="height: 30px"] .weekly-event-time,
+  .weekly-sound-check[style*="height: 30px"] .weekly-event-time {
+    display: none;
+  }
+  
+  /* =====================================================
+     LOADING STATE
+     ===================================================== */
+  .calendar-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(111, 34, 210, 0.3);
+    border-top-color: #6F22D2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  /* =====================================================
+     SHARED RESPONSIVE STYLES
+     ===================================================== */
+  @media (max-width: 768px) {
+    .weekly-day-name {
+      font-size: 12px;
+    }
+  
+    .weekly-day-date {
+      font-size: 16px;
+    }
+  
+    .calendar-week-display {
+      font-size: 14px;
+      min-width: 200px;
+    }
+  }

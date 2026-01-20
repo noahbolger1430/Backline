@@ -36,7 +36,8 @@ from app.services.storage import storage_service
 from app.services.tour_generator_geocoding_utils import (
     GeocodingService,
     calculate_distance,
-    build_location_string
+    build_location_string,
+    estimate_distance_from_location
 )
 
 router = APIRouter()
@@ -190,9 +191,9 @@ def list_venues(
             detail="min_capacity cannot be greater than max_capacity",
         )
 
-    # Get band location if distance filtering is requested
+    # Get band location for distance calculation (always calculate if band_id provided)
     band_location_str = None
-    if distance_km is not None:
+    if distance_km is not None or band_id:
         if base_location:
             # Use provided base location
             band_location_str = base_location
@@ -207,7 +208,8 @@ def list_venues(
                     street_address=band.location
                 )
         
-        if not band_location_str:
+        # Only require location if distance filtering is explicitly requested
+        if distance_km is not None and not band_location_str:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Distance filter requires either a base_location or a band_id with location"
@@ -225,9 +227,9 @@ def list_venues(
         limit=limit,
     )
 
-    # Calculate distances if requested
+    # Calculate distances if band location is available
     venues_with_distance = []
-    if distance_km is not None and band_location_str:
+    if band_location_str:
         # Geocode band location
         band_coords = GeocodingService.geocode(band_location_str)
         
@@ -242,22 +244,45 @@ def list_venues(
                     venue_coords[0], venue_coords[1]
                 )
                 
-                # Only include venues within the specified distance
-                if distance <= distance_km:
+                # If distance filter is specified, only include venues within distance
+                if distance_km is not None:
+                    if distance <= distance_km:
+                        venues_with_distance.append((venue, distance))
+                else:
+                    # No filter - include all venues with calculated distance
                     venues_with_distance.append((venue, distance))
             else:
-                # Include venues that couldn't be geocoded with None distance
-                # (you might want to exclude these instead)
-                venues_with_distance.append((venue, None))
+                # Geocoding failed - use heuristic distance calculation
+                try:
+                    # Try heuristic estimation (function handles lowercasing internally)
+                    distance = estimate_distance_from_location(
+                        band_location_str,
+                        venue_location_str
+                    )
+                    if distance_km is not None:
+                        if distance <= distance_km:
+                            venues_with_distance.append((venue, distance))
+                    else:
+                        venues_with_distance.append((venue, distance))
+                except Exception:
+                    # If heuristic also fails, include with None distance
+                    if distance_km is None:  # Only include if not filtering
+                        venues_with_distance.append((venue, None))
         
-        # Sort by distance (venues with None distance at the end)
-        venues_with_distance.sort(
-            key=lambda x: x[1] if x[1] is not None else float('inf')
-        )
-        
-        # Update venues list and total count
-        venues = [v[0] for v in venues_with_distance]
-        total = len(venues)
+        # If filtering by distance, update venues list
+        if distance_km is not None:
+            # Sort by distance (venues with None distance at the end)
+            venues_with_distance.sort(
+                key=lambda x: x[1] if x[1] is not None else float('inf')
+            )
+            # Update venues list and total count
+            venues = [v[0] for v in venues_with_distance]
+            total = len(venues)
+        else:
+            # Not filtering - keep all venues, just sort by distance
+            venues_with_distance.sort(
+                key=lambda x: x[1] if x[1] is not None else float('inf')
+            )
     else:
         # No distance calculation needed
         venues_with_distance = [(v, None) for v in venues]

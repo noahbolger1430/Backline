@@ -42,6 +42,7 @@ class RecommendedGig(BaseModel):
     venue_name: str
     venue_city: Optional[str] = None
     venue_state: Optional[str] = None
+    venue_image_path: Optional[str] = None
 
     # Recommendation details
     recommendation_score: float = Field(..., description="Overall recommendation score")

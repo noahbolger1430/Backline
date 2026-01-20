@@ -187,6 +187,7 @@ class RecommendationService:
                 venue_name=event.venue.name,
                 venue_city=event.venue.city,
                 venue_state=event.venue.state,
+                venue_image_path=event.venue.image_path,
                 recommendation_score=score,
                 recommendation_reasons=reasons,
                 has_applied=application is not None,

@@ -33,14 +33,6 @@ const ToolsView = ({ onToolSelect }) => {
       comingSoon: true
     },
     {
-      id: "merch-tracker",
-      name: "Merch Tracker",
-      description: "Track merchandise sales and inventory",
-      icon: "👕",
-      available: false,
-      comingSoon: true
-    },
-    {
       id: "practice-companion",
       name: "Practice Companion",
       description: "Import setlists, find tabs, and listen to songs you need to learn",

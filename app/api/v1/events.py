@@ -175,16 +175,30 @@ def serialize_event_with_details(event: Event) -> dict:
     venue_city = None
     venue_state = None
     venue_zip_code = None
+    venue_image_path = None
+    
+    # For expanded recurring events, the venue relationship might not be properly loaded
+    # Try to access it directly first, then check __dict__ for copied events
+    venue = None
     try:
         if hasattr(event, 'venue') and event.venue:
-            venue_name = event.venue.name
-            venue_street_address = event.venue.street_address
-            venue_city = event.venue.city
-            venue_state = event.venue.state
-            venue_zip_code = event.venue.zip_code
-    except Exception:
-        # If venue relationship is not loaded, try to get it from the venue_id
+            venue = event.venue
+    except (AttributeError, Exception):
+        # If venue relationship is not accessible as property, try __dict__
         pass
+    
+    # Also check __dict__ for copied/expanded events (venue might be there but not accessible as property)
+    if not venue and hasattr(event, '__dict__'):
+        venue = event.__dict__.get('venue')
+    
+    # Extract venue data if we found it
+    if venue:
+        venue_name = getattr(venue, 'name', '') or ""
+        venue_street_address = getattr(venue, 'street_address', None)
+        venue_city = getattr(venue, 'city', None)
+        venue_state = getattr(venue, 'state', None)
+        venue_zip_code = getattr(venue, 'zip_code', None)
+        venue_image_path = getattr(venue, 'image_path', None)
     
     # Safely access created_by_band name
     created_by_band_name = None
@@ -242,6 +256,7 @@ def serialize_event_with_details(event: Event) -> dict:
         "venue_city": venue_city,
         "venue_state": venue_state,
         "venue_zip_code": venue_zip_code,
+        "venue_image_path": venue_image_path,
         "created_by_band_name": created_by_band_name,
         "location_name": location_name,
         "street_address": street_address,
@@ -658,19 +673,49 @@ def list_events(
     )
 
     # Reload events with relationships
-    event_ids = [e.id for e in events]
+    # For expanded recurring events, use original event IDs to load venue relationships
+    event_ids_to_load = set()
+    for e in events:
+        original_id = getattr(e, '_original_event_id', None)
+        if original_id:
+            event_ids_to_load.add(original_id)
+        else:
+            event_ids_to_load.add(e.id)
+    
     events_with_details = (
         db.query(Event)
         .options(joinedload(Event.venue), joinedload(Event.bands))
-        .filter(Event.id.in_(event_ids))
+        .filter(Event.id.in_(list(event_ids_to_load)))
         .all()
     )
     
-    # Create a map for quick lookup
-    events_map = {e.id: e for e in events_with_details}
+    # Create map by original ID for venue data lookup
+    events_map_by_original = {e.id: e for e in events_with_details}
+    
+    # Merge venue data from original events into expanded events
+    processed_events = []
+    for e in events:
+        original_id = getattr(e, '_original_event_id', None)
+        if original_id and original_id in events_map_by_original:
+            # Expanded recurring event - merge venue from original event
+            original_event = events_map_by_original[original_id]
+            if original_event.venue:
+                # Copy venue relationship to expanded event
+                # For copied events, we need to set it in __dict__ for it to be accessible
+                if hasattr(e, '__dict__'):
+                    e.__dict__['venue'] = original_event.venue
+                # Also try setting as property in case it works
+                try:
+                    e.venue = original_event.venue
+                except:
+                    pass
+        elif e.id in events_map_by_original:
+            # Regular event - use the loaded version with venue relationship
+            e = events_map_by_original[e.id]
+        processed_events.append(e)
     
     return EventListResponse(
-        events=[EventResponse.model_validate(serialize_event_with_details(events_map.get(e.id, e))) for e in events],
+        events=[EventResponse.model_validate(serialize_event_with_details(e)) for e in processed_events],
         total=total,
         skip=skip,
         limit=limit,
