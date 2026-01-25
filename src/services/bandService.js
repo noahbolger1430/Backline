@@ -126,7 +126,7 @@ export const bandService = {
   },
 
   async getBandEvents(bandId) {
-    const response = await apiClient(`/events?band_id=${bandId}`, {
+    const response = await apiClient(`/events/?band_id=${bandId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

@@ -73,11 +73,20 @@ class EnsureCORSHeadersMiddleware(BaseHTTPMiddleware):
             changed = True
         
         # List of top-level API routes that should have /api/v1 prefix
-        api_prefixes = ["/auth", "/users", "/bands", "/venues", "/events", "/tours", "/availability", "/notifications", "/recommendations"]
+        api_prefixes = ["/auth", "/users", "/bands", "/venues", "/events", "/tours", "/availability", "/notifications", "/recommendations", "/band-events", "/event-applications", "/equipment", "/physical-tickets", "/setlists", "/stage-plots", "/youtube", "/venue-favorites", "/rehearsals"]
         if not path.startswith("/api/v1") and path != "/":
             for prefix in api_prefixes:
                 if path.startswith(prefix):
                     path = f"/api/v1{path}"
+                    changed = True
+                    break
+        
+        # Ensure trailing slash for top-level collection endpoints
+        # This prevents 405 errors or redirects that break CORS
+        if path.startswith("/api/v1/"):
+            for prefix in api_prefixes:
+                if path == f"/api/v1{prefix}":
+                    path = f"{path}/"
                     changed = True
                     break
         
