@@ -29,6 +29,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
+        "https://backline-black.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -56,9 +57,16 @@ class EnsureCORSHeadersMiddleware(BaseHTTPMiddleware):
                     f.write(json.dumps({"location":"main.py:52","message":"Request processed","data":{"method":request.method,"path":str(request.url.path),"status":response.status_code},"timestamp":int(__import__("time").time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}) + "\n")
             except: pass
             # #endregion
-            # Ensure CORS headers are present
+            # Ensure CORS headers are present (CORSMiddleware should handle this, but this is a fallback)
             origin = request.headers.get("origin")
-            if origin in ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000", "http://127.0.0.1:8000", "https://backline-black.vercel.app/"]:
+            allowed_origins = [
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:8000",
+                "http://127.0.0.1:8000",
+                "https://backline-black.vercel.app",
+            ]
+            if origin in allowed_origins:
                 response.headers["Access-Control-Allow-Origin"] = origin
                 response.headers["Access-Control-Allow-Credentials"] = "true"
                 response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
@@ -71,9 +79,27 @@ app.add_middleware(EnsureCORSHeadersMiddleware)
 
 # Add exception handlers to ensure errors are properly formatted
 # CORS middleware should add headers, but we'll add them explicitly as fallback
-def get_cors_headers():
+def get_cors_headers(request: Request = None):
+    """
+    Get CORS headers based on the request origin.
+    If no request is provided, returns headers that allow the production frontend.
+    """
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "https://backline-black.vercel.app",
+    ]
+    
+    origin = "https://backline-black.vercel.app"  # Default to production
+    if request:
+        request_origin = request.headers.get("origin")
+        if request_origin in allowed_origins:
+            origin = request_origin
+    
     return {
-        "Access-Control-Allow-Origin": "http://localhost:3000",
+        "Access-Control-Allow-Origin": origin,
         "Access-Control-Allow-Credentials": "true",
         "Access-Control-Allow-Methods": "*",
         "Access-Control-Allow-Headers": "*",
@@ -84,7 +110,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail},
-        headers=get_cors_headers(),
+        headers=get_cors_headers(request),
     )
 
 @app.exception_handler(RequestValidationError)
@@ -92,7 +118,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(
         status_code=422,
         content={"detail": exc.errors()},
-        headers=get_cors_headers(),
+        headers=get_cors_headers(request),
     )
 
 @app.exception_handler(Exception)
@@ -104,7 +130,7 @@ async def general_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"},
-        headers=get_cors_headers(),
+        headers=get_cors_headers(request),
     )
 
 app.include_router(api_router, prefix="/api/v1")
