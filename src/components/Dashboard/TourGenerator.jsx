@@ -7,7 +7,12 @@ import TourAddStopModal from "./TourAddStopModal";
 import VenueSwapModal from "./VenueSwapModal";
 import "./TourGenerator.css";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+const getApiUrl = () => {
+  let url = process.env.REACT_APP_API_URL || "http://localhost:8000";
+  url = url.replace(/\/$/, "");
+  return url.includes("/api/v1") ? url : `${url}/api/v1`;
+};
+const API_BASE_URL = getApiUrl();
 
 const TourGenerator = ({ bandId, onBack }) => {
   const [view, setView] = useState("landing"); // "landing", "generate", "saved"

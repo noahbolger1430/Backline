@@ -1,7 +1,7 @@
 import React from "react";
 import { getImageUrl } from "../../utils/imageUtils";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+import { API_BASE_URL } from '../../config';
 
 const EventsCarousel = ({ events }) => {
   const formatDate = (dateString) => {

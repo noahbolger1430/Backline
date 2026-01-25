@@ -62,7 +62,12 @@ const VenueProfile = ({ venueId, onVenueUpdate }) => {
   const [hoursError, setHoursError] = useState(null);
   const [hoursEditing, setHoursEditing] = useState(false);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+  const getApiUrl = () => {
+    let url = process.env.REACT_APP_API_URL || "http://localhost:8000";
+    url = url.replace(/\/$/, "");
+    return url.includes("/api/v1") ? url : `${url}/api/v1`;
+  };
+  const API_BASE_URL = getApiUrl();
 
   useEffect(() => {
     const fetchVenueData = async () => {

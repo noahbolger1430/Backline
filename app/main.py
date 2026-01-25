@@ -63,6 +63,26 @@ class EnsureCORSHeadersMiddleware(BaseHTTPMiddleware):
                 headers["Access-Control-Allow-Credentials"] = "true"
             
             return Response(status_code=200, headers=headers)
+
+        # Normalize path: handle double slashes and missing /api/v1 prefix
+        # This prevents redirects on preflight requests
+        path = request.url.path
+        changed = False
+        if "//" in path:
+            path = path.replace("//", "/")
+            changed = True
+        
+        # List of top-level API routes that should have /api/v1 prefix
+        api_prefixes = ["/auth", "/users", "/bands", "/venues", "/events", "/tours", "/availability", "/notifications", "/recommendations"]
+        if not path.startswith("/api/v1") and path != "/":
+            for prefix in api_prefixes:
+                if path.startswith(prefix):
+                    path = f"/api/v1{path}"
+                    changed = True
+                    break
+        
+        if changed:
+            request.scope["path"] = path
         
         # #region agent log
         import json

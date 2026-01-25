@@ -4,7 +4,12 @@ import { venueFavoriteService } from "../../services/venueFavoriteService";
 import { getImageUrl } from "../../utils/imageUtils";
 import "./Dashboard.css";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+const getApiUrl = () => {
+  let url = process.env.REACT_APP_API_URL || "http://localhost:8000";
+  url = url.replace(/\/$/, "");
+  return url.includes("/api/v1") ? url : `${url}/api/v1`;
+};
+const API_BASE_URL = getApiUrl();
 
 const VenuesView = ({ bandId = null, bandLocation = null }) => {
   const [venues, setVenues] = useState([]);
