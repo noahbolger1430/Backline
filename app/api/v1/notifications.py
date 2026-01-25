@@ -16,7 +16,7 @@ from app.services.notification_service import NotificationService
 router = APIRouter()
 
 
-@router.get("/notifications", response_model=NotificationListResponse)
+@router.get("/notifications/", response_model=NotificationListResponse)
 def list_notifications(
     unread_only: bool = Query(False, description="Only return unread notifications"),
     limit: int = Query(50, ge=1, le=100, description="Maximum number of notifications to return"),

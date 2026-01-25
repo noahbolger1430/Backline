@@ -3,7 +3,7 @@ import { apiClient } from '../utils/apiClient';
 export const notificationService = {
   async getNotifications(unreadOnly = false, limit = 50) {
     const response = await apiClient(
-      `/notifications?unread_only=${unreadOnly}&limit=${limit}`,
+      `/notifications/?unread_only=${unreadOnly}&limit=${limit}`,
       {
         method: "GET",
         headers: {

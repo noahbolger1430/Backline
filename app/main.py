@@ -83,10 +83,19 @@ class EnsureCORSHeadersMiddleware(BaseHTTPMiddleware):
         
         # Ensure trailing slash for top-level collection endpoints
         # This prevents 405 errors or redirects that break CORS
+        # Handle both paths with and without query parameters
         if path.startswith("/api/v1/"):
+            # Split path and query string
+            path_parts = path.split("?", 1)
+            base_path = path_parts[0]
+            query_string = path_parts[1] if len(path_parts) > 1 else None
+            
             for prefix in api_prefixes:
-                if path == f"/api/v1{prefix}":
-                    path = f"{path}/"
+                if base_path == f"/api/v1{prefix}":
+                    # Add trailing slash to base path
+                    base_path = f"{base_path}/"
+                    # Reconstruct path with query string if present
+                    path = base_path if query_string is None else f"{base_path}?{query_string}"
                     changed = True
                     break
         
