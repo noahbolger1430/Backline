@@ -25,3 +25,75 @@ export const getImageUrl = (imagePath, apiBaseUrl = null) => {
   return `${baseUrl}/${imagePath}`;
 };
 
+/**
+ * Compresses an image file if it exceeds a certain size.
+ * 
+ * @param {File} file - The image file to compress
+ * @param {number} maxSizeMB - The maximum size in MB
+ * @returns {Promise<File>} - The compressed file (or original if smaller)
+ */
+export const compressImage = async (file, maxSizeMB = 4.0) => {
+  if (!file || file.size <= maxSizeMB * 1024 * 1024) {
+    return file;
+  }
+
+  console.log(`Compressing image: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Scale down if too large
+        const maxDimension = 1600;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = (height / width) * maxDimension;
+            width = maxDimension;
+          } else {
+            width = (width / height) * maxDimension;
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Start with high quality and reduce until under limit
+        let quality = 0.9;
+        const compress = () => {
+          canvas.toBlob(
+            (blob) => {
+              if (blob.size <= maxSizeMB * 1024 * 1024 || quality <= 0.1) {
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                console.log(`Compression finished: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+                resolve(compressedFile);
+              } else {
+                quality -= 0.1;
+                compress();
+              }
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+        compress();
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+

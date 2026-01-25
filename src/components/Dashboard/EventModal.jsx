@@ -167,36 +167,11 @@ const EventModal = ({ event, onClose, bandId = null }) => {
     }
   };
 
-  // #region agent log
-  const getImageUrlWithLogging = (imagePath) => {
-    const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
-    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventModal.jsx:167',message:'getImageUrl called (post-fix)',data:{imagePath:imagePath,isGcpUrl:imagePath?.startsWith('http://')||imagePath?.startsWith('https://')},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-    const finalUrl = getImageUrl(imagePath, apiBaseUrl);
-    fetch('http://127.0.0.1:7242/ingest/b2c6bf00-6bde-4c2b-a6a7-cfef785ca6be',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EventModal.jsx:172',message:'getImageUrl returning (post-fix)',data:{imagePath:imagePath,finalUrl:finalUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-    return finalUrl;
-  };
-  // #endregion
-
-  if (!event) return null;
-
-  return (
-    <div className="event-modal-overlay" onClick={onClose}>
-      <div className="event-modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>
-          ×
-        </button>
-
-        {loading && <div className="modal-loading">Loading event details...</div>}
-        
-        {error && <div className="modal-error">Error loading event details: {error}</div>}
-
-        {!loading && !error && fullEvent && (
-          <>
             {/* Event Image */}
             {fullEvent.image_path && (
               <div className="modal-image-container">
                 <img 
-                  src={getImageUrlWithLogging(fullEvent.image_path)} 
+                  src={getImageUrl(fullEvent.image_path, process.env.REACT_APP_API_URL || "http://localhost:8000")} 
                   alt={fullEvent.name}
                   className="modal-event-image"
                   onError={(e) => {

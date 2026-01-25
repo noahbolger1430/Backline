@@ -20,52 +20,11 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Add CORS middleware FIRST, before any other middleware or routes
-# This must be added before any routes or exception handlers
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "https://backline-black.vercel.app",
-    ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-    max_age=3600,
-)
-
-# Add a custom middleware to ensure CORS headers are always present
-class EnsureCORSHeadersMiddleware(BaseHTTPMiddleware):
+# Add a custom middleware to normalize paths and handle redirects
+class PathNormalizationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # Handle OPTIONS requests early to prevent redirects
-        if request.method == "OPTIONS":
-            origin = request.headers.get("origin")
-            allowed_origins = [
-                "http://localhost:3000",
-                "http://127.0.0.1:3000",
-                "http://localhost:8000",
-                "http://127.0.0.1:8000",
-                "https://backline-black.vercel.app",
-            ]
-            
-            headers = {
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-                "Access-Control-Allow-Headers": "*",
-                "Access-Control-Max-Age": "3600",
-            }
-            
-            if origin in allowed_origins:
-                headers["Access-Control-Allow-Origin"] = origin
-                headers["Access-Control-Allow-Credentials"] = "true"
-            
-            return Response(status_code=200, headers=headers)
-
         # Normalize path: handle double slashes and missing /api/v1 prefix
-        # This prevents redirects on preflight requests
+        # This prevents redirects on preflight requests which can break CORS
         path = request.url.path
         changed = False
         if "//" in path:
@@ -83,7 +42,6 @@ class EnsureCORSHeadersMiddleware(BaseHTTPMiddleware):
         
         # Ensure trailing slash for top-level collection endpoints
         # This prevents 405 errors or redirects that break CORS
-        # Handle both paths with and without query parameters
         if path.startswith("/api/v1/"):
             # Split path and query string
             path_parts = path.split("?", 1)
@@ -102,70 +60,26 @@ class EnsureCORSHeadersMiddleware(BaseHTTPMiddleware):
         if changed:
             request.scope["path"] = path
         
-        # #region agent log
-        import json
-        log_path = r"c:\Users\Noah\CursorProjects\Backline\.cursor\debug.log"
-        try:
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(json.dumps({"location":"main.py:43","message":"Incoming request","data":{"method":request.method,"path":str(request.url.path),"query":str(request.url.query)},"timestamp":int(__import__("time").time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}) + "\n")
-        except: pass
-        # #endregion
-        try:
-            response = await call_next(request)
-            # #region agent log
-            try:
-                with open(log_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps({"location":"main.py:52","message":"Request processed","data":{"method":request.method,"path":str(request.url.path),"status":response.status_code},"timestamp":int(__import__("time").time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}) + "\n")
-            except: pass
-            # #endregion
-            # Ensure CORS headers are present (CORSMiddleware should handle this, but this is a fallback)
-            origin = request.headers.get("origin")
-            allowed_origins = [
-                "http://localhost:3000",
-                "http://127.0.0.1:3000",
-                "http://localhost:8000",
-                "http://127.0.0.1:8000",
-                "https://backline-black.vercel.app",
-            ]
-            if origin in allowed_origins:
-                response.headers["Access-Control-Allow-Origin"] = origin
-                response.headers["Access-Control-Allow-Credentials"] = "true"
-                response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-                response.headers["Access-Control-Allow-Headers"] = "*"
-            return response
-        except Exception as e:
-            raise
+        return await call_next(request)
 
-app.add_middleware(EnsureCORSHeadersMiddleware)
+app.add_middleware(PathNormalizationMiddleware)
 
-# Add explicit OPTIONS handler to prevent redirects on preflight requests
-# This must be added before routes to catch all OPTIONS requests
-@app.options("/{full_path:path}")
-async def options_handler(request: Request, full_path: str):
-    """
-    Handle all OPTIONS (preflight) requests explicitly to prevent redirects.
-    CORS preflight requests cannot be redirected, so we must respond directly.
-    """
-    origin = request.headers.get("origin")
-    allowed_origins = [
+# Add CORS middleware LAST so it wraps everything else
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
         "https://backline-black.vercel.app",
-    ]
-    
-    headers = {
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-        "Access-Control-Allow-Headers": "*",
-        "Access-Control-Max-Age": "3600",
-    }
-    
-    if origin in allowed_origins:
-        headers["Access-Control-Allow-Origin"] = origin
-        headers["Access-Control-Allow-Credentials"] = "true"
-    
-    return Response(status_code=200, headers=headers)
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,
+)
 
 # Add exception handlers to ensure errors are properly formatted
 # CORS middleware should add headers, but we'll add them explicitly as fallback

@@ -25,15 +25,6 @@ from app.api.v1 import (
 
 api_router = APIRouter()
 
-# #region agent log
-import json
-log_path = r"c:\Users\Noah\CursorProjects\Backline\.cursor\debug.log"
-try:
-    with open(log_path, "a", encoding="utf-8") as f:
-        f.write(json.dumps({"location":"__init__.py:15","message":"Checking registered routers","data":{"has_rehearsals":True,"registered_routers":["auth","users","bands","venues","events","availability","notifications","venue_recommendations","tour_generator","rehearsals"]},"timestamp":int(__import__("time").time()*1000),"sessionId":"debug-session","runId":"post-fix","hypothesisId":"A"}) + "\n")
-except: pass
-# #endregion
-
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(bands.router, prefix="/bands", tags=["bands"])
