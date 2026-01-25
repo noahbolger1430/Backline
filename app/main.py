@@ -58,7 +58,7 @@ class EnsureCORSHeadersMiddleware(BaseHTTPMiddleware):
             # #endregion
             # Ensure CORS headers are present
             origin = request.headers.get("origin")
-            if origin in ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000", "http://127.0.0.1:8000"]:
+            if origin in ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000", "http://127.0.0.1:8000", "https://backline-black.vercel.app/"]:
                 response.headers["Access-Control-Allow-Origin"] = origin
                 response.headers["Access-Control-Allow-Credentials"] = "true"
                 response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
