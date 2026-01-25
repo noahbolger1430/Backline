@@ -41,6 +41,29 @@ app.add_middleware(
 # Add a custom middleware to ensure CORS headers are always present
 class EnsureCORSHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        # Handle OPTIONS requests early to prevent redirects
+        if request.method == "OPTIONS":
+            origin = request.headers.get("origin")
+            allowed_origins = [
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:8000",
+                "http://127.0.0.1:8000",
+                "https://backline-black.vercel.app",
+            ]
+            
+            headers = {
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Max-Age": "3600",
+            }
+            
+            if origin in allowed_origins:
+                headers["Access-Control-Allow-Origin"] = origin
+                headers["Access-Control-Allow-Credentials"] = "true"
+            
+            return Response(status_code=200, headers=headers)
+        
         # #region agent log
         import json
         log_path = r"c:\Users\Noah\CursorProjects\Backline\.cursor\debug.log"
@@ -76,6 +99,35 @@ class EnsureCORSHeadersMiddleware(BaseHTTPMiddleware):
             raise
 
 app.add_middleware(EnsureCORSHeadersMiddleware)
+
+# Add explicit OPTIONS handler to prevent redirects on preflight requests
+# This must be added before routes to catch all OPTIONS requests
+@app.options("/{full_path:path}")
+async def options_handler(request: Request, full_path: str):
+    """
+    Handle all OPTIONS (preflight) requests explicitly to prevent redirects.
+    CORS preflight requests cannot be redirected, so we must respond directly.
+    """
+    origin = request.headers.get("origin")
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "https://backline-black.vercel.app",
+    ]
+    
+    headers = {
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Max-Age": "3600",
+    }
+    
+    if origin in allowed_origins:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+    
+    return Response(status_code=200, headers=headers)
 
 # Add exception handlers to ensure errors are properly formatted
 # CORS middleware should add headers, but we'll add them explicitly as fallback
