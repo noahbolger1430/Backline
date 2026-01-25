@@ -167,6 +167,21 @@ const EventModal = ({ event, onClose, bandId = null }) => {
     }
   };
 
+  if (!event) return null;
+
+  return (
+    <div className="event-modal-overlay" onClick={onClose}>
+      <div className="event-modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>
+          ×
+        </button>
+
+        {loading && <div className="modal-loading">Loading event details...</div>}
+        
+        {error && <div className="modal-error">Error loading event details: {error}</div>}
+
+        {!loading && !error && fullEvent && (
+          <>
             {/* Event Image */}
             {fullEvent.image_path && (
               <div className="modal-image-container">
