@@ -2,6 +2,7 @@
 Google Cloud Storage service for handling file uploads.
 """
 import os
+import json
 import uuid
 from pathlib import Path
 from typing import Optional
@@ -33,33 +34,15 @@ class StorageService:
         
         # Only initialize if GCP is configured
         if settings.gcp_project_id and settings.gcp_images_bucket:
-            # Get credentials path from settings (loaded from .env)
-            creds_value = settings.google_application_credentials
+            creds_path = self._setup_credentials()
             
-            if not creds_value:
-                # Check if it's already in os.environ (might be set externally)
-                creds_value = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "")
-            
-            if creds_value:
-                # Convert to absolute path if relative
-                creds_path = Path(creds_value)
-                if not creds_path.is_absolute():
-                    # Try relative to project root
-                    project_root = Path(__file__).parent.parent.parent
-                    creds_path = project_root / creds_value
-                
-                # Verify the file exists
-                if not creds_path.exists():
-                    print(f"Warning: GCP credentials file not found at: {creds_path}")
-                    print("Falling back to local file storage")
-                    return
-                
-                # Set absolute path in environment (Google Cloud libraries require this)
-                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(creds_path.resolve())
-            else:
-                print("Warning: GOOGLE_APPLICATION_CREDENTIALS not set in .env file")
+            if not creds_path:
+                print("Warning: Could not set up GCP credentials")
                 print("Falling back to local file storage")
                 return
+            
+            # Set absolute path in environment (Google Cloud libraries require this)
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(creds_path)
             
             try:
                 self.client = storage.Client(project=settings.gcp_project_id)
@@ -73,6 +56,60 @@ class StorageService:
             except Exception as e:
                 print(f"Warning: Could not initialize GCP Storage client: {e}")
                 print("Falling back to local file storage")
+    
+    def _setup_credentials(self) -> Optional[Path]:
+        """
+        Set up GCP credentials from environment variable or file path.
+        
+        For serverless deployments (Vercel, AWS Lambda), credentials should be
+        provided as GCP_CREDENTIALS_JSON environment variable (JSON string).
+        For local development, use GOOGLE_APPLICATION_CREDENTIALS pointing to a file path.
+        
+        Returns:
+            Path to credentials file, or None if credentials couldn't be set up
+        """
+        # Method 1: Check for JSON content in environment variable (for serverless)
+        gcp_creds_json = os.environ.get("GCP_CREDENTIALS_JSON", "")
+        if gcp_creds_json:
+            try:
+                # Validate it's valid JSON
+                json.loads(gcp_creds_json)
+                
+                # Write to /tmp (writable in serverless environments)
+                tmp_creds_path = Path("/tmp/gcp-credentials.json")
+                tmp_creds_path.write_text(gcp_creds_json)
+                
+                # Set permissions (readable by owner only for security)
+                os.chmod(tmp_creds_path, 0o600)
+                
+                return tmp_creds_path
+            except json.JSONDecodeError:
+                print(f"Warning: GCP_CREDENTIALS_JSON is not valid JSON")
+            except Exception as e:
+                print(f"Warning: Could not write GCP credentials to /tmp: {e}")
+        
+        # Method 2: Check for file path (for local development)
+        creds_value = settings.google_application_credentials
+        
+        if not creds_value:
+            # Check if it's already in os.environ (might be set externally)
+            creds_value = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "")
+        
+        if creds_value:
+            # Convert to absolute path if relative
+            creds_path = Path(creds_value)
+            if not creds_path.is_absolute():
+                # Try relative to project root
+                project_root = Path(__file__).parent.parent.parent
+                creds_path = project_root / creds_value
+            
+            # Verify the file exists
+            if creds_path.exists():
+                return creds_path.resolve()
+            else:
+                print(f"Warning: GCP credentials file not found at: {creds_path}")
+        
+        return None
     
     def _is_gcp_enabled(self) -> bool:
         """Check if GCP storage is properly configured."""
@@ -127,8 +164,11 @@ class StorageService:
                 )
         else:
             # Fallback to local storage
-            local_dir = Path(folder)
-            local_dir.mkdir(exist_ok=True)
+            # Use /tmp in serverless environments (read-only filesystem except /tmp)
+            # This also works in development environments
+            base_dir = Path("/tmp")
+            local_dir = base_dir / folder
+            local_dir.mkdir(parents=True, exist_ok=True)
             
             file_path = local_dir / unique_filename
             with open(file_path, "wb") as buffer:
@@ -187,8 +227,11 @@ class StorageService:
                 )
         else:
             # Fallback to local storage
-            local_dir = Path(folder)
-            local_dir.mkdir(exist_ok=True)
+            # Use /tmp in serverless environments (read-only filesystem except /tmp)
+            # This also works in development environments
+            base_dir = Path("/tmp")
+            local_dir = base_dir / folder
+            local_dir.mkdir(parents=True, exist_ok=True)
             
             file_path = local_dir / unique_filename
             with open(file_path, "wb") as buffer:
@@ -226,7 +269,15 @@ class StorageService:
                 return False
         else:
             # Delete from local storage
+            # Check in /tmp directory (used for serverless environments)
             try:
+                # Try /tmp first (for serverless environments)
+                tmp_path = Path("/tmp") / image_path
+                if tmp_path.exists():
+                    tmp_path.unlink()
+                    return True
+                
+                # Fallback to current directory (for local development)
                 file_path = Path(image_path)
                 if file_path.exists():
                     file_path.unlink()
@@ -265,7 +316,15 @@ class StorageService:
                 return False
         else:
             # Delete from local storage
+            # Check in /tmp directory (used for serverless environments)
             try:
+                # Try /tmp first (for serverless environments)
+                tmp_path = Path("/tmp") / file_path
+                if tmp_path.exists():
+                    tmp_path.unlink()
+                    return True
+                
+                # Fallback to current directory (for local development)
                 file_path_obj = Path(file_path)
                 if file_path_obj.exists():
                     file_path_obj.unlink()
