@@ -5,6 +5,7 @@ import EventApplicationsList from "./EventApplicationsList";
 import ClaimEquipmentModal from "./ClaimEquipmentModal";
 import PhysicalTicketsModal from "./PhysicalTicketsModal";
 import BandTicketSalesModal from "./BandTicketSalesModal";
+import EventEditForm from "./EventEditForm";
 import { getImageUrl } from "../../utils/imageUtils";
 import "./EventModal.css";
 
@@ -16,6 +17,7 @@ const EventModal = ({ event, onClose, bandId = null }) => {
   const [userHasCategory, setUserHasCategory] = useState({}); // { category: boolean }
   const [loadingBackline, setLoadingBackline] = useState(false);
   const [claimModalOpen, setClaimModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [claimingCategory, setClaimingCategory] = useState(null); // category being claimed
   const [physicalTicketsModalOpen, setPhysicalTicketsModalOpen] = useState(false);
   const [bandTicketSalesModalOpen, setBandTicketSalesModalOpen] = useState(false);
@@ -169,6 +171,8 @@ const EventModal = ({ event, onClose, bandId = null }) => {
 
   if (!event) return null;
 
+  const canEdit = bandId && fullEvent && fullEvent.created_by_band_id === parseInt(bandId);
+
   return (
     <div className="event-modal-overlay" onClick={onClose}>
       <div className="event-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -181,20 +185,46 @@ const EventModal = ({ event, onClose, bandId = null }) => {
         {error && <div className="modal-error">Error loading event details: {error}</div>}
 
         {!loading && !error && fullEvent && (
-          <>
-            {/* Event Image */}
-            {fullEvent.image_path && (
-              <div className="modal-image-container">
-                <img 
-                  src={getImageUrl(fullEvent.image_path, process.env.REACT_APP_API_URL || "http://localhost:8000")} 
-                  alt={fullEvent.name}
-                  className="modal-event-image"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
-              </div>
-            )}
+          isEditing ? (
+            <div className="modal-section edit-mode-section">
+              <h2 className="modal-title" style={{ marginBottom: '24px' }}>Edit Event</h2>
+              <EventEditForm
+                event={fullEvent}
+                onUpdate={async () => {
+                  // Re-fetch event details to show updated data
+                  if (event?.id) {
+                    try {
+                      setLoading(true);
+                      const eventDetails = await eventService.getEvent(event.id);
+                      setFullEvent(eventDetails);
+                    } catch (err) {
+                      console.error("Error refreshing event details:", err);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }
+                  setIsEditing(false);
+                }}
+                onCancel={() => setIsEditing(false)}
+                startEditing={true}
+                hideButtons={false}
+              />
+            </div>
+          ) : (
+            <>
+              {/* Event Image */}
+              {fullEvent.image_path && (
+                <div className="modal-image-container">
+                  <img 
+                    src={getImageUrl(fullEvent.image_path, process.env.REACT_APP_API_URL || "http://localhost:8000")} 
+                    alt={fullEvent.name}
+                    className="modal-event-image"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
 
             {/* Event Title and Status */}
             <div className="modal-header">
@@ -203,18 +233,19 @@ const EventModal = ({ event, onClose, bandId = null }) => {
                 {fullEvent.description && (
                   <p className="modal-description-header">{fullEvent.description}</p>
                 )}
-                {fullEvent.venue_name && (
+                {(fullEvent.venue_name || fullEvent.location_name) && (
                   <div className="modal-venue-location">
                     <span className="location-pin-icon">📍</span>
                     <span className="venue-location-text">
-                      {fullEvent.venue_name}
-                      {(fullEvent.venue_street_address || fullEvent.venue_city || fullEvent.venue_state || fullEvent.venue_zip_code) && (
+                      {fullEvent.venue_name || fullEvent.location_name}
+                      {(fullEvent.venue_street_address || fullEvent.venue_city || fullEvent.venue_state || fullEvent.venue_zip_code ||
+                        fullEvent.street_address || fullEvent.city || fullEvent.state || fullEvent.zip_code) && (
                         <>
                           , {[
-                            fullEvent.venue_street_address,
-                            fullEvent.venue_city,
-                            fullEvent.venue_state,
-                            fullEvent.venue_zip_code
+                            fullEvent.venue_street_address || fullEvent.street_address,
+                            fullEvent.venue_city || fullEvent.city,
+                            fullEvent.venue_state || fullEvent.state,
+                            fullEvent.venue_zip_code || fullEvent.zip_code
                           ].filter(Boolean).join(", ")}
                         </>
                       )}
@@ -222,9 +253,19 @@ const EventModal = ({ event, onClose, bandId = null }) => {
                   </div>
                 )}
               </div>
-              <span className={`status-badge ${getStatusBadgeClass(fullEvent.status)}`}>
-                {fullEvent.status}
-              </span>
+              <div className="modal-header-badges">
+                {canEdit && (
+                  <button 
+                    className="modal-edit-btn"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    Edit Event
+                  </button>
+                )}
+                <span className={`status-badge ${getStatusBadgeClass(fullEvent.status)}`}>
+                  {fullEvent.status}
+                </span>
+              </div>
             </div>
 
             {/* Event Date and Time */}
@@ -690,7 +731,8 @@ const EventModal = ({ event, onClose, bandId = null }) => {
               </div>
             )}
           </>
-        )}
+        )
+      )}
 
         {/* Claim Equipment Modal */}
         {claimModalOpen && claimingCategory && (

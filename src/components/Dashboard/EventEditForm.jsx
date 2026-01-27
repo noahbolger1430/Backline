@@ -21,6 +21,13 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
     ticket_price: "",
     is_age_restricted: false,
     age_restriction: "",
+    // New fields for band-created events
+    location_name: "",
+    street_address: "",
+    city: "",
+    state: "",
+    zip_code: "",
+    genre_tags: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -75,6 +82,13 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
             ticket_price: event.ticket_price ? (event.ticket_price / 100).toFixed(2) : "",
             is_age_restricted: event.is_age_restricted || false,
             age_restriction: event.age_restriction ? String(event.age_restriction) : "",
+            // Populate location fields for band-created events
+            location_name: event.location_name || "",
+            street_address: event.street_address || "",
+            city: event.city || "",
+            state: event.state || "",
+            zip_code: event.zip_code || "",
+            genre_tags: event.genre_tags || "",
             _eventId: event.id, // Track which event this form is for
           };
         }
@@ -355,7 +369,18 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
         ticket_price: ticketPriceInCents,
         is_age_restricted: formData.is_age_restricted,
         age_restriction: ageRestrictionInt,
+        // Include genre tags if available
+        genre_tags: formData.genre_tags?.trim() || null,
       };
+      
+      // If band-created event, include location fields
+      if (event.created_by_band_id) {
+        updateData.location_name = formData.location_name.trim();
+        updateData.street_address = formData.street_address?.trim() || null;
+        updateData.city = formData.city.trim();
+        updateData.state = formData.state.trim();
+        updateData.zip_code = formData.zip_code?.trim() || null;
+      }
       
       console.log("EventEditForm - Sending update data:", {
         ticket_price_input: formData.ticket_price,
@@ -387,7 +412,12 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
         imageToSend = imageFile;
       }
       
-      await eventService.updateEvent(event.id, updateData, imageToSend, shouldRemoveImage);
+      if (event.created_by_band_id) {
+        await eventService.updateBandEvent(event.created_by_band_id, event.id, updateData, imageToSend, shouldRemoveImage);
+      } else {
+        await eventService.updateEvent(event.id, updateData, imageToSend, shouldRemoveImage);
+      }
+      
       setIsEditing(false);
       setImageFile(null);
       // Notify parent that editing is done
@@ -481,6 +511,19 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
                 <span className="detail-label">Date:</span>
                 <span className="detail-value">{formatDate(event.event_date)}</span>
               </div>
+              {event.created_by_band_id && event.location_name && (
+                <div className="event-detail-row">
+                  <span className="detail-label">Location:</span>
+                  <span className="detail-value">
+                    {event.location_name}
+                    {(event.street_address || event.city || event.state) && (
+                      <>
+                        , {[event.street_address, event.city, event.state, event.zip_code].filter(Boolean).join(", ")}
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
               {event.doors_time && (
                 <div className="event-detail-row">
                   <span className="detail-label">Doors:</span>
@@ -850,6 +893,85 @@ const EventEditForm = ({ event, onUpdate, onCancel, hideButtons = false, startEd
             <option value="cancelled">Cancelled</option>
           </select>
         </div>
+
+        {event.created_by_band_id && (
+          <div className="form-section location-section">
+            <h3 className="form-section-title">Location</h3>
+            <div className="form-group">
+              <label htmlFor="location_name">Location Name *</label>
+              <input
+                type="text"
+                id="location_name"
+                name="location_name"
+                value={formData.location_name}
+                onChange={handleChange}
+                required
+                maxLength={255}
+                placeholder="e.g., Central Park"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="street_address">Street Address</label>
+              <input
+                type="text"
+                id="street_address"
+                name="street_address"
+                value={formData.street_address}
+                onChange={handleChange}
+                maxLength={255}
+                placeholder="123 Main St"
+              />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="city">City *</label>
+                <input
+                  type="text"
+                  id="city"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  required
+                  maxLength={100}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="state">State/Province *</label>
+                <input
+                  type="text"
+                  id="state"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleChange}
+                  required
+                  maxLength={50}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="zip_code">Postal Code</label>
+                <input
+                  type="text"
+                  id="zip_code"
+                  name="zip_code"
+                  value={formData.zip_code}
+                  onChange={handleChange}
+                  maxLength={20}
+                />
+              </div>
+            </div>
+            <div className="form-group">
+              <label htmlFor="genre_tags">Genre Tags</label>
+              <input
+                type="text"
+                id="genre_tags"
+                name="genre_tags"
+                value={formData.genre_tags}
+                onChange={handleChange}
+                placeholder="e.g., rock, indie, alternative"
+              />
+            </div>
+          </div>
+        )}
 
         {formData.status === "pending" && (
           <div className="form-group checkbox-group">

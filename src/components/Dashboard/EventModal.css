@@ -80,6 +80,31 @@
     flex-direction: column;
     gap: 8px;
   }
+
+  .modal-header-badges {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+  }
+
+  .modal-edit-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    background-color: #6F22D2;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .modal-edit-btn:hover {
+    background-color: #8B2FE8;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(111, 34, 210, 0.4);
+  }
   
   .modal-title {
     font-size: 28px;
