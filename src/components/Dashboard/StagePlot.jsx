@@ -1674,7 +1674,7 @@ const StagePlot = ({ onBack, bandId, stagePlotId = null, viewOnly = false, onPlo
         const newPlot = await stagePlotService.createStagePlot({
           band_id: bandId,
           name: plotName,
-          description: plot.description || null,
+          description: plotDescription || null,
           items: formattedItems,
           settings: {
             stage_width: 600,
