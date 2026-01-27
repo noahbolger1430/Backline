@@ -27,7 +27,7 @@
   }
   
   /* Close Button */
-  .modal-close {
+  .event-modal-content .modal-close {
     position: sticky;
     top: 10px;
     right: 10px;
@@ -47,26 +47,26 @@
     transition: background-color 0.2s;
   }
   
-  .modal-close:hover {
+  .event-modal-content .modal-close:hover {
     background: rgba(11, 12, 16, 0.9); /* Primary Background with higher opacity */
   }
   
   /* Event Image */
-  .modal-image-container {
+  .event-modal-content .modal-image-container {
     width: 100%;
     max-height: 300px;
     overflow: hidden;
     border-radius: 12px 12px 0 0;
   }
   
-  .modal-event-image {
+  .event-modal-content .modal-event-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
   
   /* Modal Header */
-  .modal-header {
+  .event-modal-content .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -74,21 +74,21 @@
     gap: 16px;
   }
 
-  .modal-header-content {
+  .event-modal-content .modal-header-content {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
 
-  .modal-header-badges {
+  .event-modal-content .modal-header-badges {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 12px;
   }
 
-  .modal-edit-btn {
+  .event-modal-content .modal-edit-btn {
     padding: 8px 16px;
     font-size: 13px;
     font-weight: 600;
@@ -100,20 +100,20 @@
     transition: all 0.2s;
   }
 
-  .modal-edit-btn:hover {
+  .event-modal-content .modal-edit-btn:hover {
     background-color: #8B2FE8;
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(111, 34, 210, 0.4);
   }
   
-  .modal-title {
+  .event-modal-content .modal-title {
     font-size: 28px;
     font-weight: 700;
     color: #FFFFFF; /* High Contrast Text - Pure White */
     margin: 0;
   }
 
-  .modal-description-header {
+  .event-modal-content .modal-description-header {
     color: #8E8E93; /* Subtle Text - Slate Silver */
     font-size: 14px;
     line-height: 1.6;
@@ -121,7 +121,7 @@
     white-space: pre-wrap;
   }
 
-  .modal-venue-location {
+  .event-modal-content .modal-venue-location {
     display: flex;
     align-items: flex-start;
     gap: 8px;
@@ -131,20 +131,20 @@
     line-height: 1.6;
   }
 
-  .location-pin-icon {
+  .event-modal-content .location-pin-icon {
     font-size: 16px;
     flex-shrink: 0;
     margin-top: 2px;
   }
 
-  .venue-location-text {
+  .event-modal-content .venue-location-text {
     color: #8E8E93 !important; /* Subtle Text - Slate Silver */
     font-size: 14px;
     line-height: 1.6;
   }
   
   /* Status Badge */
-  .status-badge {
+  .event-modal-content .status-badge {
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 12px;
@@ -154,41 +154,41 @@
     white-space: nowrap;
   }
   
-  .status-badge-confirmed {
+  .event-modal-content .status-badge-confirmed {
     background-color: rgba(76, 175, 80, 0.2); /* Green with opacity for dark theme */
     color: #4CAF50; /* Green text */
     border: 1px solid #4CAF50;
   }
   
-  .status-badge-pending {
+  .event-modal-content .status-badge-pending {
     background-color: rgba(255, 193, 7, 0.2); /* Yellow with opacity for dark theme */
     color: #FFC107; /* Yellow text */
     border: 1px solid #FFC107;
   }
   
-  .status-badge-cancelled {
+  .event-modal-content .status-badge-cancelled {
     background-color: rgba(244, 67, 54, 0.2); /* Red with opacity for dark theme */
     color: #F44336; /* Red text */
     border: 1px solid #F44336;
   }
   
-  .status-badge-default {
+  .event-modal-content .status-badge-default {
     background-color: rgba(197, 198, 199, 0.2); /* Sterling Silver with opacity */
     color: #C5C6C7; /* Secondary Accent - Sterling Silver */
     border: 1px solid #C5C6C7;
   }
   
   /* Modal Sections */
-  .modal-section {
+  .event-modal-content .modal-section {
     padding: 16px 24px;
   }
   
-  .modal-section:last-child {
+  .event-modal-content .modal-section:last-child {
     border-bottom: none;
     padding-bottom: 24px;
   }
   
-  .modal-section-title {
+  .event-modal-content .modal-section-title {
     font-size: 16px;
     font-weight: 600;
     color: #FFFFFF !important; /* High Contrast Text - Pure White - matches modal-title */
@@ -198,33 +198,33 @@
   }
   
   /* Info Rows */
-  .modal-info-row {
+  .event-modal-content .modal-info-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 8px 0;
   }
   
-  .modal-info-label {
+  .event-modal-content .modal-info-label {
     font-weight: 600;
     color: #8E8E93; /* Subtle Text - Slate Silver */
     font-size: 14px;
   }
   
-  .modal-info-value {
+  .event-modal-content .modal-info-value {
     color: #FFFFFF; /* High Contrast Text - Pure White */
     font-size: 14px;
     text-align: right;
   }
   
-  .modal-price {
+  .event-modal-content .modal-price {
     font-size: 18px;
     font-weight: 700;
     color: #6F22D2; /* Primary Accent - Electric Violet */
   }
   
   /* Description */
-  .modal-description {
+  .event-modal-content .modal-description {
     color: #8E8E93; /* Subtle Text - Slate Silver */
     font-size: 14px;
     line-height: 1.6;
@@ -233,14 +233,14 @@
   }
   
   /* Bands Grid - Card Layout */
-  .modal-bands-grid {
+  .event-modal-content .modal-bands-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 16px;
     margin: 12px 0;
   }
   
-  .modal-band-card {
+  .event-modal-content .modal-band-card {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -251,12 +251,12 @@
     transition: border-color 0.2s ease;
   }
   
-  .modal-band-card:hover {
+  .event-modal-content .modal-band-card:hover {
     border-color: #6F22D2; /* Primary Accent - Electric Violet */
     box-shadow: 0 2px 8px rgba(111, 34, 210, 0.2);
   }
   
-  .modal-band-card-image-container {
+  .event-modal-content .modal-band-card-image-container {
     position: relative;
     width: 100%;
     aspect-ratio: 1;
@@ -265,14 +265,14 @@
     background-color: #1F2833; /* Secondary Background - Charcoal Grey */
   }
   
-  .modal-band-card-image {
+  .event-modal-content .modal-band-card-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
   }
   
-  .modal-band-card-placeholder {
+  .event-modal-content .modal-band-card-placeholder {
     width: 100%;
     height: 100%;
     display: flex;
@@ -282,7 +282,7 @@
     font-size: 32px;
   }
   
-  .modal-band-order-badge {
+  .event-modal-content .modal-band-order-badge {
     position: absolute;
     top: 8px;
     left: 8px;
@@ -295,13 +295,13 @@
     z-index: 10;
   }
   
-  .modal-band-card-content {
+  .event-modal-content .modal-band-card-content {
     display: flex;
     flex-direction: column;
     gap: 6px;
   }
   
-  .modal-band-card-name {
+  .event-modal-content .modal-band-card-name {
     color: #FFFFFF; /* High Contrast Text - Pure White */
     font-weight: 500;
     font-size: 14px;
@@ -309,7 +309,7 @@
     word-break: break-word;
   }
   
-  .modal-band-card-status {
+  .event-modal-content .modal-band-card-status {
     padding: 4px 8px;
     border-radius: 12px;
     font-size: 10px;
@@ -319,38 +319,38 @@
     letter-spacing: 0.5px;
   }
   
-  .modal-band-card-status.confirmed {
+  .event-modal-content .modal-band-card-status.confirmed {
     background-color: rgba(76, 175, 80, 0.2); /* Green with opacity for dark theme */
     color: #4CAF50; /* Green text */
     border: 1px solid #4CAF50;
   }
   
-  .modal-band-card-status.pending {
+  .event-modal-content .modal-band-card-status.pending {
     background-color: rgba(255, 193, 7, 0.2); /* Yellow with opacity for dark theme */
     color: #FFC107; /* Yellow text */
     border: 1px solid #FFC107;
   }
   
-  .modal-band-card-status.cancelled {
+  .event-modal-content .modal-band-card-status.cancelled {
     background-color: rgba(244, 67, 54, 0.2); /* Red with opacity for dark theme */
     color: #F44336; /* Red text */
     border: 1px solid #F44336;
   }
   
-  .modal-band-card-details {
+  .event-modal-content .modal-band-card-details {
     display: flex;
     flex-direction: column;
     gap: 4px;
     margin-top: 4px;
   }
   
-  .modal-band-card-detail {
+  .event-modal-content .modal-band-card-detail {
     color: #8E8E93; /* Subtle Text - Slate Silver */
     font-size: 11px;
     text-align: center;
   }
   
-  .modal-no-bands {
+  .event-modal-content .modal-no-bands {
     color: #8E8E93; /* Subtle Text - Slate Silver */
     font-style: italic;
     text-align: center;
@@ -359,28 +359,28 @@
   }
   
   /* Loading and Error States */
-  .modal-loading,
-  .modal-error {
+  .event-modal-content .modal-loading,
+  .event-modal-content .modal-error {
     padding: 24px;
     text-align: center;
     font-size: 14px;
   }
   
-  .modal-loading {
+  .event-modal-content .modal-loading {
     color: #8E8E93; /* Subtle Text - Slate Silver */
   }
   
-  .modal-error {
+  .event-modal-content .modal-error {
     color: #F44336; /* Red for errors */
   }
   
   /* Text Utilities */
-  .text-success {
+  .event-modal-content .text-success {
     color: #4CAF50 !important; /* Green for success */
     font-weight: 600;
   }
   
-  .text-muted {
+  .event-modal-content .text-muted {
     color: #8E8E93 !important; /* Subtle Text - Slate Silver */
   }
   
@@ -392,98 +392,98 @@
       border-radius: 0;
     }
   
-    .modal-header {
+    .event-modal-content .modal-header {
       flex-direction: column;
       align-items: flex-start;
     }
   
-    .modal-title {
+    .event-modal-content .modal-title {
       font-size: 24px;
     }
   
-    .modal-info-row {
+    .event-modal-content .modal-info-row {
       flex-direction: column;
       align-items: flex-start;
       gap: 4px;
     }
   
-    .modal-info-value {
+    .event-modal-content .modal-info-value {
       text-align: left;
     }
   
-    .band-item-details {
+    .event-modal-content .band-item-details {
       flex-direction: column;
       gap: 4px;
     }
   }
   
   /* Scrollbar Styling - Uses global purple scrollbar */
-
+  
 /* Event Schedule */
-.modal-schedule-list {
+.event-modal-content .modal-schedule-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.modal-schedule-item {
+.event-modal-content .modal-schedule-item {
   padding: 12px;
   background-color: #0B0C10;
   border-radius: 6px;
   border: 1px solid #333333;
 }
 
-.modal-schedule-item .schedule-band-name {
+.event-modal-content .modal-schedule-item .schedule-band-name {
   font-weight: 600;
   color: #FFFFFF;
   margin-bottom: 8px;
 }
 
-.modal-schedule-item .schedule-times {
+.event-modal-content .modal-schedule-item .schedule-times {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.modal-schedule-item .schedule-time {
+.event-modal-content .modal-schedule-item .schedule-time {
   display: flex;
   gap: 10px;
 }
 
-.modal-schedule-item .schedule-time-label {
+.event-modal-content .modal-schedule-item .schedule-time-label {
   font-size: 14px;
   color: #C5C6C7;
   min-width: 100px;
 }
 
-.modal-schedule-item .schedule-time-value {
+.event-modal-content .modal-schedule-item .schedule-time-value {
   font-size: 14px;
   color: #FFFFFF;
   font-weight: 500;
 }
 
-.modal-schedule-item.your-schedule {
+.event-modal-content .modal-schedule-item.your-schedule {
   background-color: #1F2833;
   border: 2px solid #66FCF1;
   border-radius: 8px;
   padding: 16px;
 }
 
-.modal-schedule-item.your-schedule .schedule-band-name {
+.event-modal-content .modal-schedule-item.your-schedule .schedule-band-name {
   color: #66FCF1;
   font-weight: 700;
   font-size: 16px;
 }
 
 /* Backline Section */
-.backline-loading {
+.event-modal-content .backline-loading {
   color: #8E8E93; /* Subtle Text - Slate Silver */
   text-align: center;
   padding: 16px;
   font-size: 14px;
 }
 
-.backline-empty {
+.event-modal-content .backline-empty {
   color: #8E8E93; /* Subtle Text - Slate Silver */
   text-align: center;
   padding: 16px;
@@ -491,20 +491,20 @@
   font-size: 14px;
 }
 
-.backline-list {
+.event-modal-content .backline-list {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.backline-category-group {
+.event-modal-content .backline-category-group {
   background-color: #0B0C10; /* Primary Background - Obsidian Black */
   border-radius: 8px;
   padding: 16px;
   border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
 }
 
-.backline-category-header {
+.event-modal-content .backline-category-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -513,7 +513,7 @@
   border-bottom: 1px solid #1F2833; /* Secondary Background - Charcoal Grey */
 }
 
-.backline-category-title {
+.event-modal-content .backline-category-title {
   font-size: 16px;
   font-weight: 600;
   color: #6F22D2; /* Primary Accent - Electric Violet */
@@ -521,7 +521,7 @@
   text-transform: capitalize;
 }
 
-.backline-claim-btn {
+.event-modal-content .backline-claim-btn {
   padding: 6px 16px;
   font-size: 13px;
   font-weight: 600;
@@ -533,69 +533,69 @@
   transition: all 0.2s;
 }
 
-.backline-claim-btn:hover {
+.event-modal-content .backline-claim-btn:hover {
   background-color: #8B2FE8; /* Lighter purple */
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(111, 34, 210, 0.4);
 }
 
-.backline-claim-btn:disabled {
+.event-modal-content .backline-claim-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
 }
 
-.backline-items {
+.event-modal-content .backline-items {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.backline-item {
+.event-modal-content .backline-item {
   background-color: #1F2833; /* Secondary Background - Charcoal Grey */
   border-radius: 6px;
   padding: 12px;
   border-left: 3px solid #6F22D2; /* Primary Accent - Electric Violet */
 }
 
-.backline-item-info {
+.event-modal-content .backline-item-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
   margin-bottom: 8px;
 }
 
-.backline-item-name {
+.event-modal-content .backline-item-name {
   font-size: 15px;
   font-weight: 600;
   color: #FFFFFF; /* High Contrast Text - Pure White */
 }
 
-.backline-item-band {
+.event-modal-content .backline-item-band {
   font-size: 13px;
   color: #C5C6C7; /* Secondary Accent - Sterling Silver */
 }
 
-.backline-item-member {
+.event-modal-content .backline-item-member {
   font-size: 12px;
   color: #8E8E93; /* Subtle Text - Slate Silver */
   font-style: italic;
 }
 
-.backline-item-details {
+.event-modal-content .backline-item-details {
   margin-top: 6px;
   font-size: 13px;
   color: #C5C6C7; /* Secondary Accent - Sterling Silver */
 }
 
-.backline-item-specs {
+.event-modal-content .backline-item-specs {
   margin-top: 6px;
   font-size: 12px;
   color: #8E8E93; /* Subtle Text - Slate Silver */
   font-style: italic;
 }
 
-.backline-item-notes {
+.event-modal-content .backline-item-notes {
   margin-top: 8px;
   font-size: 12px;
   color: #8E8E93; /* Subtle Text - Slate Silver */
@@ -604,7 +604,7 @@
   border-radius: 4px;
 }
 
-.backline-claimed-badge {
+.event-modal-content .backline-claimed-badge {
   display: inline-block;
   margin-left: 12px;
   padding: 4px 10px;
@@ -618,12 +618,12 @@
   letter-spacing: 0.5px;
 }
 
-.backline-item.claimed {
+.event-modal-content .backline-item.claimed {
   border-left-color: #4CAF50;
   background-color: rgba(76, 175, 80, 0.1);
 }
 
-.backline-claimed-indicator {
+.event-modal-content .backline-claimed-indicator {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -636,15 +636,15 @@
   color: #4CAF50;
 }
 
-.claimed-icon {
+.event-modal-content .claimed-icon {
   font-size: 14px;
 }
 
-.claimed-label {
+.event-modal-content .claimed-label {
   font-size: 12px;
 }
 
-.backline-unclaim-btn {
+.event-modal-content .backline-unclaim-btn {
   margin-top: 10px;
   padding: 6px 12px;
   font-size: 12px;
@@ -657,27 +657,27 @@
   transition: all 0.2s;
 }
 
-.backline-unclaim-btn:hover {
+.event-modal-content .backline-unclaim-btn:hover {
   background-color: #FF4444;
   color: #FFFFFF;
 }
 
 /* Venue Backline Section Styles */
-.venue-backline-list {
+.event-modal-content .venue-backline-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
   margin-top: 12px;
 }
 
-.venue-backline-item {
+.event-modal-content .venue-backline-item {
   background-color: #0B0C10;
   border-radius: 8px;
   padding: 16px;
   border: 1px solid #1F2833;
 }
 
-.venue-backline-category-header {
+.event-modal-content .venue-backline-category-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -686,14 +686,14 @@
   border-bottom: 1px solid #1F2833;
 }
 
-.venue-backline-category-name {
+.event-modal-content .venue-backline-category-name {
   font-size: 16px;
   font-weight: 600;
   color: #FFFFFF;
   margin: 0;
 }
 
-.venue-backline-status {
+.event-modal-content .venue-backline-status {
   padding: 4px 12px;
   border-radius: 12px;
   font-size: 12px;
@@ -702,36 +702,36 @@
   letter-spacing: 0.5px;
 }
 
-.venue-backline-status.claimed {
+.event-modal-content .venue-backline-status.claimed {
   background-color: rgba(76, 175, 80, 0.2);
   color: #4CAF50;
   border: 1px solid #4CAF50;
 }
 
-.venue-backline-status.unclaimed {
+.event-modal-content .venue-backline-status.unclaimed {
   background-color: rgba(142, 142, 147, 0.2);
   color: #8E8E93;
   border: 1px solid #8E8E93;
 }
 
-.venue-backline-claimed-details {
+.event-modal-content .venue-backline-claimed-details {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.venue-backline-equipment-name {
+.event-modal-content .venue-backline-equipment-name {
   font-size: 18px;
   font-weight: 600;
   color: #FFFFFF;
 }
 
-.venue-backline-equipment-brand {
+.event-modal-content .venue-backline-equipment-brand {
   font-size: 14px;
   color: #C5C6C7;
 }
 
-.venue-backline-supplier {
+.event-modal-content .venue-backline-supplier {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -741,27 +741,27 @@
   font-size: 14px;
 }
 
-.venue-backline-supplier-label {
+.event-modal-content .venue-backline-supplier-label {
   color: #8E8E93;
   font-weight: 500;
 }
 
-.venue-backline-supplier-name {
+.event-modal-content .venue-backline-supplier-name {
   color: #FFFFFF;
   font-weight: 600;
 }
 
-.venue-backline-supplier-separator {
+.event-modal-content .venue-backline-supplier-separator {
   color: #8E8E93;
   margin: 0 4px;
 }
 
-.venue-backline-supplier-band {
+.event-modal-content .venue-backline-supplier-band {
   color: #C5C6C7;
   font-style: italic;
 }
 
-.venue-backline-unclaimed {
+.event-modal-content .venue-backline-unclaimed {
   padding: 12px;
   text-align: center;
   background-color: rgba(142, 142, 147, 0.1);
@@ -769,14 +769,14 @@
   border: 1px dashed #8E8E93;
 }
 
-.venue-backline-unclaimed-text {
+.event-modal-content .venue-backline-unclaimed-text {
   color: #8E8E93;
   font-size: 14px;
   font-style: italic;
 }
 
 /* Physical Tickets Button */
-.physical-tickets-button {
+.event-modal-content .physical-tickets-button {
   margin-top: 16px;
   padding: 12px 20px;
   background-color: #6F22D2;
@@ -792,30 +792,30 @@
   gap: 8px;
 }
 
-.physical-tickets-button:hover {
+.event-modal-content .physical-tickets-button:hover {
   background-color: #8B2FE8;
 }
 
-.physical-tickets-button:disabled {
+.event-modal-content .physical-tickets-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
-.gig-form {
+.event-modal-content .gig-form {
   padding-bottom: 24px;
 }
 
-.form-group {
+.event-modal-content .form-group {
   margin-bottom: 16px;
   flex: 1;
 }
 
-.form-row {
+.event-modal-content .form-row {
   display: flex;
   gap: 16px;
   margin-bottom: 16px;
 }
 
-.form-label {
+.event-modal-content .form-label {
   display: block;
   margin-bottom: 6px;
   font-size: 14px;
@@ -825,13 +825,13 @@
   letter-spacing: 0.5px;
 }
 
-.form-label.required::after {
+.event-modal-content .form-label.required::after {
   content: " *";
   color: #FF4444;
 }
 
-.form-input,
-.form-textarea {
+.event-modal-content .form-input,
+.event-modal-content .form-textarea {
   width: 100%;
   padding: 10px 12px;
   font-size: 14px;
@@ -843,33 +843,33 @@
   transition: all 0.2s;
 }
 
-.form-input:focus,
-.form-textarea:focus {
+.event-modal-content .form-input:focus,
+.event-modal-content .form-textarea:focus {
   outline: none;
   border-color: #6F22D2; /* Primary Accent - Electric Violet */
   box-shadow: 0 0 0 2px rgba(111, 34, 210, 0.2);
 }
 
-.form-input:disabled,
-.form-textarea:disabled {
+.event-modal-content .form-input:disabled,
+.event-modal-content .form-textarea:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   background-color: #1F2833; /* Secondary Background - Charcoal Grey */
 }
 
-.form-textarea {
+.event-modal-content .form-textarea {
   resize: vertical;
   min-height: 80px;
 }
 
-.form-hint {
+.event-modal-content .form-hint {
   margin-top: 4px;
   font-size: 12px;
   color: #8E8E93; /* Subtle Text - Slate Silver */
   font-style: italic;
 }
 
-.checkbox-label {
+.event-modal-content .checkbox-label {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -878,7 +878,7 @@
   color: #FFFFFF; /* High Contrast Text - Pure White */
 }
 
-.form-checkbox {
+.event-modal-content .form-checkbox {
   width: 18px;
   height: 18px;
   cursor: pointer;
@@ -886,16 +886,16 @@
 }
 
 /* Image Upload Styles */
-.image-upload-container {
+.event-modal-content .image-upload-container {
   position: relative;
 }
 
-.image-upload-label {
+.event-modal-content .image-upload-label {
   display: block;
   cursor: pointer;
 }
 
-.image-upload-placeholder {
+.event-modal-content .image-upload-placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -907,47 +907,47 @@
   transition: all 0.2s;
 }
 
-.image-upload-label:hover .image-upload-placeholder {
+.event-modal-content .image-upload-label:hover .image-upload-placeholder {
   border-color: #6F22D2; /* Primary Accent - Electric Violet */
   background-color: rgba(111, 34, 210, 0.05);
 }
 
-.upload-icon {
+.event-modal-content .upload-icon {
   font-size: 48px;
   margin-bottom: 12px;
 }
 
-.upload-text {
+.event-modal-content .upload-text {
   font-size: 14px;
   font-weight: 600;
   color: #FFFFFF; /* High Contrast Text - Pure White */
   margin-bottom: 4px;
 }
 
-.upload-hint {
+.event-modal-content .upload-hint {
   font-size: 12px;
   color: #8E8E93; /* Subtle Text - Slate Silver */
 }
 
-.image-upload-input {
+.event-modal-content .image-upload-input {
   display: none;
 }
 
-.image-preview-container {
+.event-modal-content .image-preview-container {
   display: flex;
   flex-direction: column;
   gap: 12px;
   align-items: center;
 }
 
-.image-preview {
+.event-modal-content .image-preview {
   max-width: 100%;
   max-height: 300px;
   border-radius: 8px;
   border: 2px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
 }
 
-.remove-image-btn {
+.event-modal-content .remove-image-btn {
   padding: 8px 16px;
   font-size: 13px;
   font-weight: 600;
@@ -959,13 +959,13 @@
   transition: all 0.2s;
 }
 
-.remove-image-btn:hover {
+.event-modal-content .remove-image-btn:hover {
   background-color: #FF4444;
   color: #FFFFFF;
 }
 
 /* Form Actions */
-.form-actions {
+.event-modal-content .form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
@@ -973,7 +973,7 @@
   border-top: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
 }
 
-.form-button {
+.event-modal-content .form-button {
   padding: 10px 20px;
   font-size: 14px;
   font-weight: 600;
@@ -983,37 +983,36 @@
   border: none;
 }
 
-.cancel-button {
+.event-modal-content .cancel-button {
   background-color: #1F2833; /* Secondary Background - Charcoal Grey */
   color: #FFFFFF; /* High Contrast Text - Pure White */
   border: 1px solid #C5C6C7; /* Secondary Accent - Sterling Silver */
 }
 
-.cancel-button:hover {
+.event-modal-content .cancel-button:hover {
   background-color: #2F3843;
   border-color: #FFFFFF;
 }
 
-.submit-button {
+.event-modal-content .submit-button {
   background-color: #6F22D2; /* Primary Accent - Electric Violet */
   color: #FFFFFF; /* High Contrast Text - Pure White */
 }
 
-.submit-button:hover:not(:disabled) {
+.event-modal-content .submit-button:hover:not(:disabled) {
   background-color: #8B2FE8; /* Lighter purple */
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(111, 34, 210, 0.4);
 }
 
-.submit-button:disabled {
+.event-modal-content .submit-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
-  .form-row {
+  .event-modal-content .form-row {
     flex-direction: column;
     gap: 0;
   }

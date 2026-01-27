@@ -6,19 +6,19 @@
   margin: 0 auto;
 }
 
-.event-create-form-header {
+.event-create-form-container .event-create-form-header {
   margin-bottom: 25px;
   padding-bottom: 15px;
 }
 
-.event-create-form-header h2 {
+.event-create-form-container .event-create-form-header h2 {
   font-size: 24px;
   font-weight: bold;
   color: #ffffff;
   margin: 0;
 }
 
-.event-form-error {
+.event-create-form-container .event-form-error {
   background-color: #ffebee;
   color: #c62828;
   padding: 12px 16px;
@@ -27,30 +27,30 @@
   border-left: 3px solid #c62828;
 }
 
-.event-create-form {
+.event-create-form-container .event-create-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.form-group {
+.event-create-form-container .form-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.form-group label {
+.event-create-form-container .form-group label {
   font-size: 14px;
   font-weight: 600;
   color: #333333;
 }
 
-.form-group input[type="text"],
-.form-group input[type="date"],
-.form-group input[type="time"],
-.form-group input[type="number"],
-.form-group input[type="file"],
-.form-group textarea {
+.event-create-form-container .form-group input[type="text"],
+.event-create-form-container .form-group input[type="date"],
+.event-create-form-container .form-group input[type="time"],
+.event-create-form-container .form-group input[type="number"],
+.event-create-form-container .form-group input[type="file"],
+.event-create-form-container .form-group textarea {
   padding: 10px 12px;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
@@ -58,56 +58,56 @@
   transition: border-color 0.2s ease;
 }
 
-.form-group input[type="file"] {
+.event-create-form-container .form-group input[type="file"] {
   padding: 8px;
   cursor: pointer;
 }
 
 /* Make date and time picker icons white */
-.form-group input[type="date"]::-webkit-calendar-picker-indicator,
-.form-group input[type="time"]::-webkit-calendar-picker-indicator {
+.event-create-form-container .form-group input[type="date"]::-webkit-calendar-picker-indicator,
+.event-create-form-container .form-group input[type="time"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
   cursor: pointer;
 }
 
-.form-group input[type="date"]::-moz-calendar-picker-indicator,
-.form-group input[type="time"]::-moz-calendar-picker-indicator {
+.event-create-form-container .form-group input[type="date"]::-moz-calendar-picker-indicator,
+.event-create-form-container .form-group input[type="time"]::-moz-calendar-picker-indicator {
   filter: invert(1);
   cursor: pointer;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
+.event-create-form-container .form-group input:focus,
+.event-create-form-container .form-group textarea:focus {
   outline: none;
   border-color: #2196f3;
 }
 
-.form-group textarea {
+.event-create-form-container .form-group textarea {
   resize: vertical;
   min-height: 100px;
 }
 
-.form-row {
+.event-create-form-container .form-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 15px;
 }
 
-.form-section {
+.event-create-form-container .form-section {
   background-color: #f8f9fa;
   border-radius: 6px;
   padding: 16px;
   border: 1px solid #e0e0e0;
 }
 
-.form-section-title {
+.event-create-form-container .form-section-title {
   font-size: 16px;
   font-weight: 600;
   color: #333333;
   margin: 0 0 12px 0;
 }
 
-.checkbox-group label {
+.event-create-form-container .checkbox-group label {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -115,41 +115,41 @@
   font-weight: normal;
 }
 
-.checkbox-group input[type="checkbox"] {
+.event-create-form-container .checkbox-group input[type="checkbox"] {
   width: 18px;
   height: 18px;
   cursor: pointer;
 }
 
-.nested-checkbox {
+.event-create-form-container .nested-checkbox {
   margin-left: 28px;
   margin-top: 12px;
   padding-left: 12px;
   border-left: 2px solid #2196f3;
 }
 
-.form-help-text {
+.event-create-form-container .form-help-text {
   font-size: 12px;
   color: #666666;
   margin: 4px 0 0 28px;
   line-height: 1.4;
 }
 
-.form-help-text-inline {
+.event-create-form-container .form-help-text-inline {
   font-size: 12px;
   color: #666666;
   font-weight: normal;
   margin-left: 8px;
 }
 
-.form-error-text {
+.event-create-form-container .form-error-text {
   font-size: 12px;
   color: #c62828;
   margin: 4px 0 0 0;
   line-height: 1.4;
 }
 
-.form-actions {
+.event-create-form-container .form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
@@ -157,8 +157,8 @@
   padding-top: 20px;
 }
 
-.btn-cancel,
-.btn-submit {
+.event-create-form-container .btn-cancel,
+.event-create-form-container .btn-submit {
   padding: 12px 24px;
   border-radius: 4px;
   font-size: 14px;
@@ -167,33 +167,33 @@
   transition: all 0.2s ease;
 }
 
-.btn-cancel {
+.event-create-form-container .btn-cancel {
   background-color: #f5f5f5;
   color: #666666;
   border: 1px solid #d0d0d0;
 }
 
-.btn-cancel:hover:not(:disabled) {
+.event-create-form-container .btn-cancel:hover:not(:disabled) {
   background-color: #e0e0e0;
 }
 
-.btn-submit {
+.event-create-form-container .btn-submit {
   background-color: #4caf50;
   color: #ffffff;
   border: none;
 }
 
-.btn-submit:hover:not(:disabled) {
+.event-create-form-container .btn-submit:hover:not(:disabled) {
   background-color: #43a047;
 }
 
-.btn-cancel:disabled,
-.btn-submit:disabled {
+.event-create-form-container .btn-cancel:disabled,
+.event-create-form-container .btn-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.image-preview {
+.event-create-form-container .image-preview {
   margin-top: 12px;
   border-radius: 4px;
   overflow: hidden;
@@ -201,14 +201,14 @@
   max-width: 300px;
 }
 
-.image-preview img {
+.event-create-form-container .image-preview img {
   width: 100%;
   height: auto;
   display: block;
 }
 
 @media (max-width: 768px) {
-  .form-row {
+  .event-create-form-container .form-row {
     grid-template-columns: 1fr;
   }
 
@@ -216,20 +216,20 @@
     padding: 20px;
   }
 
-  .form-actions {
+  .event-create-form-container .form-actions {
     flex-direction: column;
   }
 
-  .btn-cancel,
-  .btn-submit {
+  .event-create-form-container .btn-cancel,
+  .event-create-form-container .btn-submit {
     width: 100%;
   }
 
-  .nested-checkbox {
+  .event-create-form-container .nested-checkbox {
     margin-left: 0;
   }
 
-  .form-help-text {
+  .event-create-form-container .form-help-text {
     margin-left: 28px;
   }
 }
