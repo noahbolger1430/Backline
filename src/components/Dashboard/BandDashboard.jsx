@@ -80,10 +80,17 @@ const BandDashboard = ({ bandId, onLogout }) => {
         const transformedEvents = eventsData
           .map((event) => ({
             id: event.id,
-            venueName: event.venue_name,
+            venue_name: event.venue_name,
+            venueName: event.venue_name, // Keep for backward compatibility
             date: event.event_date,
+            event_date: event.event_date, // Keep both for consistency
             image_path: event.image_path,
             name: event.name,
+            // Add fields for band-created events
+            created_by_band_id: event.created_by_band_id,
+            location_name: event.location_name,
+            city: event.city,
+            state: event.state,
           }))
           .sort((a, b) => new Date(a.date) - new Date(b.date));
         setEvents(transformedEvents);
