@@ -87,6 +87,15 @@ const CalendarWeekly = ({ bandId }) => {
     return `${displayHours}:${String(minutes || 0).padStart(2, '0')} ${period}`;
   };
 
+  const calculateEndTime = (startTime, durationMinutes) => {
+    if (!startTime || !durationMinutes) return startTime;
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + (minutes || 0) + durationMinutes;
+    const endHours = Math.floor(totalMinutes / 60) % 24;
+    const endMinutes = totalMinutes % 60;
+    return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+  };
+
   // Scroll to current time on mount and when week changes
   useEffect(() => {
     if (scrollableRef.current) {
@@ -413,11 +422,9 @@ const CalendarWeekly = ({ bandId }) => {
                       {/* Render rehearsal cards */}
                       {dayRehearsals.map((rehearsal, rehearsalIndex) => {
                         const topPosition = rehearsal.start_time ? timeToPixels(rehearsal.start_time) : 0;
-                        let height = 60;
-                        if (rehearsal.start_time && rehearsal.end_time) {
-                          const endPosition = timeToPixels(rehearsal.end_time);
-                          height = Math.max(40, endPosition - topPosition);
-                        }
+                        const duration = rehearsal.duration_minutes || 60;
+                        const height = Math.max(40, duration);
+                        const endTime = calculateEndTime(rehearsal.start_time, duration);
                         
                         return (
                           <div
@@ -434,7 +441,7 @@ const CalendarWeekly = ({ bandId }) => {
                               <div className="weekly-rehearsal-header">
                                 <span className="weekly-rehearsal-icon">🎵</span>
                                 <span className="weekly-rehearsal-time">
-                                  {formatTime(rehearsal.start_time)}
+                                  {formatTime(rehearsal.start_time)} - {formatTime(endTime)}
                                 </span>
                               </div>
                               {rehearsal.location && (
