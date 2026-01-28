@@ -98,20 +98,47 @@ const CalendarWeekly = ({ bandId }) => {
 
   // Scroll to current time on mount and when week changes
   useEffect(() => {
-    if (scrollableRef.current) {
-      const today = new Date();
+    const performScroll = () => {
+      if (!scrollableRef.current) return;
+
+      // Find the weekly-time-grid-container which is the actual scrollable element
+      const timeGridContainer = scrollableRef.current.querySelector('.weekly-time-grid-container');
+      if (!timeGridContainer) return;
+
+      // Calculate scroll position based on current time
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      
+      // Check if today is in the current week
       const weekDays = getWeekDays();
-      const isCurrentWeek = weekDays.some(day => 
-        day.toDateString() === today.toDateString()
+      const today = new Date();
+      const isTodayInWeek = weekDays.some(day => 
+        day.getDate() === today.getDate() &&
+        day.getMonth() === today.getMonth() &&
+        day.getFullYear() === today.getFullYear()
       );
 
-      if (isCurrentWeek) {
-        const scrollPosition = Math.max(0, getCurrentTimePosition() - 120);
-        scrollableRef.current.scrollTop = scrollPosition;
+      let targetScrollTop;
+      
+      if (isTodayInWeek) {
+        // Scroll to current time - 2 hours (120 minutes) for context
+        targetScrollTop = Math.max(0, currentMinutes - 120);
       } else {
-        scrollableRef.current.scrollTop = 480;
+        // Default to 8 AM (480 minutes) for non-current weeks
+        targetScrollTop = 480;
       }
-    }
+
+      timeGridContainer.scrollTop = targetScrollTop;
+    };
+
+    // Use requestAnimationFrame to ensure DOM is ready
+    const rafId = requestAnimationFrame(() => {
+      performScroll();
+      // Try again after a delay to handle async content
+      setTimeout(performScroll, 500);
+    });
+
+    return () => cancelAnimationFrame(rafId);
   }, [currentWeek]);
 
   // Fetch data when week changes
@@ -336,7 +363,7 @@ const CalendarWeekly = ({ bandId }) => {
   const isCurrentWeek = weekDays.some(day => isToday(day));
 
   return (
-    <div className="calendar-container calendar-weekly-container">
+    <div className="calendar-container calendar-weekly-container" ref={scrollableRef}>
       <div className="calendar-controls">
         <button className="calendar-nav-btn" onClick={handlePreviousWeek}>
           ←
@@ -377,7 +404,7 @@ const CalendarWeekly = ({ bandId }) => {
         </div>
 
         {/* Scrollable Time Grid */}
-        <div className="weekly-time-grid-container" ref={scrollableRef}>
+        <div className="weekly-time-grid-container">
           <div className="weekly-time-grid">
             {/* Time Labels */}
             <div className="weekly-time-column">

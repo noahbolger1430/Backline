@@ -1,13 +1,27 @@
 /* src/components/Dashboard/CalendarWeekly.css */
 /* Band Weekly Calendar Specific Styles */
 
-/* =====================================================
-   CONTAINER STRUCTURE
-   ===================================================== */
+  /* =====================================================
+     CONTAINER STRUCTURE
+     ===================================================== */
    .calendar-weekly-container {
-    height: 100%;
+    height: 700px;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+    position: relative;
+    background-color: #0B0C10;
+  }
+
+  .calendar-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    gap: 20px;
+    background-color: #0B0C10;
+    flex-shrink: 0;
+    height: 60px;
   }
   
   .weekly-calendar-container {
@@ -17,7 +31,7 @@
     background-color: #0B0C10;
     border-radius: 8px;
     margin-top: 20px;
-    overflow: hidden;
+    overflow: visible;
     min-height: 0;
   }
   
@@ -30,6 +44,12 @@
     border-bottom: 1px solid rgba(197, 198, 199, 0.2);
     flex-shrink: 0;
     height: 100px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 15px; /* Account for scrollbar width */
   }
   
   .weekly-corner-cell {
@@ -43,6 +63,7 @@
     flex: 1;
     display: grid;
     grid-template-columns: repeat(7, 1fr);
+    min-width: 0; /* Allow grid to shrink properly */
   }
   
   .weekly-column-header {
@@ -54,6 +75,7 @@
     align-items: center;
     gap: 4px;
     background-color: #0B0C10;
+    min-width: 0; /* Allow column to shrink properly */
   }
   
   .weekly-column-header:last-child {
@@ -84,12 +106,14 @@
     overflow-y: auto;
     overflow-x: hidden;
     position: relative;
-    height: 600px;
+    scrollbar-gutter: stable; /* Reserve space for scrollbar */
   }
   
   .weekly-time-grid {
     display: flex;
     min-height: 1440px;
+    width: 100%;
+    box-sizing: border-box;
   }
   
   /* =====================================================
@@ -123,6 +147,7 @@
   .weekly-days-grid {
     flex: 1;
     position: relative;
+    min-width: 0; /* Allow grid to shrink properly */
   }
   
   .weekly-grid-lines {
@@ -146,11 +171,13 @@
     bottom: 0;
     display: grid;
     grid-template-columns: repeat(7, 1fr);
+    min-width: 0; /* Ensure grid columns align properly */
   }
   
   .weekly-day-column {
     border-right: 1px solid rgba(197, 198, 199, 0.2);
     position: relative;
+    min-width: 0; /* Allow column to shrink properly */
   }
   
   .weekly-day-column:last-child {
