@@ -140,9 +140,6 @@ const SetlistList = ({ bandId, onBack, onSelect, onCreateNew }) => {
             <p className="empty-state-description">
               Create your first setlist to organize your songs for performances
             </p>
-            <button className="empty-state-button" onClick={onCreateNew}>
-              Create Setlist
-            </button>
           </div>
         ) : (
           <div className="setlist-grid">
